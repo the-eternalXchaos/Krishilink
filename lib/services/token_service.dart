@@ -1,0 +1,270 @@
+// import 'dart:convert';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/foundation.dart';
+// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// import 'package:get/get.dart';
+// import 'package:jwt_decoder/jwt_decoder.dart';
+// import 'package:krishi_link/core/utils/api_constants.dart';
+// import 'package:krishi_link/exceptions/app_exception.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:krishi_link/features/admin/models/user_model.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get/get.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/exceptions/app_exception.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:krishi_link/features/admin/models/user_model.dart';
+import 'package:dio/dio.dart' as dio;
+
+class TokenService {
+  static const _storage = FlutterSecureStorage();
+  static const _tokenKey = 'access_token';
+  static const _refreshTokenKey = 'refresh_token';
+  static const _expirationKey = 'token_expiration';
+  static const _userKey = 'user_model';
+
+  static Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+    required String expiration,
+  }) async {
+    try {
+      debugPrint(
+        '[TokenService] Saving tokens: access=$accessToken, refresh=$refreshToken, exp=$expiration',
+      );
+      await _storage.write(key: _tokenKey, value: accessToken);
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+      await _storage.write(key: _expirationKey, value: expiration);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('hasTokens', true);
+      debugPrint('[TokenService] Tokens saved successfully');
+    } catch (e) {
+      debugPrint('[TokenService] Failed to save tokens: $e');
+      throw AppException('Failed to save tokens: $e');
+    }
+  }
+
+  static Future<void> saveUser(UserModel user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = jsonEncode(user.toJson());
+      await prefs.setString(_userKey, userJson);
+      debugPrint('[TokenService] User saved: ${user.fullName}');
+    } catch (e) {
+      debugPrint('[TokenService] Failed to save user: $e');
+      throw AppException('Failed to save user: $e');
+    }
+  }
+
+  static Future<UserModel?> getUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString(_userKey);
+      if (userJson == null) {
+        debugPrint('[TokenService] No user found');
+        return null;
+      }
+      final user = UserModel.fromJson(jsonDecode(userJson));
+      debugPrint('[TokenService] User loaded: ${user.fullName}');
+      return user;
+    } catch (e) {
+      debugPrint('[TokenService] Failed to load user: $e');
+      return null;
+    }
+  }
+
+  static Future<void> clearTokens() async {
+    try {
+      await _storage.delete(key: _tokenKey);
+      await _storage.delete(key: _refreshTokenKey);
+      await _storage.delete(key: _expirationKey);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('hasTokens');
+      await prefs.remove(_userKey);
+      debugPrint('[TokenService] Tokens and user cleared');
+    } catch (e) {
+      debugPrint('[TokenService] Failed to clear tokens: $e');
+      throw AppException('Failed to clear tokens: $e');
+    }
+  }
+
+  static Future<bool> hasTokens() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasTokensFlag = prefs.getBool('hasTokens') ?? false;
+      if (!hasTokensFlag) {
+        debugPrint('[TokenService] No hasTokens flag');
+        return false;
+      }
+
+      final access = await getAccessToken();
+      final refresh = await getRefreshToken();
+      final expiration = await _storage.read(key: _expirationKey);
+      final result = access != null && refresh != null && expiration != null;
+      debugPrint(
+        '[TokenService] hasTokens: $result (access: ${access != null}, refresh: ${refresh != null}, exp: ${expiration != null})',
+      );
+      return result;
+    } catch (e) {
+      debugPrint('[TokenService] hasTokens error: $e');
+      return false;
+    }
+  }
+
+  static Future<String?> getAccessToken() async {
+    try {
+      final token = await _storage.read(key: _tokenKey);
+      if (token?.isNotEmpty == true) {
+        debugPrint('[TokenService] Access token retrieved');
+        return token;
+      }
+      debugPrint('[TokenService] No access token found');
+      return null;
+    } catch (e) {
+      debugPrint('[TokenService] Error reading access token: $e');
+      return null;
+    }
+  }
+
+  static Future<String?> getRefreshToken() async {
+    try {
+      final token = await _storage.read(key: _refreshTokenKey);
+      if (token?.isNotEmpty == true) {
+        debugPrint('[TokenService] Refresh token retrieved');
+        return token;
+      }
+      debugPrint('[TokenService] No refresh token found');
+      return null;
+    } catch (e) {
+      debugPrint('[TokenService] Error reading refresh token: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> isTokenExpired() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        debugPrint('[TokenService] No token to check expiration');
+        return true;
+      }
+
+      if (JwtDecoder.isExpired(token)) {
+        debugPrint('[TokenService] Token expired (JWT)');
+        return true;
+      }
+
+      final expStr = await _storage.read(key: _expirationKey);
+      if (expStr == null) {
+        debugPrint('[TokenService] No expiration stored');
+        return true;
+      }
+      final expiryDate = DateTime.parse(expStr);
+      final isExpired = DateTime.now().isAfter(expiryDate);
+      debugPrint(
+        '[TokenService] Token expiration check: isExpired=$isExpired, expiry=$expStr',
+      );
+      return isExpired;
+    } catch (e) {
+      debugPrint('[TokenService] Error checking token expiration: $e');
+      return true;
+    }
+  }
+
+  static Future<bool> refreshAccessToken() async {
+    try {
+      final refreshToken = await getRefreshToken();
+      debugPrint('[TokenService] Using refresh token: $refreshToken');
+      if (refreshToken == null) {
+        debugPrint('[TokenService] No refresh token available');
+        return false;
+      }
+
+      // Use Dio for multipart/form-data
+      final dioClient = dio.Dio();
+      final formData = dio.FormData.fromMap({
+        'refreshToken': refreshToken, // must match backend field name
+      });
+      final response = await dioClient.post(
+        ApiConstants.refreshTokenEndpoint,
+        data: formData,
+        options: dio.Options(contentType: 'multipart/form-data'),
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint(
+          '[TokenService] Token refresh failed: ${response.statusCode}',
+        );
+        await clearTokens();
+        return false;
+      }
+
+      final data = response.data is Map<String, dynamic> ? response.data : {};
+      final apiData = data['data'] ?? {};
+      await saveTokens(
+        accessToken: apiData['token'] ?? '',
+        refreshToken: apiData['refreshToken'] ?? '',
+        expiration: apiData['expiration'] ?? DateTime.now().toIso8601String(),
+      );
+      debugPrint('[TokenService] Token refreshed successfully');
+      return true;
+    } catch (e) {
+      debugPrint('[TokenService] Token refresh error: $e');
+      await clearTokens();
+      return false;
+    }
+  }
+
+  static Future<Map<String, String>> getAuthHeaders() async {
+    try {
+      var token = await getAccessToken();
+      if (token == null || await isTokenExpired()) {
+        final refreshed = await refreshAccessToken();
+        if (!refreshed) {
+          await clearTokens();
+          Get.offAllNamed('/login');
+          throw AppException('Authentication required');
+        }
+        token = await getAccessToken();
+      }
+
+      if (token == null) {
+        throw AppException('No valid token available');
+      }
+
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+      };
+      debugPrint('[TokenService] Auth headers: $headers');
+      return headers;
+    } catch (e) {
+      debugPrint('[TokenService] Error getting auth headers: $e');
+      throw AppException('Failed to build auth headers');
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getDecodedTokenPayload() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        debugPrint('[TokenService] No token to decode');
+        return null;
+      }
+      final payload = JwtDecoder.decode(token);
+      debugPrint('[TokenService] Decoded payload: $payload');
+      return payload;
+    } catch (e) {
+      debugPrint('[TokenService] Error decoding token: $e');
+      return null;
+    }
+  }
+}

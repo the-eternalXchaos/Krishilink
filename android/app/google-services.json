@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "476616447660",
+    "project_id": "krishilink-65ace",
+    "storage_bucket": "krishilink-65ace.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:476616447660:android:f9f4d16d49ef684af33109",
+        "android_client_info": {
+          "package_name": "com.example.krishi_link"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAukYcBjKlqTbRKbi3vze2GoABC6yu075E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

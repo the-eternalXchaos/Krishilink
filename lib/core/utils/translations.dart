@@ -1,0 +1,373 @@
+// import 'package:get/get.dart';
+// import 'package:krishi_link/features/farmer/controller/product_management.dart';
+
+// class AppTranslations extends Translations {
+//   @override
+//   Map<String, Map<String, String>> get keys => {
+//     'en_US': {
+//       'home': 'Home',
+//       'my_crops': 'My Crops',
+//       'menu': 'Menu',
+//       'add_crop': 'Add Crop',
+//       'Tip Details': 'Tip Details',
+//       'No tips available': 'No tips available',
+//       'High temperature alert: Water your crops twice daily to prevent stress.':
+//           'High temperature alert: Water your crops twice daily to prevent stress.',
+//       'Rainy weather: Avoid overwatering and check for fungal risks.':
+//           'Rainy weather: Avoid overwatering and check for fungal risks.',
+//       'Attention: %s is %s. Check care instructions.':
+//           'Attention: %s is %s. Check care instructions.',
+//       'All crops are healthy. Maintain regular care.':
+//           'All crops are healthy. Maintain regular care.',
+//       'Crop Overview': 'Crop Overview',
+//       'Status': 'Status',
+//       'Planting Date': 'Planting Date',
+//       'Notes': 'Notes',
+//       'Disease Detection': 'Disease Detection',
+//       'Detected Disease': 'Detected Disease',
+//       'Care Instructions': 'Care Instructions',
+//       'No disease detected. Scan leaves to check health.':
+//           'No disease detected. Scan leaves to check health.',
+//       'Scan Leaf Again': 'Scan Leaf Again',
+//       'Health History': 'Health History',
+//       'Health history graph coming soon!': 'Health history graph coming soon!',
+//       'Graph Placeholder': 'Graph Placeholder',
+//       'Edit Crop': 'Edit Crop',
+//       'Scan Leaf': 'Scan Leaf',
+//       'Healthy': 'Healthy',
+//       'At Risk': 'At Risk',
+//       'Diseased': 'Diseased',
+//       'Add Crop': 'Add Crop',
+//       'Crop Details': 'Crop Details',
+//       'Crop Name': 'Crop Name',
+//       'e.g., Tomato': 'e.g., Tomato',
+//       'Please enter a crop name': 'Please enter a crop name',
+//       'Select Date': 'Select Date',
+//       'Additional details': 'Additional details',
+//       'Update Crop': 'Update Crop',
+//       'Error': 'Error',
+//       'Failed to save crop: %s': 'Failed to save crop: %s',
+//       'Scan Crop Leaf': 'Scan Crop Leaf',
+//       'No image selected': 'No image selected',
+//       'Camera': 'Camera',
+//       'Gallery': 'Gallery',
+//       // 'Photos',
+//       'Analyze Image': 'Analyze Image',
+//       'Detection Results': 'Detection Results',
+//       'Disease': 'Disease',
+//       'Confidence': 'Confidence',
+//       'Failed to pick image: %s': 'Failed to pick image: %s',
+//       'Please select an image first': 'Please select an image first',
+//       'Success': 'Success',
+//       'Disease detection completed': 'Disease detection completed',
+//       'Failed to analyze image: %s': 'Failed to analyze image: %s',
+//       'Follow care instructions for %s.': 'Follow care instructions for %s.',
+//       'Early Blight': 'Early Blight',
+//       'Apply fungicide and remove affected leaves.':
+//           'Apply fungicide and remove affected leaves.',
+//       'Notifications': 'Notifications',
+//       'No notifications yet': 'No notifications yet',
+//       'Mark as read': 'Mark as read',
+//       'New order received': 'New order received',
+//       'Water crops today': 'Water crops today', 'My Orders': 'My Orders',
+//       'No orders yet': 'No orders yet',
+//       'Status: Pending': 'Status: Pending',
+//       'Status: Delivered': 'Status: Delivered',
+//       'Tomato (%s kg)': 'Tomato (%s kg)',
+//       'Potato (%s kg)': 'Potato (%s kg)',
+//       'Order Details': 'Order Details',
+//       'Order Information': 'Order Information',
+//       'Product': 'Product',
+//       'Order Date': 'Order Date',
+//       'Buyer': 'Buyer',
+//       'Delivery Address': 'Delivery Address',
+//       'Actions': 'Actions',
+//       'Mark as Delivered': 'Mark as Delivered',
+//       'Order has been delivered': 'Order has been delivered',
+//       'Order marked as delivered': 'Order marked as delivered',
+//       'Failed to update order: %s': 'Failed to update order: %s',
+//       'John Doe': 'John Doe',
+//       '123 Farm Road, Kathmandu': '123 Farm Road, Kathmandu',
+//       'Total Price': 'Total Price',
+//       'Payment Status': 'Payment Status',
+//       'Refund Status': 'Refund Status',
+//       'Buyer Contact': 'Buyer Contact',
+//       'Delivered On': 'Delivered On',
+//       'pending': 'Pending',
+//       'delivered': 'Delivered',
+//       'completed': 'Completed', 'Settings': 'Settings',
+//       'Profile Settings': 'Profile Settings',
+//       'Name': 'Name',
+//       'Contact Number': 'Contact Number',
+//       'Please enter your name': 'Please enter your name',
+//       'Please enter your contact': 'Please enter your contact',
+//       'Update Profile': 'Update Profile',
+//       'Language': 'Language',
+//       'English': 'English',
+//       'Nepali': 'Nepali',
+//       'Logout': 'Logout',
+//       'Are you sure you want to logout?': 'Are you sure you want to logout?',
+//       'Yes': 'Yes',
+//       'No': 'No',
+//       'Success': 'Success',
+//       'Profile updated successfully': 'Profile updated successfully',
+//       'Error': 'Error',
+//       'Failed to load profile: %s': 'Failed to load profile: %s',
+//       'Failed to update profile: %s': 'Failed to update profile: %s',
+//       // Tutorials
+//       'Tutorials': 'Tutorials',
+//       'No tutorials available': 'No tutorials available',
+//       'Tutorial': 'Tutorial',
+//       'How to Prevent Early Blight in Tomatoes':
+//           'How to Prevent Early Blight in Tomatoes',
+//       'Learn effective methods to protect your tomato crops from early blight.':
+//           'Learn effective methods to protect your tomato crops from early blight.',
+//       'Disease Prevention': 'Disease Prevention',
+//       'Optimal Watering Techniques for Paddy':
+//           'Optimal Watering Techniques for Paddy',
+//       'Master the art of watering paddy crops for maximum yield.':
+//           'Master the art of watering paddy crops for maximum yield.',
+//       'Crop Care': 'Crop Care',
+//       //products managements 
+//       'My Products': 'My Products',
+//       'No products yet': 'No products yet',
+//       'Add Product': 'Add Product',
+//       'Edit Product': 'Edit Product',
+//       'Product Name': 'Product Name',
+//       'Price (NPR)': 'Price (NPR)',
+//       'Quantity': 'Quantity',
+//       'Unit': 'Unit',
+//       'Description (Optional)': 'Description (Optional)',
+//       'Please enter product name': 'Please enter product name',
+//       'Please enter a valid price': 'Please enter a valid price',
+//       'Please enter a valid quantity': 'Please enter a valid quantity',
+//       'Save': 'Save',
+//       'Cancel': 'Cancel',
+//       'Delete Product': 'Delete Product',
+//       'Are you sure you want to delete this product?': 'Are you sure you want to delete this product?',
+//       'Yes': 'Yes',
+//       'No': 'No',
+//       'Success': 'Success',
+//       'Product saved successfully': 'Product saved successfully',
+//       'Product deleted successfully': 'Product deleted successfully',
+//       'Error': 'Error',
+//       'Failed to save product: %s': 'Failed to save product: %s',
+//       'Failed to delete product: %s': 'Failed to delete product: %s',
+//       'kg': 'kg',
+//       'liter': 'liter',
+//       'piece': 'piece',
+//     },
+//     'ne_NP': {
+//       'home': 'होम',
+
+//       'my_crops': 'मेरो बाली',
+
+//       'menu': 'मेनु',
+
+//       'add_crop': 'बाली थप्नुहोस्',
+
+//       'Tip Details': 'सुझाव विवरण',
+
+//       'No tips available': 'कुनै सुझाव उपलब्ध छैन',
+
+//       'High temperature alert: Water your crops twice daily to prevent stress.':
+//           'उच्च तापमान चेतावनी: बालीलाई तनावबाट बचाउन दिनमा दुई पटक पानी हाल्नुहोस्।',
+
+//       'Rainy weather: Avoid overwatering and check for fungal risks.':
+//           'वर्षाको मौसम: अत्यधिक पानी हाल्नबाट जोगिनुहोस् र फंगल जोखिम जाँच गर्नुहोस्।',
+
+//       'Attention: %s is %s. Check care instructions.':
+//           'ध्यान दिनुहोस्: %s %s छ। हेरचाह निर्देशनहरू जाँच गर्नुहोस्।',
+
+//       'Crop Overview': 'बाली अवलोकन',
+
+//       'Status': 'स्थिति',
+
+//       'Planting Date': 'रोपण मिति',
+
+//       'Notes': 'नोटहरू',
+
+//       'Disease Detection': 'रोग पहिचान',
+
+//       'Detected Disease': 'पहिचान भएको रोग',
+
+//       'Care Instructions': 'हेरचाह निर्देशनहरू',
+
+//       'No disease detected. Scan leaves to check health.':
+//           'कुनै रोग पहिचान भएको छैन। स्वास्थ्य जाँच गर्न पातहरू स्क्यान गर्नुहोस्।',
+
+//       'Scan Leaf Again': 'पात फेरि स्क्यान गर्नुहोस्',
+
+//       'Health History': 'स्वास्थ्य इतिहास',
+
+//       'Health history graph coming soon!':
+//           'स्वास्थ्य इतिहास ग्राफ चाँडै आउँदैछ!',
+
+//       'Graph Placeholder': 'ग्राफ प्लेसहोल्डर',
+
+//       'Edit Crop': 'बाली सम्पादन गर्नुहोस्',
+
+//       'Scan Leaf': 'पात स्क्यान गर्नुहोस्',
+
+//       'Healthy': 'स्वस्थ',
+
+//       'At Risk': 'जोखिममा',
+
+//       'Diseased': 'रोगग्रस्त',
+//       'Add Crop': 'बाली थप्नुहोस्',
+//       'Crop Details': 'बाली विवरण',
+//       'Crop Name': 'बालीको नाम',
+//       'e.g., Tomato': 'जस्तै, टमाटर',
+//       'Please enter a crop name': 'कृपया बालीको नाम प्रविष्ट गर्नुहोस्',
+//       'Select Date': 'मिति छान्नुहोस्',
+//       'Additional details': 'थप विवरणहरू',
+//       'Update Crop': 'बाली अद्यावधिक गर्नुहोस्',
+//       'Error': 'त्रुटि',
+//       'Failed to save crop: %s': 'बाली बचत गर्न असफल: %s',
+//       'Scan Crop Leaf': 'बालीको पात स्क्यान गर्नुहोस्',
+//       'No image selected': 'कुनै छवि चयन गरिएको छैन',
+//       'Camera': 'क्यामेरा',
+//       'Gallery': 'ग्यालेरी',
+//       'Analyze Image': 'छवि विश्लेषण गर्नुहोस्',
+//       'Detection Results': 'पहिचान परिणामहरू',
+//       'Disease': 'रोग',
+//       'Confidence': 'विश्वास',
+//       'Failed to pick image: %s': 'छवि चयन गर्न असफल: %s',
+//       'Please select an image first': 'कृपया पहिले छवि चयन गर्नुहोस्',
+//       'Success': 'सफलता',
+//       'Disease detection completed': 'रोग पहिचान पूरा भयो',
+//       'Failed to analyze image: %s': 'छवि विश्लेषण गर्न असफल: %s',
+//       'Follow care instructions for %s.':
+//           '%s को लागि हेरचाह निर्देशनहरू पालना गर्नुहोस्।',
+//       'Early Blight': 'प्रारम्भिक ब्लाइट',
+//       'Apply fungicide and remove affected leaves.':
+//           'फङ्गिसाइड लगाउनुहोस् र प्रभावित पातहरू हटाउनुहोस्।',
+//       'Notifications': 'सूचनाहरू',
+//       'No notifications yet': 'हाल कुनै सूचनाहरू छैनन्',
+//       'Mark as read': 'पढिएको रूपमा चिन्ह लगाउनुहोस्',
+//       'New order received': 'नयाँ अर्डर प्राप्त भयो',
+//       'Water crops today': 'आज बालीमा पानी हाल्नुहोस्',
+//       'My Orders': 'मेरो अर्डरहरू',
+//       'No orders yet': 'हाल कुनै अर्डरहरू छैनन्',
+//       'Status: Pending': 'स्थिति: विचाराधीन',
+//       'Status: Delivered': 'स्थिति: वितरित',
+//       'Tomato (%s kg)': 'टमाटर (%s किलो)',
+//       'Potato (%s kg)': 'आलु (%s किलो)',
+//       'Order Details': 'अर्डर विवरण',
+//       'Order Information': 'अर्डर जानकारी',
+//       'Product': 'उत्पादन',
+//       'Order Date': 'अर्डर मिति',
+//       'Buyer': 'खरिदकर्ता',
+//       'Delivery Address': 'वितरण ठेगाना',
+//       'Actions': 'कार्यहरू',
+//       'Mark as Delivered': 'वितरित रूपमा चिन्ह लगाउनुहोस्',
+//       'Order has been delivered': 'अर्डर वितरित भइसकेको छ',
+//       'Order marked as delivered': 'अर्डर वितरित रूपमा चिन्हित',
+//       'Failed to update order: %s': 'अर्डर अद्यावधिक गर्न असफल: %s',
+//       'John Doe': 'जोन डो',
+//       '123 Farm Road, Kathmandu': '१२३ फार्म रोड, काठमाडौं',
+//       'Total Price': 'कुल मूल्य',
+//       '': 'स्थिति',
+//       'Payment Status': 'भुक्तानी स्थिति',
+//       'Refund Status': 'फिर्ता स्थिति',
+//       'Buyer Contact': 'खरिदकर्ता सम्पर्क',
+//       'Delivered On': 'वितरित मिति',
+//       'pending': 'विचाराधीन',
+//       'delivered': 'वितरित',
+//       'completed': 'पूरा भएको',
+//       // Settings
+//       'Settings': 'सेटिङहरू',
+//       'Profile Settings': 'प्रोफाइल सेटिङहरू',
+//       'Name': 'नाम',
+//       'Contact Number': 'सम्पर्क नम्बर',
+//       'Please enter your name': 'कृपया आफ्नो नाम प्रविष्ट गर्नुहोस्',
+//       'Please enter your contact': 'कृपया आफ्नो सम्पर्क प्रविष्ट गर्नुहोस्',
+//       'Update Profile': 'प्रोफाइल अद्यावधिक गर्नुहोस्',
+//       'Language': 'भाषा',
+//       'English': 'अंग्रेजी',
+//       'Nepali': 'नेपाली',
+//       'Logout': 'लगआउट',
+//       'Are you sure you want to logout?':
+//           'के तपाईं लगआउट गर्न निश्चित हुनुहुन्छ?',
+//       'Yes': 'हो',
+//       'No': 'होइन',
+//       'Success': 'सफलता',
+//       'Profile updated successfully': 'प्रोफाइल सफलतापूर्वक अद्यावधिक गरियो',
+//       'Error': 'त्रुटि',
+//       'Failed to load profile: %s': 'प्रोफाइल लोड गर्न असफल: %s',
+//       'Failed to update profile: %s': 'प्रोफाइल अद्यावधिक गर्न असफल: %s',
+//       // Tutorials
+//       'Tutorials': 'ट्यूटोरियलहरू',
+//       'No tutorials available': 'हाल कुनै ट्यूटोरियलहरू उपलब्ध छैनन्',
+//       'Tutorial': 'ट्यूटोरियल',
+//       'How to Prevent Early Blight in Tomatoes':
+//           'टमाटरमा प्रारम्भिक ब्लाइट कसरी रोक्ने',
+//       'Learn effective methods to protect your tomato crops from early blight.':
+//           'टमाटर बालीलाई प्रारम्भिक ब्लाइटबाट जोगाउन प्रभावकारी विधिहरू सिक्नुहोस्।',
+//       'Disease Prevention': 'रोग निवारण',
+//       'Optimal Watering Techniques for Paddy':
+//           'धानको लागि इष्टतम पानी हाल्ने प्रविधिहरू',
+//       'Master the art of watering paddy crops for maximum yield.':
+//           'अधिकतम उत्पादनको लागि धान बालीमा पानी हाल्ने कला सिक्नुहोस्।',
+//       'Crop Care': 'बाली हेरचाह',
+
+//       // product FarmerProductManagementScreen
+//       'My Products': 'मेरो उत्पादनहरू',
+//       'No products yet': 'हाल कुनै उत्पादनहरू छैनन्',
+//       'Add Product': 'उत्पादन थप्नुहोस्',
+//       'Edit Product': 'उत्पादन सम्पादन गर्नुहोस्',
+//       'Product Name': 'उत्पादनको नाम',
+//       'Price (NPR)': 'मूल्य (नेरू)',
+//       'Quantity': 'परिमाण',
+//       'Unit': 'इकाई',
+//       'Description (Optional)': 'विवरण (वैकल्पिक)',
+//       'Please enter product name': 'कृपया उत्पादनको नाम प्रविष्ट गर्नुहोस्',
+//       'Please enter a valid price': 'कृपया मान्य मूल्य प्रविष्ट गर्नुहोस्',
+//       'Please enter a valid quantity': 'कृपया मान्य परिमाण प्रविष्ट गर्नुहोस्',
+//       'Save': 'सुरक्षित गर्नुहोस्',
+//       'Cancel': 'रद्द गर्नुहोस्',
+//       'Delete Product': 'उत्पादन मेटाउनुहोस्',
+//       'Are you sure you want to delete this product?': 'के तपाईं यो उत्पादन मेटाउन निश्चित हुनुहुन्छ?',
+//       'Yes': 'हो',
+//       'No': 'होइन',
+//       'Success': 'सफलता',
+//       'Product saved successfully': 'उत्पादन सफलतापूर्वक सुरक्षित गरियो',
+//       'Product deleted successfully': 'उत्पादन सफलतापूर्वक मेटाइयो',
+//       'Error': 'त्रुटि',
+//       'Failed to save product: %s': 'उत्पादन सुरक्षित गर्न असफल: %s',
+//       'Failed to delete product: %s': 'उत्पादन मेटाउन असफल: %s',
+//       'kg': 'किलो',
+//       'liter': 'लिटर',
+//       'piece': 'टुक्रा',
+//     },
+//   };
+// }
+// // tutorials 
+// 'Published: %s': 'Published: %s',
+//       'Overview': 'Overview',
+//       'Steps': 'Steps',
+//       'Image Placeholder: %s': 'Image Placeholder: %s',
+//       'Video Placeholder: %s': 'Video Placeholder: %s',
+//       'ne_NP': {
+//       'Published: %s': 'प्रकाशित: %s',
+//       'Overview': 'अवलोकन',
+//       'Steps': 'चरणहरू',
+//       'Image Placeholder: %s': 'छवि प्लेसहोल्डर: %s',
+//       'Video Placeholder: %s': 'भिडियो प्लेसहोल्डर: %s',
+// core/utils/lang.dart
+// final Map<String, Map<String, String>> translations = {
+//   'en_US': {
+//     'verify_otp': 'Verify OTP',
+//     'enter_otp': 'Enter the 6-digit OTP sent to',
+//     'resend_otp': 'Resend OTP',
+//     ...
+//   },
+//   'ne_NP': {
+//     'verify_otp': 'ओटीपी प्रमाणित गर्नुहोस्',
+//     'enter_otp': 'पठाइएको ६ अङ्कको ओटीपी प्रविष्ट गर्नुहोस्',
+//     'resend_otp': 'ओटीपी पुन: पठाउनुहोस्',
+//     ...
+//   },
+// };
+
+//     },
