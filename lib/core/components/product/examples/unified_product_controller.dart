@@ -6,7 +6,7 @@ import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'dart:io';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:dio/dio.dart' as dio;
-import 'package:krishi_link/core/constants/api_constants.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
 
 /// Unified Product Controller that can be used by both Admin and Farmer
 /// This controller provides common functionality and can be extended for specific roles
@@ -18,6 +18,9 @@ class UnifiedProductController extends GetxController {
   final RxInt page = 1.obs;
   final int pageSize = 20;
   final RxBool hasMore = true.obs;
+
+  final totalProducts = 0.obs;
+  final pendingProducts = 0.obs;
 
   final AuthController authController = Get.find<AuthController>();
 
@@ -188,20 +191,78 @@ class UnifiedProductController extends GetxController {
     }
   }
 
-  Future<void> updateProductActiveStatusApi(
+  // Future<void> updateProductActiveStatusApi(
+  //   String productId,
+  //   bool isActive,
+  // ) async {
+  //   final opts = await _jsonOptions();
+  //   final response = await _dio.put(
+  //     '${ApiConstants.updateProductStatusEndpoint}/$productId',
+  //     data: {'isActive': isActive},
+  //     options: opts,
+  //   );
+  //   if (response.statusCode != 200) {
+  //     throw Exception(
+  //       'Failed to update product status: ${response.statusCode}',
+  //     );
+  //   }
+  // }
+
+  Future<void> updateProductActiveStatus(
     String productId,
     bool isActive,
   ) async {
-    final opts = await _jsonOptions();
-    final response = await _dio.put(
-      '${ApiConstants.updateProductStatusEndpoint}/$productId',
-      data: {'isActive': isActive},
-      options: opts,
-    );
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to update product status: ${response.statusCode}',
+    try {
+      final opts = await _jsonOptions();
+      print('Updating product $productId to isActive: $isActive');
+      final response = await _dio.put(
+        '${ApiConstants.updateProductStatusEndpoint}/$productId',
+        data: {'isActive': isActive},
+        options: opts,
       );
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to update product status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Error updating product status: $e');
+      if (e is dio.DioException) {
+        print('Dio error details: ${e.response?.data}');
+        throw Exception(
+          'Failed to update product status: ${e.response?.data['message'] ?? 'Network error'}',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  bool isEmail(String input) => RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(input);
+
+  Future<Map<String, dynamic>?> fetchUserDetailsByEmailOrPhone(
+    String input,
+  ) async {
+    final opts = await _jsonOptions();
+    try {
+      dio.Response response;
+      if (isEmail(input)) {
+        response = await _dio.get(
+          '${ApiConstants.getUserDetailsByEmail}?email=$input',
+          options: opts,
+        );
+      } else {
+        response = await _dio.get(
+          '${ApiConstants.getUserDetailsByPhoneNumber}/$input',
+          options: opts,
+        );
+      }
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        return response.data['data'];
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching user details: $e');
+      return null;
     }
   }
 
@@ -372,7 +433,7 @@ class UnifiedProductController extends GetxController {
   }
 
   /// Toggle product active status (Admin only)
-  Future<void> updateProductActiveStatus(
+  Future<void> updateProductActiveStatusApi(
     String productId,
     bool isActive,
   ) async {

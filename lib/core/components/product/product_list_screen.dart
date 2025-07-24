@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide SearchBar;
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/product/product_card.dart';
+import 'package:krishi_link/core/components/product/product_list_management.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/widgets/search_bar.dart';
 
@@ -8,6 +8,7 @@ class ProductListScreen extends StatefulWidget {
   final RxList<Product> products;
   final RxBool isLoading;
   final bool isAdmin;
+  final bool isFarmer;
   final Function(Product) onEdit;
   final Function(Product) onDelete;
   final VoidCallback onRefresh;
@@ -25,6 +26,7 @@ class ProductListScreen extends StatefulWidget {
     required this.onDelete,
     required this.onRefresh,
     this.isAdmin = false,
+    this.isFarmer = false,
     this.onToggleActive,
     this.title = 'Products',
     this.showActiveToggle = true,
@@ -279,9 +281,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
         itemCount: filteredProducts.length,
         itemBuilder: (context, index) {
           final product = filteredProducts[index];
-          return ProductCard(
+          return ProductListManagement(
             product: product,
             isAdmin: widget.isAdmin,
+            isFarmer: widget.isFarmer,
             showActiveToggle: widget.showActiveToggle,
             onEdit: () => widget.onEdit(product),
             onDelete: () => _confirmDelete(product),

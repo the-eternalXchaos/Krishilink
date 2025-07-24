@@ -1,137 +1,377 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/product/product_form.dart';
-import 'package:krishi_link/core/components/product/product_form_data.dart';
-import 'package:krishi_link/core/components/product/product_list_screen.dart';
 import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
+import 'package:krishi_link/core/components/product/product_form.dart';
+import 'package:krishi_link/features/admin/controllers/admin_product_controller.dart';
+import 'package:krishi_link/controllers/filter_controller.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/widgets/search_bar.dart' as custom;
+import 'package:krishi_link/core/lottie/popup_service.dart';
 
-/// Comprehensive example showing how to use the unified product management system
-/// This example automatically adapts based on user role (Admin vs Farmer)
-class UnifiedProductManagement extends StatelessWidget {
-  UnifiedProductManagement({super.key});
+class UnifiedProductManagement extends StatefulWidget {
+  const UnifiedProductManagement({super.key});
 
+  @override
+  State<UnifiedProductManagement> createState() =>
+      _UnifiedProductManagementState();
+}
+
+class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
   final UnifiedProductController controller =
       Get.isRegistered<UnifiedProductController>()
           ? Get.find<UnifiedProductController>()
           : Get.put(UnifiedProductController());
+  final FilterController filterController =
+      Get.isRegistered<FilterController>()
+          ? Get.find<FilterController>()
+          : Get.put(FilterController());
+  final TextEditingController searchController = TextEditingController();
+  final RxString filterActiveStatus = 'all'.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    controller.fetchProducts();
+    searchController.addListener(() {
+      filterController.searchProducts(searchController.text);
+      controller.fetchProducts(
+        searchQuery: filterController.productSearchQuery.value,
+        selectedCategories: filterController.selectedCategories.toList(),
+        selectedLocations: filterController.selectedLocations.toList(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => ProductListScreen(
-        products: controller.userProducts,
-        isLoading: controller.isLoading,
-        isAdmin: controller.currentUserRole.value == 'admin',
-        title: _getTitle(),
-        showActiveToggle: controller.currentUserRole.value == 'admin',
-        showAddButton: true,
-        onEdit: _editProduct,
-        onDelete: _deleteProduct,
-        onRefresh: _refreshProducts,
-        onToggleActive:
-            controller.currentUserRole.value == 'admin'
-                ? _toggleProductActive
-                : null,
-        onAdd: _addProduct,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('manage_products'.tr),
+        backgroundColor: Theme.of(context).primaryColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed:
+                () => controller.fetchProducts(
+                  searchQuery: filterController.productSearchQuery.value,
+                  selectedCategories:
+                      filterController.selectedCategories.toList(),
+                  selectedLocations:
+                      filterController.selectedLocations.toList(),
+                ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed:
+            () => Get.dialog(
+              ProductForm(
+                product: null,
+                onSubmit: (formData, newImagePath) async {
+                  // TODO: Implement product submission logic
+                },
+              ),
+            ),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: custom.SearchBar(
+                    onSearch: (value) {
+                      filterController.searchProducts(value);
+                      controller.fetchProducts(
+                        searchQuery: filterController.productSearchQuery.value,
+                        selectedCategories:
+                            filterController.selectedCategories.toList(),
+                        selectedLocations:
+                            filterController.selectedLocations.toList(),
+                      );
+                    },
+                    searchController: searchController,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Obx(
+                  () => DropdownButton<String>(
+                    value: filterActiveStatus.value,
+                    items:
+                        ['all', 'active', 'inactive']
+                            .map(
+                              (status) => DropdownMenuItem(
+                                value: status,
+                                child: Text(status.tr.capitalizeFirst!),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        filterActiveStatus.value = value;
+                      }
+                    },
+                    underline: Container(),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Obx(
+              () =>
+                  controller.isLoading.value
+                      ? const Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                        onRefresh: () async {
+                          await controller.fetchProducts(
+                            searchQuery:
+                                filterController.productSearchQuery.value,
+                            selectedCategories:
+                                filterController.selectedCategories.toList(),
+                            selectedLocations:
+                                filterController.selectedLocations.toList(),
+                          );
+                        },
+                        child:
+                            controller.products.isEmpty
+                                ? Center(child: Text('no_products_found'.tr))
+                                : ListView.builder(
+                                  itemCount: controller.products.length,
+                                  itemBuilder: (context, index) {
+                                    final product = controller.products[index];
+                                    if (filterActiveStatus.value != 'all' &&
+                                        ((filterActiveStatus.value ==
+                                                    'active' &&
+                                                !product.isActive) ||
+                                            (filterActiveStatus.value ==
+                                                    'inactive' &&
+                                                product.isActive))) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return Card(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: ExpansionTile(
+                                        leading: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: Image.network(
+                                            product.image,
+                                            width: 60,
+                                            height: 60,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Container(
+                                                  width: 60,
+                                                  height: 60,
+                                                  color: Colors.grey[300],
+                                                  child: const Icon(
+                                                    Icons.image_not_supported,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          product.productName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Price: Rs.${product.rate}/${product.unit}',
+                                            ),
+                                          ],
+                                        ),
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(16.0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                SwitchListTile(
+                                                  title: Text(
+                                                    product.isActive
+                                                        ? 'Active'
+                                                        : 'Inactive',
+                                                    style: TextStyle(
+                                                      color:
+                                                          product.isActive
+                                                              ? Colors.green
+                                                              : Colors.red,
+                                                    ),
+                                                  ),
+                                                  value: product.isActive,
+                                                  onChanged: (value) {
+                                                    controller
+                                                        .updateProductActiveStatus(
+                                                          product.id,
+                                                          value,
+                                                        );
+                                                  },
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                  dense: true,
+                                                ),
+                                                Text(
+                                                  'Category: ${product.category}',
+                                                ),
+                                                Text(
+                                                  'Quantity: ${product.availableQuantity} ${product.unit}',
+                                                ),
+                                                if (product.location != null &&
+                                                    product
+                                                        .location!
+                                                        .isNotEmpty)
+                                                  Text(
+                                                    'Location: ${product.location}',
+                                                  ),
+                                                if (product
+                                                        .description
+                                                        .isNotEmpty &&
+                                                    product.description !=
+                                                        'No description')
+                                                  Text(
+                                                    'Description: ${product.description}',
+                                                  ),
+                                                if (product.farmerName !=
+                                                        null &&
+                                                    product
+                                                        .farmerName!
+                                                        .isNotEmpty)
+                                                  Text(
+                                                    'Farmer: ${product.farmerName}',
+                                                  ),
+                                                const SizedBox(height: 16),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    ElevatedButton.icon(
+                                                      onPressed:
+                                                          () =>
+                                                              _showProductDialog(
+                                                                context,
+                                                                product:
+                                                                    product,
+                                                              ),
+                                                      icon: const Icon(
+                                                        Icons.edit,
+                                                      ),
+                                                      label: Text('edit'.tr),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.blue,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ElevatedButton.icon(
+                                                      onPressed:
+                                                          () => _confirmDelete(
+                                                            context,
+                                                            controller,
+                                                            product,
+                                                          ),
+                                                      icon: const Icon(
+                                                        Icons.delete,
+                                                      ),
+                                                      label: Text('delete'.tr),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                      ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  String _getTitle() {
-    return controller.currentUserRole.value == 'admin'
-        ? 'manage_products'
-        : 'my_products';
+  void _showProductDialog(BuildContext context, {Product? product}) {
+    // TODO: Implement product form dialog for add/edit
+    // You can use your existing ProductFormDialog or similar widget here
+    // Example:
+    // Get.dialog(ProductFormDialog(product: product));
+    // Get.dialog(
+    //   ProductForm(
+    //     product: product,
+    //     onSubmit: (formData, newImagePath) async {
+    //       // TODO: Implement product submission logic
+    //       // You can use your existing ProductFormDialog or similar widget here
+    //       // Example:
+    //       // await ProductFormDialog(product: product).submit(formData, newImagePath);
+    //     },
+    //   ),
+    // );
   }
 
-  void _addProduct() {
-    final controller =
-        Get.isRegistered<UnifiedProductController>()
-            ? Get.find<UnifiedProductController>()
-            : Get.put(UnifiedProductController());
-    Get.to(
-      () => ProductForm(
-        onSubmit: (formData, imagePath) async {
-          await _handleProductSubmit(formData, imagePath);
-        },
-        submitButtonText: 'add_product'.tr,
-      ),
-    );
-  }
-
-  void _editProduct(Product product) {
-    final controller =
-        Get.isRegistered<UnifiedProductController>()
-            ? Get.find<UnifiedProductController>()
-            : Get.put(UnifiedProductController());
-    // Check if user can edit this product
-    if (controller.currentUserRole.value != 'admin' &&
-        product.farmerId != controller.currentUserId.value) {
-      Get.snackbar('error'.tr, 'cannot_edit_other_products'.tr);
-      return;
-    }
-
-    Get.to(
-      () => ProductForm(
-        product: product,
-        onSubmit: (formData, imagePath) async {
-          await _handleProductUpdate(product, formData, imagePath);
-        },
-        submitButtonText: 'update_product'.tr,
-      ),
-    );
-  }
-
-  void _deleteProduct(Product product) {
-    // Check if user can delete this product
-    if (controller.currentUserRole.value != 'admin' &&
-        product.farmerId != controller.currentUserId.value) {
-      Get.snackbar('error'.tr, 'cannot_delete_other_products'.tr);
-      return;
-    }
-
-    // Show role-specific confirmation dialog
-    _showDeleteConfirmation(product);
-  }
-
-  void _showDeleteConfirmation(Product product) {
-    final isAdmin = controller.currentUserRole.value == 'admin';
-
+  void _confirmDelete(
+    BuildContext context,
+    UnifiedProductController controller,
+    Product product,
+  ) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'delete_product'.tr,
-          style: TextStyle(color: Theme.of(Get.context!).primaryColor),
+          style: TextStyle(color: Theme.of(context).primaryColor),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('confirm_delete_product'.trArgs([product.productName])),
-            const SizedBox(height: 8),
-            if (isAdmin) ...[
-              Text(
-                'admin_delete_warning'.tr,
-                style: TextStyle(
-                  color: Colors.red[700],
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'farmer_name'.trArgs([product.farmerName ?? 'Unknown']),
-                style: const TextStyle(fontSize: 12),
-              ),
-            ] else ...[
-              Text(
-                'farmer_delete_warning'.tr,
-                style: TextStyle(color: Colors.orange[700], fontSize: 12),
-              ),
-            ],
-          ],
-        ),
+        content: Text('confirm_delete_product'.trArgs([product.productName])),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
@@ -142,186 +382,14 @@ class UnifiedProductManagement extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Get.back();
               controller.deleteProduct(product.id);
-              _showDeleteSuccessMessage(product.productName);
+              Get.back();
             },
-            child: Text('delete'.tr, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              'delete'.tr,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _refreshProducts() {
-    controller.fetchProducts();
-  }
-
-  void _toggleProductActive(Product product, bool isActive) {
-    controller.updateProductActiveStatus(product.id, isActive);
-  }
-
-  Future<void> _handleProductSubmit(
-    ProductFormData formData,
-    String? imagePath,
-  ) async {
-    try {
-      await controller.addProduct(formData, imagePath);
-      Get.back(); // Close form
-      _showSuccessMessage('product_added_successfully'.tr);
-    } catch (error) {
-      Get.snackbar(
-        'error'.tr,
-        error.toString(),
-        backgroundColor: Colors.red.withAlpha((0.8 * 255).toInt()),
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 3),
-      );
-    }
-  }
-
-  Future<void> _handleProductUpdate(
-    Product product,
-    ProductFormData formData,
-    String? imagePath,
-  ) async {
-    try {
-      await controller.updateProduct(product.id, formData, imagePath);
-      Get.back(); // Close form
-      _showSuccessMessage('product_updated_successfully'.tr);
-    } catch (error) {
-      Get.snackbar('error'.tr, error.toString());
-    }
-  }
-
-  void _showSuccessMessage(String message) {
-    Get.snackbar(
-      'success'.tr,
-      message,
-      backgroundColor: Colors.green.withAlpha((0.8 * 255).toInt()),
-      colorText: Colors.white,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-      duration: const Duration(seconds: 3),
-    );
-  }
-
-  void _showDeleteSuccessMessage(String productName) {
-    Get.snackbar(
-      'success'.tr,
-      'product_deleted_successfully'.trArgs([productName]),
-      backgroundColor: Colors.green.withAlpha((0.8 * 255).toInt()),
-      colorText: Colors.white,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-      duration: const Duration(seconds: 3),
-    );
-  }
-}
-
-/// Example of how to integrate with your app's navigation
-class ProductManagementPage extends StatelessWidget {
-  const ProductManagementPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return UnifiedProductManagement();
-  }
-}
-
-/// Example of how to add to your routes
-class ProductManagementRoutes {
-  static const String productManagement = '/product-management';
-
-  static List<GetPage> getRoutes() {
-    return [
-      GetPage(
-        name: productManagement,
-        page: () => const ProductManagementPage(),
-        binding: ProductManagementBinding(),
-      ),
-    ];
-  }
-}
-
-/// Example binding for dependency injection
-class ProductManagementBinding extends Bindings {
-  @override
-  void dependencies() {
-    Get.lazyPut<UnifiedProductController>(() => UnifiedProductController());
-  }
-}
-
-/// Example of how to navigate to product management from other screens
-class NavigationExample {
-  static void goToProductManagement() {
-    Get.toNamed(ProductManagementRoutes.productManagement);
-  }
-
-  static void goToAddProduct() {
-    final controller = Get.find<UnifiedProductController>();
-    Get.to(
-      () => ProductForm(
-        onSubmit: (formData, imagePath) {
-          return controller.addProduct(formData, imagePath).then((_) {
-            Get.back();
-            Get.snackbar('success'.tr, 'product_added_successfully'.tr);
-          });
-        },
-      ),
-    );
-  }
-}
-
-/// Example of how to use the controller in other parts of your app
-class ProductStatsWidget extends StatelessWidget {
-  const ProductStatsWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<UnifiedProductController>();
-
-    return Obx(() {
-      final stats = controller.getProductStats();
-
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'product_statistics'.tr,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              _buildStatRow('total_products'.tr, stats['total'].toString()),
-              _buildStatRow('active_products'.tr, stats['active'].toString()),
-              _buildStatRow(
-                'inactive_products'.tr,
-                stats['inactive'].toString(),
-              ),
-              _buildStatRow(
-                'total_value'.tr,
-                'Rs. ${stats['totalValue'].toStringAsFixed(2)}',
-              ),
-              _buildStatRow('categories'.tr, stats['categories'].toString()),
-            ],
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildStatRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),
     );

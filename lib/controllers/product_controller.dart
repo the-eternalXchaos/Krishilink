@@ -364,7 +364,7 @@ class ProductController extends GetxController {
   void updateFilteredProducts() {
     print('[ProductController] Filtering  [32m${products.length} [0m products');
     final role =
-        _authController.currentUser.value?.role?.toLowerCase() ?? 'guest';
+        _authController.currentUser.value?.role.toLowerCase() ?? 'guest';
     final statusFilter = filterController.selectedStatus.value;
     final search =
         filterController.productSearchQuery.value.trim().toLowerCase();
@@ -385,8 +385,7 @@ class ProductController extends GetxController {
               final matchesSearch =
                   search.isEmpty ||
                   product.productName.toLowerCase().contains(search) ||
-                  (product.description?.toLowerCase().contains(search) ??
-                      false) ||
+                  (product.description.toLowerCase().contains(search)) ||
                   (product.location?.toLowerCase().contains(search) ?? false);
               // Category filter (partial match)
               final productCategory = product.category.toLowerCase().trim();

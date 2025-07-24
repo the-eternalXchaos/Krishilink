@@ -59,6 +59,7 @@
 
 // lib/features/admin/controller/admin_user_controller.dart
 import 'dart:convert';
+import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/core/lottie/popup.dart';
@@ -73,6 +74,14 @@ class AdminUserController extends GetxController {
   final totalUsers = 0.obs;
   final activeFarmers = 0.obs;
   final newUsersToday = 0.obs;
+
+  final dio.Dio _dio = dio.Dio(
+    dio.BaseOptions(
+      baseUrl: ApiConstants.baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+    ),
+  );
 
   @override
   void onInit() {
@@ -121,6 +130,29 @@ class AdminUserController extends GetxController {
       PopupService.error('Failed to load users: $e');
     } finally {
       isLoading(false);
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchFarmerDetails(String phone) async {
+    try {
+      final token = await TokenService.getAccessToken();
+      if (token == null) throw Exception('No authentication token');
+      final response = await _dio.get(
+        '${ApiConstants.getUserDetailsByPhoneNumber}/$phone',
+        options: dio.Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'farmerId': response.data['farmerId']?.toString() ?? '',
+          'farmerName': response.data['fullName']?.toString() ?? '',
+        };
+      } else {
+        return {};
+      }
+    } catch (e) {
+      PopupService.error('Failed to fetch farmer: $e');
+      return {};
     }
   }
 

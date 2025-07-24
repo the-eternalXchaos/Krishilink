@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:krishi_link/core/bindings/admin_binding.dart';
+import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
 import 'package:krishi_link/core/controllers/settings_controller.dart';
 import 'package:krishi_link/core/screens/unified_settings_page.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
@@ -233,9 +234,11 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/farmer-orders', page: () => const FarmerOrdersScreen()),
         GetPage(
           name: '/admin/products',
-          page: () => const ManageProductsScreen(),
+          page: () => UnifiedProductManagement(),
           binding: BindingsBuilder(() {
-            Get.lazyPut<AdminProductController>(() => AdminProductController());
+            Get.lazyPut<UnifiedProductController>(
+              () => UnifiedProductController(),
+            );
           }),
         ),
         GetPage(
@@ -321,7 +324,7 @@ class MyApp extends StatelessWidget {
         ),
         GetPage(
           name: '/admin/products',
-          page: () => ManageProductsScreen(),
+          page: () => UnifiedProductManagement(),
           binding: AdminBinding(),
         ),
         GetPage(

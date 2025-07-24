@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
 import 'package:krishi_link/features/admin/controllers/component_animation_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
@@ -9,8 +10,7 @@ import 'package:lottie/lottie.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:krishi_link/core/constants/constants.dart';
 import 'package:krishi_link/features/admin/controllers/admin_category_controller.dart';
-import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';
-import 'package:krishi_link/features/admin/controllers/admin_product_controller.dart';
+import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';        
 import 'package:krishi_link/features/admin/controllers/admin_user_controller.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
@@ -37,8 +37,8 @@ class AdminHomePage extends StatelessWidget {
     }
 
     final AdminUserController userController = Get.find<AdminUserController>();
-    final AdminProductController productController =
-        Get.find<AdminProductController>();
+    final UnifiedProductController productController =
+        Get.find<UnifiedProductController>();
     final AdminOrderController orderController =
         Get.find<AdminOrderController>();
     final AdminCategoryController categoryController =
@@ -296,7 +296,7 @@ class AdminHomePage extends StatelessWidget {
   Widget _buildQuickStats(
     BuildContext context,
     AdminUserController userController,
-    AdminProductController productController,
+    UnifiedProductController productController,
     AdminOrderController orderController,
   ) {
     return Obx(() {
@@ -365,14 +365,15 @@ class AdminHomePage extends StatelessWidget {
   Widget _buildDashboardMetrics(
     BuildContext context,
     AdminUserController userController,
-    AdminProductController productController,
+    UnifiedProductController productController,
     AdminOrderController orderController,
     AdminCategoryController categoryController,
   ) {
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(
-        tag: 'dashboard_metrics',
-      );
+      final controller =
+          Get.isRegistered<ComponentAnimationController>()
+              ? Get.find<ComponentAnimationController>(tag: 'dashboard_metrics')
+              : Get.put(ComponentAnimationController());
       return VisibilityDetector(
         key: const Key('dashboard-metrics'),
         onVisibilityChanged: (info) {

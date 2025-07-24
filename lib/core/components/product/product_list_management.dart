@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductListManagement extends StatelessWidget {
   final Product product;
   final bool isAdmin;
+  final bool isFarmer;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final ValueChanged<bool>? onToggleActive;
   final bool showActiveToggle;
 
-  const ProductCard({
+  const ProductListManagement({
     super.key,
     required this.product,
     this.isAdmin = false,
+    this.isFarmer = false,
     this.onEdit,
     this.onDelete,
     this.onToggleActive,
@@ -31,7 +33,7 @@ class ProductCard extends StatelessWidget {
       child: ExpansionTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(
+          child: Image.network( 
             product.image,
             width: 60,
             height: 60,

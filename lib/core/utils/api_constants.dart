@@ -19,7 +19,7 @@ class ApiConstants {
 
   static const String refreshTokenEndpoint =
       '$baseUrl/api/KrishilinkAuth/refreshToken';
-      
+
   static const String logoutEndpoint = '$baseUrl/api/KrishilinkAuth/logout';
 
   // -------------------- PRODUCT --------------------
@@ -84,6 +84,8 @@ class ApiConstants {
   // -------------------- MISC --------------------
   static const String getUserDetailsByPhoneNumber =
       '$baseUrl/api/User/GetUserDetailsByPhoneNumber/';
+  static const String getUserDetailsByEmail =
+      '$baseUrl/api/User/GetUserDetailsByEmail/';
   // -------------------- MISC --------------------
   static const String weatherApiBaseUrl =
       'https://api.openweathermap.org/data/2.5';

@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
+import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_analytics_controler.dart';
 import 'package:krishi_link/features/admin/controllers/admin_category_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';
-import 'package:krishi_link/features/admin/controllers/admin_product_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_user_controller.dart';
 import 'package:krishi_link/features/admin/controllers/component_animation_controller.dart';
 import 'package:krishi_link/features/admin/controllers/quick_stats_controller.dart';
@@ -19,7 +19,7 @@ class AdminBinding extends Bindings {
   void dependencies() {
     Get.lazyPut(() => AuthController());
     Get.lazyPut(() => AdminUserController());
-    Get.lazyPut(() => AdminProductController());
+    Get.lazyPut(() => UnifiedProductController());
     Get.lazyPut(() => AdminOrderController());
     Get.lazyPut(() => AdminCategoryController());
     Get.lazyPut(() => AdminAnalyticsController());

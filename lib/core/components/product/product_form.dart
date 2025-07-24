@@ -12,6 +12,8 @@ import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/components/product/location_picker.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProductForm extends StatefulWidget {
   final Product? product; // null means add, non-null means edit
@@ -30,7 +32,8 @@ class ProductForm extends StatefulWidget {
   State<ProductForm> createState() => _ProductFormState();
 }
 
-class _ProductFormState extends State<ProductForm> {
+class _ProductFormState extends State<ProductForm>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late ProductFormData formData;
   String? newImagePath; // Track if image changed
@@ -38,6 +41,8 @@ class _ProductFormState extends State<ProductForm> {
   final RxString unit = 'kg'.obs;
   final RxBool isLoadingImage = false.obs;
   final RxBool isSubmitting = false.obs;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   // Controllers
   final TextEditingController productNameController = TextEditingController();
@@ -48,12 +53,22 @@ class _ProductFormState extends State<ProductForm> {
   final TextEditingController farmerContactController = TextEditingController();
 
   final AuthController authController = Get.find<AuthController>();
+  final unifiedProductController = Get.find<UnifiedProductController>();
   late final String userRole;
   late final String? farmerContact;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+
     _initializeForm();
     final user = authController.currentUser.value;
     userRole = user?.role.toLowerCase() ?? '';
@@ -134,6 +149,26 @@ class _ProductFormState extends State<ProductForm> {
     }
   }
 
+  // Add this method for camera capture
+  Future<void> _captureImage() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.camera);
+      if (pickedFile != null) {
+        setState(() {
+          imageFile = File(pickedFile.path);
+          newImagePath = imageFile!.path;
+          formData.imagePath = newImagePath!;
+        });
+        PopupService.success('image_captured'.tr);
+      }
+    } catch (e) {
+      PopupService.error(
+        'failed_to_capture_image'.trParams({'error': e.toString()}),
+      );
+    }
+  }
+
   void _onLocationSelected(double latitude, double longitude, String address) {
     setState(() {
       formData.latitude = latitude;
@@ -163,10 +198,19 @@ class _ProductFormState extends State<ProductForm> {
       }
       isSubmitting.value = true;
       try {
+        if (userRole == 'admin') {
+          final userDetails = await unifiedProductController
+              .fetchUserDetailsByEmailOrPhone(formData.farmerContact);
+          if (userDetails == null) {
+            PopupService.error('user_not_found'.tr);
+            isSubmitting.value = false;
+            return;
+          }
+          // Only sending email or phone as required
+        }
         await widget.onSubmit(formData, newImagePath);
-        // Optionally: Get.back(); // If you want to close the form here
       } catch (e) {
-        // Optionally: show error
+        PopupService.error(e.toString());
       } finally {
         isSubmitting.value = false;
       }
@@ -175,350 +219,574 @@ class _ProductFormState extends State<ProductForm> {
 
   @override
   Widget build(BuildContext context) {
-    final AuthController authController =
-        Get.isRegistered<AuthController>()
-            ? Get.find<AuthController>()
-            : Get.put(AuthController());
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.product == null ? 'add_product'.tr : 'edit_product'.tr,
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: colorScheme.surface,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 120.0,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                widget.product == null ? 'add_product'.tr : 'edit_product'.tr,
+                style: TextStyle(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      top: 20,
+                      child: Icon(
+                        Icons.agriculture_outlined,
+                        size: 100,
+                        color: colorScheme.onPrimary.withOpacity(0.1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Form(
+                key: _formKey,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBasicInfoSection(colorScheme),
+                      const SizedBox(height: 24),
+                      _buildPricingSection(colorScheme),
+                      const SizedBox(height: 24),
+                      _buildImageSection(colorScheme),
+                      const SizedBox(height: 24),
+                      _buildLocationSection(colorScheme),
+                      const SizedBox(height: 32),
+                      _buildSubmitButton(colorScheme),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  Widget _buildBasicInfoSection(ColorScheme colorScheme) {
+    return _buildAnimatedCard(
+      colorScheme: colorScheme,
+      icon: Icons.info_outline,
+      title: 'basic_information'.tr,
+      iconColor: Colors.blue,
+      child: Column(
+        children: [
+          _buildEnhancedTextField(
+            controller: productNameController,
+            labelText: 'product_name'.tr,
+            icon: Icons.inventory_outlined,
+            maxLength: 50,
+            validator:
+                (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
+          ),
+          const SizedBox(height: 20),
+          _buildEnhancedTextField(
+            controller: descriptionController,
+            labelText: 'description'.tr,
+            icon: Icons.description_outlined,
+            maxLength: 300,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 20),
+          _buildEnhancedTextField(
+            controller: categoryController,
+            labelText: 'category'.tr,
+            icon: Icons.category_outlined,
+            maxLength: 50,
+            validator:
+                (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
+          ),
+          const SizedBox(height: 20),
+          _buildEnhancedTextField(
+            controller: farmerContactController,
+            labelText: 'farmer_contact'.tr,
+            icon: Icons.person_outline,
+            readOnly: userRole == 'farmer',
+            hintText:
+                userRole == 'admin' ? 'Enter farmer phone or email' : null,
+            validator:
+                (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPricingSection(ColorScheme colorScheme) {
+    return _buildAnimatedCard(
+      colorScheme: colorScheme,
+      icon: Icons.attach_money_outlined,
+      title: 'pricing_quantity'.tr,
+      iconColor: Colors.green,
+      child: Column(
+        children: [
+          Row(
             children: [
-              _buildBasicInfoSection(),
-              const SizedBox(height: 24),
-              _buildPricingSection(),
-              const SizedBox(height: 24),
-              _buildImageSection(),
-              const SizedBox(height: 24),
-              _buildLocationSection(),
-              const SizedBox(height: 32),
-              _buildSubmitButton(),
+              Expanded(
+                flex: 2,
+                child: _buildEnhancedTextField(
+                  controller: rateController,
+                  labelText: 'rate'.tr,
+                  icon: Icons.currency_rupee_outlined,
+                  prefixText: 'Rs. ',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator:
+                      (v) =>
+                          (v == null ||
+                                  double.tryParse(v) == null ||
+                                  double.parse(v) <= 0)
+                              ? 'invalid_rate'.tr
+                              : double.parse(v) > 99999.99
+                              ? 'rate_max_99999_99'.tr
+                              : null,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Obx(
+                  () => _buildEnhancedDropdown(
+                    value: unit.value,
+                    items: ['kg', 'liter', 'piece'],
+                    onChanged: (value) {
+                      if (value != null) {
+                        unit.value = value;
+                      }
+                    },
+                    labelText: 'unit'.tr,
+                    icon: Icons.straighten_outlined,
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: 20),
+          _buildEnhancedTextField(
+            controller: quantityController,
+            labelText: 'available_quantity'.tr,
+            icon: Icons.inventory_2_outlined,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator:
+                (v) =>
+                    (v == null ||
+                            double.tryParse(v) == null ||
+                            double.parse(v) < 0)
+                        ? 'invalid_quantity'.tr
+                        : double.parse(v) > 99999.99
+                        ? 'quantity_max_99999_99'.tr
+                        : null,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBasicInfoSection() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'basic_information'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: productNameController,
-              decoration: InputDecoration(
-                labelText: 'product_name'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.inventory),
+  Widget _buildImageSection(ColorScheme colorScheme) {
+    return _buildAnimatedCard(
+      colorScheme: colorScheme,
+      icon: Icons.photo_camera_outlined,
+      title: 'product_image'.tr,
+      iconColor: Colors.purple,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.3),
+                width: 2,
+                style: BorderStyle.solid,
               ),
-              maxLength: 50,
-              validator:
-                  (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: descriptionController,
-              decoration: InputDecoration(
-                labelText: 'description'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.description),
-              ),
-              maxLength: 300,
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: categoryController,
-              decoration: InputDecoration(
-                labelText: 'category'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.category),
-              ),
-              maxLength: 50,
-              validator:
-                  (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: farmerContactController,
-              readOnly: userRole == 'farmer',
-              decoration: InputDecoration(
-                labelText: 'farmer_contact'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.person),
-                hintText:
-                    userRole == 'admin' ? 'Enter farmer phone or email' : null,
-              ),
-              validator:
-                  (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPricingSection() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'pricing_quantity'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
+            child: Column(
               children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: rateController,
-                    decoration: InputDecoration(
-                      labelText: 'rate'.tr,
-                      border: const OutlineInputBorder(),
-                      prefixText: 'Rs. ',
-                      prefixIcon: const Icon(Icons.currency_rupee),
+                Obx(
+                  () => Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator:
-                        (v) =>
-                            (v == null ||
-                                    double.tryParse(v) == null ||
-                                    double.parse(v) <= 0)
-                                ? 'invalid_rate'.tr
-                                : double.parse(v) > 99999.99
-                                ? 'rate_max_99999_99'.tr
-                                : null,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Obx(
-                    () => DropdownButtonFormField<String>(
-                      value: unit.value,
-                      items:
-                          ['kg', 'liter', 'piece']
-                              .map(
-                                (u) => DropdownMenuItem(
-                                  value: u,
-                                  child: Text(u.tr),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child:
+                          isLoadingImage.value
+                              ? Container(
+                                color: colorScheme.surfaceVariant,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
                                 ),
                               )
-                              .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          unit.value = value;
-                        }
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'unit'.tr,
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.straighten),
-                      ),
-                      validator: (v) => v == null ? 'required'.tr : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: quantityController,
-              decoration: InputDecoration(
-                labelText: 'available_quantity'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.inventory_2),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              validator:
-                  (v) =>
-                      (v == null ||
-                              double.tryParse(v) == null ||
-                              double.parse(v) < 0)
-                          ? 'invalid_quantity'.tr
-                          : double.parse(v) > 99999.99
-                          ? 'quantity_max_99999_99'.tr
-                          : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageSection() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'product_image'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Obx(
-                    () =>
-                        isLoadingImage.value
-                            ? const Center(child: CircularProgressIndicator())
-                            : imageFile != null
-                            ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
+                              : imageFile != null
+                              ? Image.file(
                                 imageFile!,
                                 fit: BoxFit.cover,
                                 errorBuilder:
                                     (context, error, stackTrace) =>
-                                        const Icon(Icons.image_not_supported),
-                              ),
-                            )
-                            : formData.imagePath.isNotEmpty
-                            ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
+                                        _buildImagePlaceholder(colorScheme),
+                              )
+                              : formData.imagePath.isNotEmpty
+                              ? Image.network(
                                 formData.imagePath,
                                 fit: BoxFit.cover,
                                 errorBuilder:
                                     (context, error, stackTrace) =>
-                                        const Icon(Icons.image_not_supported),
-                              ),
-                            )
-                            : const Icon(Icons.add_photo_alternate, size: 40),
+                                        _buildImagePlaceholder(colorScheme),
+                              )
+                              : _buildImagePlaceholder(colorScheme),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton.icon(
-                        icon: const Icon(Icons.photo_camera),
+                        icon: const Icon(Icons.image_outlined),
                         label: Text('pick_image'.tr),
                         onPressed: _pickImage,
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 40),
+                          backgroundColor: colorScheme.primaryContainer,
+                          foregroundColor: colorScheme.onPrimaryContainer,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'image_requirements'.tr,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.photo_camera_outlined),
+                        label: Text('capture_image'.tr),
+                        onPressed: _captureImage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primaryContainer,
+                          foregroundColor: colorScheme.onPrimaryContainer,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  'image_requirements'.tr,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildLocationSection() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  Widget _buildImagePlaceholder(ColorScheme colorScheme) {
+    return Container(
+      color: colorScheme.surfaceVariant,
+      child: Icon(
+        Icons.add_photo_alternate_outlined,
+        size: 60,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _buildLocationSection(ColorScheme colorScheme) {
+    return _buildAnimatedCard(
+      colorScheme: colorScheme,
+      icon: Icons.location_on_outlined,
+      title: 'location_information'.tr,
+      iconColor: Colors.red,
+      child: LocationPicker(
+        initialLatitude: formData.latitude,
+        initialLongitude: formData.longitude,
+        initialAddress: formData.location.toString(),
+        onLocationSelected: _onLocationSelected,
+      ),
+    );
+  }
+
+  Widget _buildAnimatedCard({
+    required ColorScheme colorScheme,
+    required IconData icon,
+    required String title,
+    required Color iconColor,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'location_information'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            LocationPicker(
-              initialLatitude: formData.latitude,
-              initialLongitude: formData.longitude,
-              initialAddress: formData.location.toString(),
-              onLocationSelected: _onLocationSelected,
-            ),
+            const SizedBox(height: 24),
+            child,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _buildEnhancedTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+    String? hintText,
+    String? prefixText,
+    int? maxLength,
+    int? maxLines,
+    TextInputType? keyboardType,
+    bool readOnly = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixText: prefixText,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Theme.of(
+          context,
+        ).colorScheme.surfaceVariant.withOpacity(0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+      ),
+      maxLength: maxLength,
+      maxLines: maxLines ?? 1,
+      keyboardType: keyboardType,
+      readOnly: readOnly,
+      validator: validator,
+    );
+  }
+
+  Widget _buildEnhancedDropdown({
+    required String value,
+    required List<String> items,
+    required Function(String?) onChanged,
+    required String labelText,
+    required IconData icon,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items:
+          items
+              .map(
+                (item) => DropdownMenuItem(value: item, child: Text(item.tr)),
+              )
+              .toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: labelText,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Theme.of(
+          context,
+        ).colorScheme.surfaceVariant.withOpacity(0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+      ),
+      validator: (v) => v == null ? 'required'.tr : null,
+    );
+  }
+
+  Widget _buildSubmitButton(ColorScheme colorScheme) {
     return Obx(
-      () => SizedBox(
+      () => Container(
         width: double.infinity,
-        height: 50,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: ElevatedButton(
           onPressed: isSubmitting.value ? null : _submitForm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
           child:
               isSubmitting.value
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                    widget.submitButtonText.isNotEmpty
-                        ? widget.submitButtonText
-                        : widget.product == null
-                        ? 'add_product'.tr
-                        : 'update_product'.tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
                       color: Colors.white,
+                      strokeWidth: 2,
                     ),
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        widget.product == null ? Icons.add : Icons.update,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.submitButtonText.isNotEmpty
+                            ? widget.submitButtonText
+                            : widget.product == null
+                            ? 'add_product'.tr
+                            : 'update_product'.tr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
         ),
       ),
@@ -527,6 +795,7 @@ class _ProductFormState extends State<ProductForm> {
 
   @override
   void dispose() {
+    _animationController.dispose();
     productNameController.dispose();
     descriptionController.dispose();
     rateController.dispose();
