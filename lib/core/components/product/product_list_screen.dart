@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide SearchBar;
 import 'package:get/get.dart';
+import 'package:krishi_link/core/components/product/add_edit_product_form.dart';
 import 'package:krishi_link/core/components/product/product_list_management.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/widgets/search_bar.dart';
@@ -286,7 +287,19 @@ class _ProductListScreenState extends State<ProductListScreen> {
             isAdmin: widget.isAdmin,
             isFarmer: widget.isFarmer,
             showActiveToggle: widget.showActiveToggle,
-            onEdit: () => widget.onEdit(product),
+            // onEdit: () => widget.onEdit(product),
+            onEdit: () {
+              Get.to(
+                () => AddEditProductForm(
+                  product: product,
+                  onSubmit: (formData, newImagePath) {
+                    // Handle form submission
+                  },
+                ),
+              );
+              // Get.toNamed('/product-edit', arguments: {'product': product});
+            },
+
             onDelete: () => _confirmDelete(product),
             onToggleActive:
                 widget.onToggleActive != null
