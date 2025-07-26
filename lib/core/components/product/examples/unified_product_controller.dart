@@ -64,6 +64,7 @@ class UnifiedProductController extends GetxController {
     String? searchQuery,
     List<String>? selectedCategories,
     List<String>? selectedLocations,
+    String? status, // Add status filter parameter
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -81,6 +82,8 @@ class UnifiedProductController extends GetxController {
           'categories': selectedCategories.join(','),
         if (selectedLocations != null && selectedLocations.isNotEmpty)
           'locations': selectedLocations.join(','),
+        if (status != null && status != 'all')
+          'status': status, // Add status filter
         'page': page,
         'pageSize': pageSize,
       },
@@ -215,6 +218,9 @@ class UnifiedProductController extends GetxController {
     try {
       final opts = await _jsonOptions();
       print('Updating product $productId to isActive: $isActive');
+      print(
+        'API endpoint: ${ApiConstants.updateProductStatusEndpoint}/$productId',
+      );
       final response = await _dio.put(
         '${ApiConstants.updateProductStatusEndpoint}/$productId',
         data: {'isActive': isActive},
@@ -225,14 +231,35 @@ class UnifiedProductController extends GetxController {
           'Failed to update product status: ${response.statusCode}',
         );
       }
+
+      // Update the local product list to make the toggle reactive
+      final productIndex = products.indexWhere((p) => p.id == productId);
+      if (productIndex != -1) {
+        products[productIndex] = products[productIndex].copyWith(
+          isActive: isActive,
+        );
+        products.refresh(); // Notify listeners that the list has changed
+        print('Updated local product status for $productId to $isActive');
+      } else {
+        print('Warning: Product $productId not found in local list');
+        // Refresh the entire list to ensure we have the latest data
+        await fetchProducts();
+      }
+
+      // Show success message
+      PopupService.success('Product status updated successfully');
     } catch (e) {
       print('Error updating product status: $e');
       if (e is dio.DioException) {
         print('Dio error details: ${e.response?.data}');
+        PopupService.error(
+          'Failed to update product status: ${e.response?.data['message'] ?? 'Network error'}',
+        );
         throw Exception(
           'Failed to update product status: ${e.response?.data['message'] ?? 'Network error'}',
         );
       }
+      PopupService.error('Failed to update product status: $e');
       rethrow;
     }
   }
@@ -297,6 +324,7 @@ class UnifiedProductController extends GetxController {
     String? searchQuery,
     List<String>? selectedCategories,
     List<String>? selectedLocations,
+    String? status, // Add status filter parameter
     bool reset = false,
   }) async {
     try {
@@ -312,6 +340,7 @@ class UnifiedProductController extends GetxController {
           searchQuery: searchQuery,
           selectedCategories: selectedCategories,
           selectedLocations: selectedLocations,
+          status: status, // Pass status filter to API
           page: page.value,
           pageSize: pageSize,
         );
@@ -352,12 +381,14 @@ class UnifiedProductController extends GetxController {
     String? searchQuery,
     List<String>? selectedCategories,
     List<String>? selectedLocations,
+    String? status,
   ) async {
     // Use FarmerApiServices for admin getAllProducts
     final fetched = await fetchProductsApi(
       searchQuery: searchQuery,
       selectedCategories: selectedCategories,
       selectedLocations: selectedLocations,
+      status: status,
     );
     products.value = fetched;
   }
@@ -367,12 +398,14 @@ class UnifiedProductController extends GetxController {
     String? searchQuery,
     List<String>? selectedCategories,
     List<String>? selectedLocations,
+    String? status,
   ) async {
     // Use FarmerApiServices for farmer's products
     final fetched = await fetchProductsApi(
       searchQuery: searchQuery,
       selectedCategories: selectedCategories,
       selectedLocations: selectedLocations,
+      status: status,
     );
     // Only keep products for this farmer
     products.value =
@@ -410,9 +443,22 @@ class UnifiedProductController extends GetxController {
     try {
       isLoading.value = true;
       final product = products.firstWhere((p) => p.id == productId);
+
+      // Create updated product with new form data
+      final updatedProduct = product.copyWith(
+        productName: formData.productName,
+        description: formData.description,
+        rate: formData.rate,
+        availableQuantity: formData.availableQuantity,
+        category: formData.category,
+        unit: formData.unit,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+      );
+
       await updateProductApi(
         productId,
-        product,
+        updatedProduct,
         imageFile: imagePath != null ? File(imagePath) : null,
       );
       await fetchProducts();
@@ -442,7 +488,10 @@ class UnifiedProductController extends GetxController {
       return;
     }
     try {
-      await updateProductActiveStatusApi(productId, isActive);
+      await updateProductActiveStatus(
+        productId,
+        isActive,
+      ); // Call the actual API method
       await fetchProducts();
     } catch (e) {
       Get.snackbar('error'.tr, e.toString());
