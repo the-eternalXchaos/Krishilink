@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
+import 'package:krishi_link/core/components/product/add_edit_product_form.dart';
 import 'package:krishi_link/core/components/product/product_form.dart';
 import 'package:krishi_link/features/admin/controllers/admin_product_controller.dart';
 import 'package:krishi_link/controllers/filter_controller.dart';
@@ -64,6 +65,8 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
                       filterController.selectedCategories.toList(),
                   selectedLocations:
                       filterController.selectedLocations.toList(),
+                  status:
+                      filterActiveStatus.value, // Include current status filter
                 ),
           ),
         ],
@@ -101,6 +104,9 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
                             filterController.selectedCategories.toList(),
                         selectedLocations:
                             filterController.selectedLocations.toList(),
+                        status:
+                            filterActiveStatus
+                                .value, // Include current status filter
                       );
                     },
                     searchController: searchController,
@@ -119,9 +125,21 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
                               ),
                             )
                             .toList(),
-                    onChanged: (value) {
+                    onChanged: (value) async {
                       if (value != null) {
                         filterActiveStatus.value = value;
+                        // Fetch products with the new status filter
+                        await controller.fetchProducts(
+                          searchQuery:
+                              filterController.productSearchQuery.value,
+                          selectedCategories:
+                              filterController.selectedCategories.toList(),
+                          selectedLocations:
+                              filterController.selectedLocations.toList(),
+                          status: value, // Pass the selected status
+                          reset:
+                              true, // Reset to get fresh data with new filter
+                        );
                       }
                     },
                     underline: Container(),
@@ -145,11 +163,45 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
                                 filterController.selectedCategories.toList(),
                             selectedLocations:
                                 filterController.selectedLocations.toList(),
+                            status:
+                                filterActiveStatus
+                                    .value, // Include current status filter
+                            reset:
+                                true, // This will clear the list and start fresh
                           );
                         },
                         child:
                             controller.products.isEmpty
-                                ? Center(child: Text('no_products_found'.tr))
+                                ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('no_products_found'.tr),
+                                      SizedBox(height: 040),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          await controller.fetchProducts(
+                                            searchQuery:
+                                                filterController
+                                                    .productSearchQuery
+                                                    .value,
+                                            selectedCategories:
+                                                filterController
+                                                    .selectedCategories
+                                                    .toList(),
+                                            selectedLocations:
+                                                filterController
+                                                    .selectedLocations
+                                                    .toList(),
+                                            status: filterActiveStatus.value,
+                                            reset: true,
+                                          );
+                                        },
+                                        child: Text('refresh'.tr),
+                                      ),
+                                    ],
+                                  ),
+                                )
                                 : ListView.builder(
                                   itemCount: controller.products.length,
                                   itemBuilder: (context, index) {
@@ -232,12 +284,17 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
                                                     ),
                                                   ),
                                                   value: product.isActive,
-                                                  onChanged: (value) {
-                                                    controller
-                                                        .updateProductActiveStatus(
-                                                          product.id,
-                                                          value,
-                                                        );
+                                                  onChanged: (value) async {
+                                                    try {
+                                                      await controller
+                                                          .updateProductActiveStatus(
+                                                            product.id,
+                                                            value,
+                                                          );
+                                                    } catch (e) {
+                                                      // Error is already handled in the controller
+                                                      // The toggle will revert to its previous state
+                                                    }
                                                   },
                                                   contentPadding:
                                                       EdgeInsets.zero,
@@ -342,21 +399,31 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
   }
 
   void _showProductDialog(BuildContext context, {Product? product}) {
-    // TODO: Implement product form dialog for add/edit
-    // You can use your existing ProductFormDialog or similar widget here
-    // Example:
-    // Get.dialog(ProductFormDialog(product: product));
-    // Get.dialog(
-    //   ProductForm(
-    //     product: product,
-    //     onSubmit: (formData, newImagePath) async {
-    //       // TODO: Implement product submission logic
-    //       // You can use your existing ProductFormDialog or similar widget here
-    //       // Example:
-    //       // await ProductFormDialog(product: product).submit(formData, newImagePath);
-    //     },
-    //   ),
-    // );
+    Get.dialog(
+      ProductForm(
+        product: product,
+        onSubmit: (formData, newImagePath) async {
+          try {
+            if (product != null) {
+              // Update existing product
+              await controller.updateProduct(
+                product.id,
+                formData,
+                newImagePath,
+              );
+              PopupService.success('Product updated successfully');
+            } else {
+              // Add new product
+              await controller.addProduct(formData, newImagePath);
+              PopupService.success('Product added successfully');
+            }
+            Get.back(); // Close the dialog
+          } catch (e) {
+            PopupService.error('Failed to save product: $e');
+          }
+        },
+      ),
+    );
   }
 
   void _confirmDelete(
