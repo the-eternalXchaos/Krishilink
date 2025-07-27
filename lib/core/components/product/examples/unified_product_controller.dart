@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/core/components/product/product_form_data.dart';
@@ -115,33 +116,79 @@ class UnifiedProductController extends GetxController {
     double latitude = 0,
     double longitude = 0,
   }) async {
-    final opts = await _formOptions();
-    final formData = dio.FormData.fromMap({
-      'ProductName': productName,
-      'Rate': rate,
-      'AvailableQuantity': availableQuantity,
-      'Category': category,
-      'Unit': unit,
-      'Description': description ?? '',
-      'Latitude': latitude,
-      'Longitude': longitude,
-      'Image': await dio.MultipartFile.fromFile(
-        image.path,
-        filename: image.path.split('/').last,
-      ),
-    });
-    final response = await _dio.post(
-      ApiConstants.addProductEndpoint,
-      data: formData,
-      queryParameters: {'EmailorPhone': emailOrPhone},
-      options: opts,
-    );
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return Product.fromJson(response.data['data']);
+    try {
+      print('🔄 [UnifiedProductController] addProductApi called');
+      print(
+        '🔄 [UnifiedProductController] API endpoint: ${ApiConstants.addProductEndpoint}',
+      );
+      print(
+        '🔄 [UnifiedProductController] Product details - Name: $productName, Rate: $rate, Category: $category, Lat: $latitude, Lng: $longitude',
+      );
+      print('🔄 [UnifiedProductController] Email/Phone: $emailOrPhone');
+
+      final opts = await _formOptions();
+      final formData = dio.FormData.fromMap({
+        'ProductName': productName,
+        'Rate': rate,
+        'AvailableQuantity': availableQuantity,
+        'Category': category,
+        'Unit': unit,
+        'Description': description ?? '',
+        'Latitude': latitude.toString(),
+        'Longitude': longitude.toString(),
+        'Image': await dio.MultipartFile.fromFile(
+          image.path,
+          filename: image.path.split('/').last,
+        ),
+      });
+
+      print(
+        '🔄 [UnifiedProductController] Form data prepared: ${formData.fields.map((e) => '${e.key}: ${e.value}')}',
+      );
+      print('🔄 [UnifiedProductController] Image file: ${image.path}');
+
+      final response = await _dio.post(
+        ApiConstants.addProductEndpoint,
+        data: formData,
+        queryParameters: {'EmailorPhone': emailOrPhone},
+        options: opts,
+      );
+
+      print(
+        '🔄 [UnifiedProductController] API response status: ${response.statusCode}',
+      );
+      print(
+        '🔄 [UnifiedProductController] API response data: ${response.data}',
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        print('✅ [UnifiedProductController] Add product API call successful');
+        return Product.fromJson(response.data['data']);
+      }
+
+      print(
+        '❌ [UnifiedProductController] Add product API call failed: ${response.data['message'] ?? response.statusCode}',
+      );
+      throw Exception(
+        'Failed to add product: ${response.data['message'] ?? response.statusCode}',
+      );
+    } catch (e) {
+      print('❌ [UnifiedProductController] addProductApi error: $e');
+      if (e is dio.DioException) {
+        print('❌ [UnifiedProductController] Dio error type: ${e.type}');
+        print('❌ [UnifiedProductController] Dio error message: ${e.message}');
+        print(
+          '❌ [UnifiedProductController] Dio error response: ${e.response?.data}',
+        );
+        print(
+          '❌ [UnifiedProductController] Dio error status code: ${e.response?.statusCode}',
+        );
+        print(
+          '❌ [UnifiedProductController] Dio error headers: ${e.response?.headers}',
+        );
+      }
+      rethrow;
     }
-    throw Exception(
-      'Failed to add product: ${response.data['message'] ?? response.statusCode}',
-    );
   }
 
   Future<Product> updateProductApi(
@@ -149,38 +196,89 @@ class UnifiedProductController extends GetxController {
     Product product, {
     File? imageFile,
   }) async {
-    final opts = await _formOptions();
-    final formData = dio.FormData.fromMap({
-      'ProductName': product.productName,
-      'Rate': product.rate.toString(),
-      'AvailableQuantity': product.availableQuantity.toString(),
-      'Category': product.category,
-      'Unit': product.unit,
-      'Description': product.description,
-      'Latitude': product.latitude,
-      'Longitude': product.longitude,
-      if (imageFile != null)
-        'Image': await dio.MultipartFile.fromFile(
-          imageFile.path,
-          filename: imageFile.path.split('/').last,
-        ),
-    });
-    final response = await _dio.put(
-      '${ApiConstants.updateProductEndpoint}/$productId',
-      data: formData,
-      options: opts,
-    );
-    if (response.statusCode == 200 && response.data['success'] == true) {
-      return product.copyWith(
-        image:
-            imageFile != null
-                ? '${ApiConstants.getProductImageEndpoint}/$productId?t=${DateTime.now().millisecondsSinceEpoch}'
-                : product.image,
+    try {
+      debugPrint(
+        '🔄 [UnifiedProductController] updateProductApi called for product: $productId',
       );
+      debugPrint(
+        '🔄 [UnifiedProductController] API endpoint: ${ApiConstants.updateProductEndpoint}/$productId',
+      );
+
+      final opts = await _formOptions();
+      final formData = dio.FormData.fromMap({
+        'ProductName': product.productName,
+        'Rate': product.rate.toString(),
+        'AvailableQuantity': product.availableQuantity.toString(),
+        'Category': product.category,
+        'Unit': product.unit,
+        'Description': product.description ?? '',
+        'Latitude': product.latitude.toString(),
+        'Longitude': product.longitude.toString(),
+        if (imageFile != null)
+          'Image': await dio.MultipartFile.fromFile(
+            imageFile.path,
+            filename: imageFile.path.split('/').last,
+          ),
+      });
+
+      debugPrint(
+        '🔄 [UnifiedProductController] Form data prepared: ${formData.fields.map((e) => '${e.key}: ${e.value}')}',
+      );
+      debugPrint(
+        '🔄 [UnifiedProductController] Product details - Name: ${product.productName}, Rate: ${product.rate}, Category: ${product.category}, Lat: ${product.latitude}, Lng: ${product.longitude}',
+      );
+
+      final response = await _dio.put(
+        '${ApiConstants.updateProductEndpoint}/$productId',
+        data: formData,
+        queryParameters: {
+          'EmailorPhone': authController.currentUser.value?.email ?? '',
+        },
+        options: opts,
+      );
+
+      debugPrint(
+        '🔄 [UnifiedProductController] API response status: ${response.statusCode}',
+      );
+      debugPrint(
+        '🔄 [UnifiedProductController] API response data: ${response.data}',
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        print('✅ [UnifiedProductController] API call successful');
+        return product.copyWith(
+          image:
+              imageFile != null
+                  ? '${ApiConstants.getProductImageEndpoint}/$productId?t=${DateTime.now().millisecondsSinceEpoch}'
+                  : product.image,
+        );
+      }
+
+      debugPrint(
+        '❌ [UnifiedProductController] API call failed: ${response.data['message'] ?? response.statusCode}',
+      );
+      throw Exception(
+        'Failed to update product: ${response.data['message'] ?? response.statusCode}',
+      );
+    } catch (e) {
+      debugPrint('❌ [UnifiedProductController] updateProductApi error: $e');
+      if (e is dio.DioException) {
+        debugPrint('❌ [UnifiedProductController] Dio error type: ${e.type}');
+        debugPrint(
+          '❌ [UnifiedProductController] Dio error message: ${e.message}',
+        );
+        debugPrint(
+          '❌ [UnifiedProductController] Dio error response: ${e.response?.data}',
+        );
+        debugPrint(
+          '❌ [UnifiedProductController] Dio error status code: ${e.response?.statusCode}',
+        );
+        debugPrint(
+          '❌ [UnifiedProductController] Dio error headers: ${e.response?.headers}',
+        );
+      }
+      rethrow;
     }
-    throw Exception(
-      'Failed to update product: ${response.data['message'] ?? response.statusCode}',
-    );
   }
 
   Future<void> deleteProductApi(String productId) async {
@@ -239,9 +337,9 @@ class UnifiedProductController extends GetxController {
           isActive: isActive,
         );
         products.refresh(); // Notify listeners that the list has changed
-        print('Updated local product status for $productId to $isActive');
+        debugPrint('Updated local product status for $productId to $isActive');
       } else {
-        print('Warning: Product $productId not found in local list');
+        debugPrint('Warning: Product $productId not found in local list');
         // Refresh the entire list to ensure we have the latest data
         await fetchProducts();
       }
@@ -249,9 +347,9 @@ class UnifiedProductController extends GetxController {
       // Show success message
       PopupService.success('Product status updated successfully');
     } catch (e) {
-      print('Error updating product status: $e');
+      debugPrint('Error updating product status: $e');
       if (e is dio.DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         PopupService.error(
           'Failed to update product status: ${e.response?.data['message'] ?? 'Network error'}',
         );
@@ -288,7 +386,7 @@ class UnifiedProductController extends GetxController {
       }
       return null;
     } catch (e) {
-      print('Error fetching user details: $e');
+      debugPrint('Error fetching user details: $e');
       return null;
     }
   }
@@ -309,7 +407,7 @@ class UnifiedProductController extends GetxController {
 
     Future.delayed(const Duration(seconds: 2), () {
       fetchProducts();
-      print('fetchProducts');
+      debugPrint('fetchProducts');
     });
   }
 
@@ -441,8 +539,31 @@ class UnifiedProductController extends GetxController {
     String? imagePath,
   ) async {
     try {
+      debugPrint(
+        '🔄 [UnifiedProductController] Starting update for product: $productId',
+      );
+      debugPrint(
+        '🔄 [UnifiedProductController] Form data: ${formData.productName}, ${formData.rate}, ${formData.category}',
+      );
+
       isLoading.value = true;
-      final product = products.firstWhere((p) => p.id == productId);
+
+      // Check if product exists in the list
+      final productIndex = products.indexWhere((p) => p.id == productId);
+      if (productIndex == -1) {
+        debugPrint(
+          '❌ [UnifiedProductController] Product not found in list: $productId',
+        );
+        debugPrint(
+          '❌ [UnifiedProductController] Available products: ${products.map((p) => p.id).toList()}',
+        );
+        throw Exception('Product not found in local list');
+      }
+
+      final product = products[productIndex];
+      debugPrint(
+        '✅ [UnifiedProductController] Found product: ${product.productName}',
+      );
 
       // Create updated product with new form data
       final updatedProduct = product.copyWith(
@@ -456,12 +577,21 @@ class UnifiedProductController extends GetxController {
         longitude: formData.longitude,
       );
 
+      debugPrint('🔄 [UnifiedProductController] Calling updateProductApi...');
       await updateProductApi(
         productId,
         updatedProduct,
         imageFile: imagePath != null ? File(imagePath) : null,
       );
+
+      debugPrint(
+        '✅ [UnifiedProductController] API call successful, refreshing products...',
+      );
       await fetchProducts();
+      debugPrint('✅ [UnifiedProductController] Update completed successfully');
+    } catch (e) {
+      debugPrint('❌ [UnifiedProductController] Error updating product: $e');
+      rethrow;
     } finally {
       isLoading.value = false;
     }

@@ -28,12 +28,11 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 600),
     );
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    // Start animation
     _animationController.forward();
   }
 
@@ -63,8 +62,8 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
       if (scrollController.hasClients) {
         scrollController.animateTo(
           scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
         );
       }
     });
@@ -73,7 +72,7 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
   Future<void> pickImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
-      final picked = await picker.pickImage(source: source);
+      final picked = await picker.pickImage(source: source, imageQuality: 80);
       if (picked != null) {
         imagePath.value = picked.path;
         PopupService.success('Image selected successfully');
@@ -89,12 +88,13 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFE4EEE5), Color(0xFF77B07A)],
+            colors: [Color(0xFFF1F8E9), Color(0xFFA5D6A7)],
           ),
         ),
         child: SafeArea(
@@ -102,129 +102,118 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
             builder: (context, constraints) {
               return SingleChildScrollView(
                 controller: scrollController,
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
+                  horizontal: 24,
+                  vertical: 20,
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 16),
                     Text(
-                      'Disease Detection',
+                      'Crop Disease Detection',
                       style: GoogleFonts.poppins(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
                         color: Colors.green[900],
+                        letterSpacing: 0.5,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Analyze your crop images',
+                      'Upload or capture a crop image to diagnose diseases',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: Colors.grey[800],
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w400,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     Obx(
                       () => FadeTransition(
                         opacity: _fadeAnimation,
-                        child: Container(
-                          height: constraints.maxWidth > 600 ? 300 : 200,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
+                        child: GestureDetector(
+                          onTap: () => pickImage(ImageSource.gallery),
+                          child: Container(
+                            height: constraints.maxWidth > 600 ? 320 : 240,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.green[200]!,
+                                width: 2,
                               ),
-                            ],
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child:
+                                imagePath.value.isEmpty
+                                    ? Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Lottie.asset(
+                                          leafScanning,
+                                          height: 120,
+                                          repeat: true,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Tap to select an image',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                    : ClipRRect(
+                                      borderRadius: BorderRadius.circular(18),
+                                      child: Image.file(
+                                        File(imagePath.value),
+                                        height:
+                                            constraints.maxWidth > 600
+                                                ? 320
+                                                : 240,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(
+                                                  Icons.error,
+                                                  color: Colors.red,
+                                                ),
+                                      ),
+                                    ),
                           ),
-                          child:
-                              imagePath.value.isEmpty
-                                  ? Center(
-                                    child: Lottie.asset(
-                                      leafScanning, // Add a Lottie animation in assets
-                                      // height: 500, .. or user auto
-                                      repeat: true,
-                                    ),
-                                  )
-                                  : ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.file(
-                                      File(imagePath.value),
-                                      height:
-                                          constraints.maxWidth > 600
-                                              ? 300
-                                              : 200,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ElevatedButton.icon(
-                          icon: const Icon(
-                            Icons.photo_library,
-                            color: Colors.white,
-                          ),
-                          label: Text(
-                            'Gallery',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            elevation: 4,
-                          ),
+                        _buildImageButton(
+                          icon: Icons.photo_library,
+                          label: 'Gallery',
                           onPressed: () => pickImage(ImageSource.gallery),
                         ),
                         const SizedBox(width: 16),
-                        ElevatedButton.icon(
-                          icon: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                          ),
-                          label: Text(
-                            'Camera',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            elevation: 4,
-                          ),
+                        _buildImageButton(
+                          icon: Icons.camera_alt,
+                          label: 'Camera',
                           onPressed: () => pickImage(ImageSource.camera),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     Obx(
                       () => AnimatedScale(
                         scale:
@@ -232,7 +221,7 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                     controller.isLoading.value
                                 ? 0.95
                                 : 1.0,
-                        duration: const Duration(milliseconds: 200),
+                        duration: const Duration(milliseconds: 300),
                         child: ElevatedButton(
                           onPressed:
                               imagePath.value.isEmpty ||
@@ -246,35 +235,38 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                     _animationController.forward(from: 0);
                                   },
                           style: ElevatedButton.styleFrom(
-                            minimumSize: Size(constraints.maxWidth * 0.8, 48),
+                            minimumSize: Size(constraints.maxWidth * 0.9, 56),
                             backgroundColor: Colors.green[700],
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            elevation: 4,
+                            elevation: 6,
+                            shadowColor: Colors.black.withOpacity(0.2),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child:
                               controller.isLoading.value
                                   ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
+                                    width: 24,
+                                    height: 24,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                                      strokeWidth: 2.5,
                                       color: Colors.white,
                                     ),
                                   )
                                   : Text(
-                                    'Analyze',
+                                    'Analyze Crop',
                                     style: GoogleFonts.poppins(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     Obx(
                       () => FadeTransition(
                         opacity: _fadeAnimation,
@@ -283,22 +275,22 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                           children: [
                             if (controller.result.value.isNotEmpty) ...[
                               Text(
-                                'Result',
+                                'Diagnosis Result',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
                                   color: Colors.green[900],
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               Card(
-                                elevation: 4,
+                                elevation: 5,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                                 color: Colors.green[50],
                                 child: Padding(
-                                  padding: const EdgeInsets.all(20.0),
+                                  padding: const EdgeInsets.all(24.0),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -307,28 +299,16 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                             controller.result.value,
                                           ) !=
                                           null) ...[
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.bug_report,
-                                              color: Colors.green[800],
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                extractDisease(
-                                                  controller.result.value,
-                                                )!,
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.green[900],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        _buildResultSection(
+                                          icon: Icons.bug_report,
+                                          title: 'Detected Disease',
+                                          content:
+                                              extractDisease(
+                                                controller.result.value,
+                                              )!,
+                                          iconColor: Colors.green[800]!,
                                         ),
-                                        const SizedBox(height: 12),
+                                        const SizedBox(height: 16),
                                       ],
                                       if (extractCorrection(
                                                 controller.result.value,
@@ -337,27 +317,14 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                           extractCorrection(
                                             controller.result.value,
                                           )!.isNotEmpty) ...[
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Icon(
-                                              Icons.medical_services,
-                                              color: Colors.orange[800],
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                extractCorrection(
-                                                  controller.result.value,
-                                                )!,
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 16,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        _buildResultSection(
+                                          icon: Icons.medical_services,
+                                          title: 'Recommended Action',
+                                          content:
+                                              extractCorrection(
+                                                controller.result.value,
+                                              )!,
+                                          iconColor: Colors.orange[800]!,
                                         ),
                                       ],
                                     ],
@@ -368,25 +335,30 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                             if (controller.error.value.isNotEmpty) ...[
                               const SizedBox(height: 16),
                               Card(
-                                elevation: 4,
+                                elevation: 5,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                                 color: Colors.red[50],
                                 child: Padding(
-                                  padding: const EdgeInsets.all(20.0),
+                                  padding: const EdgeInsets.all(24.0),
                                   child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.error, color: Colors.red[800]),
-                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.error,
+                                        color: Colors.red[800],
+                                        size: 28,
+                                      ),
+                                      const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
                                           controller.error.value,
                                           style: GoogleFonts.poppins(
                                             fontSize: 16,
                                             color: Colors.red[900],
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
@@ -399,6 +371,7 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               );
@@ -406,6 +379,73 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImageButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Expanded(
+      child: ElevatedButton.icon(
+        icon: Icon(icon, color: Colors.white, size: 24),
+        label: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green[700],
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          elevation: 5,
+          shadowColor: Colors.black.withOpacity(0.2),
+        ),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildResultSection({
+    required IconData icon,
+    required String title,
+    required String content,
+    required Color iconColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.green[900],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            color: Colors.black87,
+            height: 1.5,
+          ),
+        ),
+      ],
     );
   }
 }

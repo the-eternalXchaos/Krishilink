@@ -188,6 +188,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildLoginCard() {
+    // device height and width
+    final deviceHeight = MediaQuery.of(context).size.height;
+    final deviceWidth = MediaQuery.of(context).size.width;
     return Card(
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -198,7 +201,9 @@ class _LoginScreenState extends State<LoginScreen>
             _buildAuthTypeSelector(),
             const SizedBox(height: 16),
             SizedBox(
-              height: 160,
+              // login box height 20% of screen height
+              height: deviceHeight * 0.25,
+              width: deviceWidth * 0.9,
               child: TabBarView(
                 controller: _tabController,
                 children: [_buildOtpForm(), _buildCredentialForm()],
@@ -213,8 +218,12 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildAuthTypeSelector() {
+    // device height and width
+    final deviceHeight = MediaQuery.of(context).size.height;
+    final deviceWidth = MediaQuery.of(context).size.width;
     return Container(
-      height: 80,
+      height: deviceHeight * 0.08,
+      width: deviceWidth * 0.9,
       decoration: BoxDecoration(
         color: Theme.of(
           context,
