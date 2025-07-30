@@ -362,7 +362,9 @@ class ProductController extends GetxController {
   get relatedProductsEndpoint => ApiConstants.getRelatedProductsEndpoint;
 
   void updateFilteredProducts() {
-    print('[ProductController] Filtering  [32m${products.length} [0m products');
+    debugPrint(
+      '[ProductController] Filtering  [32m${products.length} [0m products',
+    );
     final role =
         _authController.currentUser.value?.role.toLowerCase() ?? 'guest';
     final statusFilter = filterController.selectedStatus.value;
@@ -370,8 +372,8 @@ class ProductController extends GetxController {
         filterController.productSearchQuery.value.trim().toLowerCase();
     final locationQuery =
         filterController.locationSearchQuery.value.trim().toLowerCase();
-    print('Selected categories: ${filterController.selectedCategories}');
-    print('Selected locations: ${filterController.selectedLocations}');
+    debugPrint('Selected categories: ${filterController.selectedCategories}');
+    debugPrint('Selected locations: ${filterController.selectedLocations}');
     filteredProducts.value =
         products
             .where((product) {
@@ -403,13 +405,13 @@ class ProductController extends GetxController {
                     (loc) => productLocation.contains(loc),
                   );
               if (!matchesCategory) {
-                print(
-                  'Filtered out by category: ${product.productName} (${productCategory})',
+                debugPrint(
+                  'Filtered out by category: ${product.productName} ($productCategory)',
                 );
               }
               if (!matchesLocation) {
-                print(
-                  'Filtered out by location: ${product.productName} (${productLocation})',
+                debugPrint(
+                  'Filtered out by location: ${product.productName} ($productLocation)',
                 );
               }
               return matchesStatus &&
@@ -419,7 +421,7 @@ class ProductController extends GetxController {
             })
             .toList()
             .obs;
-    print(
+    debugPrint(
       '[ProductController] Filtered products:  [32m${filteredProducts.length} [0m',
     );
   }
@@ -469,7 +471,7 @@ class ProductController extends GetxController {
     final review = ReviewModel(
       // id: '',
       productId: productId,
-      userId: _authController.currentUser.value?.uid ?? '',
+      userId: _authController.currentUser.value?.id ?? '',
       username: username,
       review: reviewText,
       timestamp: DateTime.now(),
