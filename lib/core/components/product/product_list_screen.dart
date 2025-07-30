@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide SearchBar;
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/product/add_edit_product_form.dart';
+import 'package:krishi_link/core/components/product/product_form.dart';
 import 'package:krishi_link/core/components/product/product_list_management.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/widgets/search_bar.dart';
@@ -72,6 +72,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
     // Apply search filter
     if (searchQuery.value.isNotEmpty) {
+
+
+
+
+
+       controller.fetchProducts(
+              page: 1,
+              pageSizeParam: 20,
+              searchQuery: controller.filterController.productSearchQuery.value,
+              selectedCategories:
+                  controller.filterController.selectedCategories,
+              selectedLocations: controller.filterController.selectedLocations,
+              status: controller.filterController.selectedStatus.value,
+              reset: true,
+            );
+            
       filtered =
           filtered.where((product) {
             final query = searchQuery.value.toLowerCase();
@@ -290,10 +306,23 @@ class _ProductListScreenState extends State<ProductListScreen> {
             // onEdit: () => widget.onEdit(product),
             onEdit: () {
               Get.to(
-                () => AddEditProductForm(
+                () => ProductForm(
                   product: product,
-                  onSubmit: (formData, newImagePath) {
+                  onSubmit: (formData, newImagePath) async {
                     // Handle form submission
+                    debugPrint(
+                      '🔄 [ProductListScreen] New image path: $newImagePath',
+                    );
+                    debugPrint(
+                      '🔄 [ProductListScreen] Form data: ${formData.productName}, ${formData.rate}, ${formData.category}',
+                    );
+                    debugPrint('🔄 [ProductListScreen] Form submitted');
+                    debugPrint(
+                      '🔄 [ProductListScreen] Product: ${product.id ?? 'new'}',
+                    );
+                    debugPrint(
+                      '🔄 [ProductListScreen] Form data: ${formData.productName}, ${formData.rate}, ${formData.category}',
+                    );
                   },
                 ),
               );
