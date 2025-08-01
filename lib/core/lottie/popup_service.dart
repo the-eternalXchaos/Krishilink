@@ -36,11 +36,12 @@ class PopupService {
     });
   }
 
-  // static void close() {
-  //   if (Get.isDialogOpen ?? false) {
-  //     Get.back();
-  //   }
-  // }
+  /// Close the popup
+  static void close() {
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
+  }
 
   static void show({
     required PopupType type,
@@ -78,6 +79,7 @@ class PopupService {
     required PopupType type,
     bool forcePopup = false,
     Duration? duration,
+    required bool autoDismiss,
   }) {
     // 🎭 Decide: use popup or snackbar?
     final popupTypes = {
@@ -174,40 +176,75 @@ class PopupService {
 
   /// Success feedback
   static void success(String message, {String title = 'Success'}) {
-    handleFeedback(title: title, message: message, type: PopupType.success);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.success,
+      autoDismiss: true,
+    );
   }
 
   /// Error feedback
   static void error(String message, {String title = 'Error'}) {
-    handleFeedback(title: title, message: message, type: PopupType.error);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.error,
+      autoDismiss: true,
+    );
   }
 
   /// Warning feedback
   static void warning(String message, {String title = 'Warning'}) {
-    handleFeedback(title: title, message: message, type: PopupType.warning);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.warning,
+      autoDismiss: true,
+    );
   }
 
   /// Info feedback
   static void info(String message, {String title = 'Info'}) {
-    handleFeedback(title: title, message: message, type: PopupType.info);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.info,
+      autoDismiss: true,
+    );
   }
 
   /// Added to cart feedback
   static void addedToCart(String message, {String title = 'Added to Cart'}) {
-    handleFeedback(title: title, message: message, type: PopupType.addedToCart);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.addedToCart,
+      autoDismiss: true,
+    );
   }
 
   /// Order placed feedback
   static void orderPlaced(String message, {String title = 'Order Placed'}) {
-    handleFeedback(title: title, message: message, type: PopupType.orderPlaced);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.orderPlaced,
+      autoDismiss: true,
+    );
   }
 
   /// Party/celebration feedback
   static void party(String message, {String title = 'Congratulations'}) {
-    handleFeedback(title: title, message: message, type: PopupType.party);
+    handleFeedback(
+      title: title,
+      message: message,
+      type: PopupType.party,
+      autoDismiss: true,
+    );
   }
 
-  /// 🎯 NATURAL LANGUAGE FEEDBACK (AI-friendly)
+  /// 🎯 NATURAL LANGUAGE FEEDBACK  (AI-friendly)
   /// Parse natural language and show appropriate feedback
   static void showFeedback(String naturalText) {
     final text = naturalText.toLowerCase();
