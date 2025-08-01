@@ -58,7 +58,7 @@ class AdminOrderController extends GetxController {
       );
     } finally {
       isLoading(false);
-      // PopupService.close();
+      PopupService.close();
     }
   }
 
@@ -106,7 +106,7 @@ class AdminOrderController extends GetxController {
       );
     } finally {
       isLoading(false);
-      // PopupService.close();
+      PopupService.close();
     }
   }
 }
