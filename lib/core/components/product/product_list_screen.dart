@@ -72,22 +72,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
     // Apply search filter
     if (searchQuery.value.isNotEmpty) {
+      //  controller.fetchProducts(
+      //         page: 1,
+      //         pageSizeParam: 20,
+      //         searchQuery: controller.filterController.productSearchQuery.value,
+      //         selectedCategories:
+      //             controller.filterController.selectedCategories,
+      //         selectedLocations: controller.filterController.selectedLsocations,
+      //         status: controller.filterController.selectedStatus.value,
+      //         reset: true,
+      //       );
 
-
-
-
-
-       controller.fetchProducts(
-              page: 1,
-              pageSizeParam: 20,
-              searchQuery: controller.filterController.productSearchQuery.value,
-              selectedCategories:
-                  controller.filterController.selectedCategories,
-              selectedLocations: controller.filterController.selectedLocations,
-              status: controller.filterController.selectedStatus.value,
-              reset: true,
-            );
-            
       filtered =
           filtered.where((product) {
             final query = searchQuery.value.toLowerCase();
