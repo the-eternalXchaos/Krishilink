@@ -235,7 +235,7 @@ class _LocationPickerState extends State<LocationPicker>
     Get.snackbar(
       title,
       message,
-      backgroundColor: color.withOpacity(0.9),
+      backgroundColor: color.withValues(alpha: 0.9),
       colorText: Colors.white,
       borderRadius: 12,
       margin: const EdgeInsets.all(16),
@@ -286,7 +286,7 @@ class _LocationPickerState extends State<LocationPicker>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -301,7 +301,7 @@ class _LocationPickerState extends State<LocationPicker>
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
@@ -312,14 +312,14 @@ class _LocationPickerState extends State<LocationPicker>
           ),
           suffixIcon: _buildLocationActions(),
           filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+            borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -355,7 +355,7 @@ class _LocationPickerState extends State<LocationPicker>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(
@@ -387,7 +387,7 @@ class _LocationPickerState extends State<LocationPicker>
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child:
@@ -424,9 +424,9 @@ class _LocationPickerState extends State<LocationPicker>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.2),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,7 +494,7 @@ class _LocationPickerState extends State<LocationPicker>
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
@@ -539,7 +539,7 @@ class _LocationPickerState extends State<LocationPicker>
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       showMap.value
-                          ? colorScheme.primary.withOpacity(0.1)
+                          ? colorScheme.primary.withValues(alpha: 0.1)
                           : colorScheme.primaryContainer,
                   foregroundColor:
                       showMap.value
@@ -567,7 +567,7 @@ class _LocationPickerState extends State<LocationPicker>
                     ? Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -579,7 +579,7 @@ class _LocationPickerState extends State<LocationPicker>
                     : Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -609,7 +609,7 @@ class _LocationPickerState extends State<LocationPicker>
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.shadow.withOpacity(0.15),
+                          color: colorScheme.shadow.withValues(alpha: 0.15),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -679,7 +679,7 @@ class _LocationPickerState extends State<LocationPicker>
                             () =>
                                 isLoadingLocation.value
                                     ? Container(
-                                      color: Colors.black.withOpacity(0.3),
+                                      color: Colors.black.withValues(alpha: 0.3),
                                       child: const Center(
                                         child: CircularProgressIndicator(
                                           color: Colors.white,
@@ -728,9 +728,9 @@ class _LocationPickerState extends State<LocationPicker>
                   margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
