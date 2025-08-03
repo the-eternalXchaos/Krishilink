@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:krishi_link/core/bindings/admin_binding.dart';
-import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
+import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/core/controllers/settings_controller.dart';
 import 'package:krishi_link/core/screens/unified_settings_page.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
@@ -30,6 +30,7 @@ import 'package:krishi_link/features/farmer/screens/farmer_orders_screen.dart';
 import 'package:krishi_link/features/farmer/screens/order_details_screen.dart';
 import 'package:krishi_link/features/farmer/screens/tutorial_details.dart';
 import 'package:krishi_link/features/farmer/screens/tutorials.dart';
+import 'package:krishi_link/features/onboarding/screens/splash_screen.dart';
 import 'package:krishi_link/features/onboarding/screens/welcome_page.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
 import 'package:krishi_link/product_binding.dart';
@@ -38,7 +39,7 @@ import 'package:krishi_link/widgets/notifications.dart';
 import 'package:krishi_link/widgets/product_detail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'core/components/product/examples/unified_product_management.dart';
+import 'core/components/product/management/unified_product_management.dart';
 import 'core/controllers/language_controller.dart';
 import 'core/lottie/popup_service.dart';
 
@@ -49,7 +50,10 @@ class AuthMiddleware extends GetMiddleware {
     final currentUser = authController.currentUser.value;
 
     // Allow public routes
-    if (route == '/welcome' || route == '/login' || route == '/register') {
+    if (route == '/welcome' ||
+        // route == '/splash' ||
+        route == '/login' ||
+        route == '/register') {
       return null;
     }
 
@@ -167,6 +171,11 @@ class MyApp extends StatelessWidget {
       initialRoute: initialRoute,
       defaultTransition: Transition.fadeIn,
       getPages: [
+        GetPage(
+          name: '/splash',
+          page: () => const SplashScreen(),
+          transition: Transition.fade,
+        ),
         GetPage(
           name: '/welcome',
           page: () => const WelcomePage(),
