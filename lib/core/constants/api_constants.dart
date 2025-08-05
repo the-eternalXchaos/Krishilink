@@ -47,6 +47,8 @@ class ApiConstants {
   static const String placeOrderEndpoint = '$baseUrl/api/Order/addOrder';
   static const String addOrdersEndpoint = '$baseUrl/api/Order/addOrders';
   static const String getMyOrdersEndpoint = '$baseUrl/api/Order/getMyOrders';
+  static const String deleteOrderEndpoint =
+      '$baseUrl/api/Order/deleteOrder'; // + /{orderId}
 
   static const String cancelOrderEndpoint =
       '$baseUrl/api/Order/cancelOrder'; // + /{orderId}
