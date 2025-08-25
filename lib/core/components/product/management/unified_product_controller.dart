@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:krishi_link/core/components/product/management/unified_product_api_services.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:krishi_link/core/components/product/product_form_data.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
@@ -155,7 +156,7 @@ class UnifiedProductController extends GetxController {
       products.refresh();
       PopupService.success('Product added successfully!');
       await Future.delayed(const Duration(milliseconds: 500));
-      Get.back();
+      // Get.back();
     } catch (e) {
       debugPrint('❌ [Controller] Error adding product: $e');
       String errorMessage = 'Failed to add product';
@@ -189,31 +190,11 @@ class UnifiedProductController extends GetxController {
     ProductFormData formData,
     String? imagePath,
   ) async {
-    if (_lastRequestTime != null &&
-        DateTime.now().difference(_lastRequestTime!) < _requestCooldown) {
-      final remainingSeconds =
-          _requestCooldown.inSeconds -
-          DateTime.now().difference(_lastRequestTime!).inSeconds;
-      debugPrint(
-        '❌ [UnifiedProductController] Cooldown active, remaining: $remainingSeconds seconds',
-      );
-      PopupService.error(
-        'Please wait $remainingSeconds seconds before updating another product.',
-      );
-      return;
-    }
-
-    if (!await _checkNetworkConnectivity()) {
-      _showNetworkError();
-      return;
-    }
-
     try {
       isLoading.value = true;
-      debugPrint(
-        '🔄 [UnifiedProductController] updateProduct called for productId: $productId',
-      );
+      debugPrint('🔄 [Controller] Updating product: $productId');
 
+      // Cancel any existing request
       _currentRequestToken?.cancel('New updateProduct request started');
       _currentRequestToken = dio.CancelToken();
 
@@ -227,11 +208,11 @@ class UnifiedProductController extends GetxController {
         description: formData.description,
         latitude: formData.latitude,
         longitude: formData.longitude,
-        image: '',
+        image: formData.imagePath,
         soldedQuantity: 0.0,
         farmerId: authController.currentUser.value?.id ?? '',
         farmerName: authController.currentUser.value?.fullName ?? '',
-        farmerPhone: authController.currentUser.value?.email ?? '',
+        farmerPhone: formData.farmerContact,
         isActive: true,
         createdAt: DateTime.now(),
       );
@@ -243,31 +224,28 @@ class UnifiedProductController extends GetxController {
         cancelToken: _currentRequestToken,
       );
 
+      // Update local list and refresh
       final index = products.indexWhere((p) => p.id == productId);
       if (index != -1) {
         products[index] = updatedProduct;
         products.refresh();
+        debugPrint('✅ [Controller] Local product list updated');
+      } else {
+        // If product not found in list, fetch fresh data
+        await fetchProducts(reset: true);
+        debugPrint('✅ [Controller] Products list refreshed from API');
       }
-      await fetchProducts(reset: true);
-      PopupService.success('Product updated successfully!');
-      await Future.delayed(const Duration(milliseconds: 500));
+
+      PopupService.success('Product updated successfully');
       Get.back();
+
+      // Add delay to ensure UI updates
+      await Future.delayed(const Duration(milliseconds: 300));
     } catch (e) {
-      debugPrint('❌ [UnifiedProductController] Error updating product: $e');
+      debugPrint('❌ [Controller] Update error: $e');
       String errorMessage = 'Failed to update product';
       if (e is dio.DioException) {
-        if (e.type == dio.DioExceptionType.connectionTimeout ||
-            e.type == dio.DioExceptionType.receiveTimeout) {
-          errorMessage =
-              'Network timeout. Please check your internet connection.';
-        } else if (e.type == dio.DioExceptionType.badResponse) {
-          errorMessage =
-              e.response?.data['message'] ?? 'Server error occurred.';
-        } else if (e.type == dio.DioExceptionType.cancel) {
-          errorMessage = 'Request was cancelled.';
-        } else {
-          errorMessage = e.message ?? 'Unknown error occurred.';
-        }
+        errorMessage = e.response?.data['message'] ?? 'Server error occurred.';
       }
       PopupService.error(errorMessage);
       rethrow;
@@ -316,8 +294,8 @@ class UnifiedProductController extends GetxController {
     String productId,
     bool isActive,
   ) async {
-    if (currentUserRole.value != 'admin') {
-      PopupService.error('Only admins can update product status.');
+    if (currentUserRole.value != 'admin' && currentUserRole.value != 'farmer') {
+      PopupService.error('Only admins and farmers can update product status.');
       return;
     }
     try {
@@ -436,8 +414,10 @@ class UnifiedProductController extends GetxController {
   }
 
   void _showNetworkError() {
-    PopupService.error(
-      'No internet connection. Please check your internet connection and try again.',
+    PopupService.showSnackbar(
+      type: PopupType.error,
+      message:
+          'No internet connection. Please check your internet connection and try again.',
       title: 'No Internet Connection',
     );
   }
@@ -472,5 +452,15 @@ class UnifiedProductController extends GetxController {
       await deleteProduct(productId);
     }
   }
+
+  getCooldownStatus() {
+    if (_lastRequestTime == null) return 'No requests made yet';
+    final elapsed = DateTime.now().difference(_lastRequestTime!);
+    if (elapsed >= _requestCooldown) {
+      return 'Ready for new requests';
+    } else {
+      final remaining = _requestCooldown - elapsed;
+      return 'Cooldown active, ${remaining.inSeconds} seconds remaining';
+    }
+  }
 }
-  
