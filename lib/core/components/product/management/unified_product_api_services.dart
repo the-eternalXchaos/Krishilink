@@ -1,68 +1,31 @@
 import 'dart:io';
-import 'package:dio/dio.dart' as dio;
-import 'package:flutter/material.dart';
+import 'package:dio/dio.dart' as dio ;
+import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:krishi_link/services/api_service.dart';
+import 'package:krishi_link/services/token_service.dart';
 import 'package:path/path.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/services/token_service.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:get/get.dart';
 
-// EXTENDING TO USE THE TOKEN REFRESH LOGIC IN ApiService AND ALSO THE INTERCEPTORS
 class UnifiedProductApiServices extends ApiService {
-  // final dio.Dio _dio = dio.Dio(
-  //   dio.BaseOptions(
-  //     baseUrl: ApiConstants.baseUrl,
-  //     connectTimeout: const Duration(seconds: 10),
-  //     receiveTimeout: const Duration(seconds: 20),
-  //   ),
-  // );
-
-  Future<dio.Options> _getOptions({bool isFormData = false}) async {
-    if (isFormData) {
-      return dio.Options(
-        headers: {'accept': '*/*', 'Content-Type': 'multipart/form-data'},
-        sendTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 20),
-      );
-    }
-    return dio.Options(
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
-    );
-  }
-
   final AuthController _authController = Get.find<AuthController>();
-  UnifiedProductApiServices(this._authController);
 
-  // Future<dio.Options> _jsonOptions() async {
-  //   final token = authController.currentUser.value?.token;
-  //   if (token == null || token.isEmpty) {
-  //     throw Exception('No authentication token found');
-  //   }
-  //   return dio.Options(
-  //     headers: {
-  //       'Authorization': 'Bearer $token',
-  //       'Content-Type': 'application/json',
-  //       'accept': 'application/json',
-  //     },
-  //   );
-  // }
+  UnifiedProductApiServices() : super(); // Initialize parent ApiService
 
-  Future<dio.Options> _formOptions() async {
-    final token = await TokenService.getAccessToken();
+  // Unified method for getting headers (JSON or form-data)
+  Future<dio.Options> _getOptions({bool isFormData = false}) async {
+    final headers = await TokenService.getAuthHeaders();
     return dio.Options(
       headers: {
-        'Authorization': 'Bearer $token',
-        'accept': '*/*',
-        'Content-Type': 'multipart/form-data',
+        ...headers,
+        'accept': isFormData ? '*/*' : 'application/json',
+        'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
       },
       sendTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 60), // Increased for reliability
     );
   }
 
@@ -76,8 +39,11 @@ class UnifiedProductApiServices extends ApiService {
     int pageSize = 20,
   }) async {
     try {
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] fetchProducts called with endpoint: $endpoint',
+      );
       final opts = await _getOptions();
-      final response = await _dio.get(
+      final response = await dio.Dio().get(
         endpoint,
         queryParameters: {
           if (searchQuery != null) 'searchQuery': searchQuery,
@@ -113,7 +79,7 @@ class UnifiedProductApiServices extends ApiService {
       throw Exception('Failed to fetch products: ${response.statusCode}');
     } catch (e) {
       debugPrint('❌ [UnifiedProductApiServices] Error fetching products: $e');
-      throw Exception('Failed to fetch products: $e');
+      rethrow; // Let ApiService interceptors handle 401 errors
     }
   }
 
@@ -131,12 +97,14 @@ class UnifiedProductApiServices extends ApiService {
     dio.CancelToken? cancelToken,
   }) async {
     debugPrint(
-      '🔄 [API] addProduct called with productName: $productName, email: $emailOrPhone',
+      '🔄 [UnifiedProductApiServices] addProduct called with productName: $productName, email: $emailOrPhone',
     );
     try {
-      final opts = await _formOptions();
-      debugPrint('🔄 [API] Endpoint: ${ApiConstants.addProductEndpoint}');
-      debugPrint('🔄 [API] Headers: ${opts.headers}');
+      final opts = await _getOptions(isFormData: true);
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Endpoint: ${ApiConstants.addProductEndpoint}',
+      );
+      debugPrint('🔄 [UnifiedProductApiServices] Headers: ${opts.headers}');
 
       final formData = dio.FormData.fromMap({
         'ProductName': productName.trim(),
@@ -157,10 +125,12 @@ class UnifiedProductApiServices extends ApiService {
         'Description': description.trim(),
       });
 
-      debugPrint('🔄 [API] FormData fields: ${formData.fields}');
-      debugPrint('🔄 [API] FormData file: ${image.path}');
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] FormData fields: ${formData.fields}',
+      );
+      debugPrint('🔄 [UnifiedProductApiServices] FormData file: ${image.path}');
 
-      final response = await _dio.post(
+      final response = await dio.Dio().post(
         ApiConstants.addProductEndpoint,
         data: formData,
         queryParameters: {'EmailorPhone': emailOrPhone},
@@ -168,11 +138,15 @@ class UnifiedProductApiServices extends ApiService {
         cancelToken: cancelToken,
       );
 
-      debugPrint('🔄 [API] Response status: ${response.statusCode}');
-      debugPrint('🔄 [API] Response data: ${response.data}');
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Response status: ${response.statusCode}',
+      );
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Response data: ${response.data}',
+      );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        debugPrint('✅ [API] Product added successfully');
+        debugPrint('✅ [UnifiedProductApiServices] Product added successfully');
         return Product(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           productName: productName,
@@ -198,236 +172,19 @@ class UnifiedProductApiServices extends ApiService {
         'Failed to add product: ${response.data['message'] ?? 'Unknown error'}',
       );
     } catch (e) {
-      debugPrint('❌ [API] Error adding product: $e');
+      debugPrint('❌ [UnifiedProductApiServices] Error adding product: $e');
       if (e is dio.DioException) {
-        debugPrint('❌ [API] Dio error type: ${e.type}');
-        debugPrint('❌ [API] Dio error message: ${e.message}');
-        debugPrint('❌ [API] Dio error response: ${e.response?.data}');
+        debugPrint('❌ [UnifiedProductApiServices] Dio error type: ${e.type}');
+        debugPrint(
+          '❌ [UnifiedProductApiServices] Dio error message: ${e.message}',
+        );
+        debugPrint(
+          '❌ [UnifiedProductApiServices] Dio error response: ${e.response?.data}',
+        );
       }
-      throw Exception('Failed to add product: $e');
+      rethrow; // Let ApiService interceptors handle 401 errors
     }
   }
-  // Future<Product> addProduct({
-  //   required String productName,
-  //   required File image,
-  //   required double rate,
-  //   required double availableQuantity,
-  //   required String category,
-  //   required String emailOrPhone,
-  //   String unit = 'kg',
-  //   String description = '',
-  //   required double latitude,
-  //   required double longitude,
-  //   dio.CancelToken? cancelToken,
-  // }) async {
-  //   try {
-  //     debugPrint('✅ API call initiated');
-
-  //     debugPrint('🔄 [API] addProduct called');
-  //     final opts = await _formOptions();
-  //     debugPrint('🔄 [API] Endpoint: ${ApiConstants.addProductEndpoint}');
-  //     debugPrint('🔄 [API] EmailOrPhone: $emailOrPhone');
-
-  //     final formData = dio.FormData.fromMap({
-  //       'ProductName': productName.trim(),
-  //       'Image': await dio.MultipartFile.fromFile(
-  //         image.path,
-  //         filename: basename(image.path),
-  //         contentType: MediaType(
-  //           'image',
-  //           extension(image.path).replaceFirst('.', ''),
-  //         ),
-  //       ),
-  //       'Rate': rate.toString(),
-  //       'Unit': unit.trim(),
-  //       'AvailableQuantity': availableQuantity.toString(),
-  //       'Category': category.trim(),
-  //       'Latitude': latitude.toString(),
-  //       'Longitude': longitude.toString(),
-  //       'Description': description.trim(),
-  //     });
-
-  //     debugPrint('🔄 [API] FormData fields: ${formData.fields}');
-  //     debugPrint('🔄 [API] FormData file: ${image.path}');
-
-  //     final response = await _dio.post(
-  //       ApiConstants.addProductEndpoint,
-  //       data: formData,
-  //       queryParameters: {'EmailorPhone': emailOrPhone},
-  //       options: opts,
-  //       cancelToken: cancelToken,
-  //     );
-
-  //     debugPrint('🔄 [API] Status: ${response.statusCode}');
-  //     debugPrint('🔄 [API] Response: ${response.data}');
-
-  //     if (response.statusCode == 200 && response.data['success'] == true) {
-  //       debugPrint('✅ [API] Product added successfully');
-
-  //       // Build a local Product object (since API returns only a message)
-  //       return Product(
-  //         id: DateTime.now().millisecondsSinceEpoch.toString(),
-  //         productName: productName,
-  //         rate: rate,
-  //         availableQuantity: availableQuantity,
-  //         category: category,
-  //         unit: unit,
-  //         description: description.isNotEmpty ? description : 'No description',
-  //         latitude: latitude,
-  //         longitude: longitude,
-  //         image:
-  //             '${ApiConstants.getProductImageEndpoint}/${basename(image.path)}',
-  //         soldedQuantity: 0.0,
-  //         farmerId: authController.currentUser.value?.id ?? '',
-  //         farmerName: authController.currentUser.value?.fullName ?? '',
-  //         farmerPhone: emailOrPhone,
-  //         isActive: true,
-  //         createdAt: DateTime.now(),
-  //       );
-  //     }
-
-  //     throw Exception(
-  //       'Failed to add product: ${response.data['message'] ?? 'Unknown error'}',
-  //     );
-  //   } catch (e) {
-  //     debugPrint('❌ [API] Error: $e');
-  //     if (e is dio.DioException) {
-  //       debugPrint('❌ Dio Error: ${e.message}, Response: ${e.response?.data}');
-  //       throw Exception('Network/Server error: ${e.message}');
-  //     }
-  //     throw Exception('Failed to add product: $e');
-  //   }
-  // }
-
-  // Future<Product> updateProduct(
-  //   String productId,
-  //   Product product, {
-  //   File? imageFile,
-  //   dio.CancelToken? cancelToken,
-  // }) async {
-  //   try {
-  //     debugPrint(
-  //       '🔄 [UnifiedProductApiServices] updateProduct called for product: $productId',
-  //     );
-  //     debugPrint(
-  //       '🔄 [UnifiedProductApiServices] API endpoint: ${ApiConstants.updateProductEndpoint}/$productId',
-  //     );
-
-  //     if (product.productName.isEmpty) {
-  //       throw Exception('Product name is required');
-  //     }
-  //     if (product.rate <= 0) {
-  //       throw Exception('Product rate must be greater than 0');
-  //     }
-  //     if (product.availableQuantity <= 0) {
-  //       throw Exception('Available quantity must be greater than 0');
-  //     }
-  //     if (product.category.isEmpty) {
-  //       throw Exception('Product category is required');
-  //     }
-
-  //     final opts = await _formOptions();
-  //     final formData = dio.FormData.fromMap({
-  //       'ProductName': product.productName.trim(),
-  //       'Rate': product.rate.toString(),
-  //       'AvailableQuantity': product.availableQuantity.toString(),
-  //       'Category': product.category.trim(),
-  //       'Unit': product.unit.trim(),
-  //       'Description': (product.description).trim(),
-  //       'Latitude': product.latitude.toString(),
-  //       'Longitude': product.longitude.toString(),
-  //       if (imageFile != null)
-  //         'Image': await dio.MultipartFile.fromFile(
-  //           imageFile.path,
-  //           filename: basename(imageFile.path),
-  //           contentType: MediaType(
-  //             'image',
-  //             extension(imageFile.path).replaceFirst('.', ''),
-  //           ),
-  //         ),
-  //     });
-
-  //     debugPrint(
-  //       '🔄 [UnifiedProductApiServices] Image handling: ${imageFile != null ? 'New image provided' : 'Keeping existing image'}',
-  //     );
-  //     debugPrint('🔄 [UnifiedProductApiServices] Form data prepared:');
-  //     for (final field in formData.fields) {
-  //       debugPrint('  - ${field.key}: ${field.value}');
-  //     }
-
-  //     final response = await _dio.put(
-  //       '${ApiConstants.updateProductEndpoint}/$productId',
-  //       data: formData,
-  //       queryParameters: {'EmailorPhone': product.farmerPhone},
-  //       options: opts,
-  //       cancelToken: cancelToken,
-  //     );
-
-  //     debugPrint(
-  //       '🔄 [UnifiedProductApiServices] API response status: ${response.statusCode}',
-  //     );
-  //     debugPrint(
-  //       '🔄 [UnifiedProductApiServices] API response data: ${response.data}',
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final responseData = response.data;
-  //       if (responseData['success'] == true) {
-  //         debugPrint('✅ [UnifiedProductApiServices] API call successful');
-  //         return product.copyWith(
-  //           image:
-  //               imageFile != null
-  //                   ? '${ApiConstants.getProductImageEndpoint}/$productId?t=${DateTime.now().millisecondsSinceEpoch}'
-  //                   : product.image,
-  //         );
-  //       }
-  //       throw Exception(
-  //         'Failed to update product: ${responseData['message'] ?? 'Unknown error'}',
-  //       );
-  //     }
-  //     throw Exception(
-  //       'Failed to update product: ${response.statusCode} - ${response.data['message'] ?? response.data['title'] ?? 'Unknown error'}',
-  //     );
-  //   } catch (e) {
-  //     debugPrint('❌ [UnifiedProductApiServices] updateProduct error: $e');
-  //     if (e is dio.DioException) {
-  //       debugPrint('❌ [UnifiedProductApiServices] Dio error type: ${e.type}');
-  //       debugPrint(
-  //         '❌ [UnifiedProductApiServices] Dio error message: ${e.message}',
-  //       );
-  //       debugPrint(
-  //         '❌ [UnifiedProductApiServices] Dio error response: ${e.response?.data}',
-  //       );
-  //       debugPrint(
-  //         '❌ [UnifiedProductApiServices] Dio error status code: ${e.response?.statusCode}',
-  //       );
-  //       debugPrint(
-  //         '❌ [UnifiedProductApiServices] Dio error headers: ${e.response?.headers}',
-  //       );
-  //       switch (e.type) {
-  //         case dio.DioExceptionType.connectionTimeout:
-  //           throw Exception(
-  //             'Connection timeout. Please check your internet connection.',
-  //           );
-  //         case dio.DioExceptionType.sendTimeout:
-  //           throw Exception('Request timeout. Please try again.');
-  //         case dio.DioExceptionType.receiveTimeout:
-  //           throw Exception('Response timeout. Please try again.');
-  //         case dio.DioExceptionType.badResponse:
-  //           throw Exception('Server error: ${e.response?.statusCode}');
-  //         case dio.DioExceptionType.cancel:
-  //           throw Exception('Request was cancelled.');
-  //         case dio.DioExceptionType.connectionError:
-  //           throw Exception(
-  //             'No internet connection. Please check your network.',
-  //           );
-  //         default:
-  //           throw Exception('Network error: ${e.message}');
-  //       }
-  //     }
-  //     throw Exception('Failed to update product: $e');
-  //   }
-  // }
 
   Future<Product> updateProduct(
     String productId,
@@ -436,16 +193,27 @@ class UnifiedProductApiServices extends ApiService {
     dio.CancelToken? cancelToken,
   }) async {
     try {
-      debugPrint('🔄 [API] updateProduct called for ID: $productId');
-      final opts = await _formOptions();
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] updateProduct called for ID: $productId',
+      );
+      final opts = await _getOptions(isFormData: true);
+
+      if (product.productName.isEmpty)
+        throw Exception('Product name is required');
+      if (product.rate <= 0)
+        throw Exception('Product rate must be greater than 0');
+      if (product.availableQuantity <= 0)
+        throw Exception('Available quantity must be greater than 0');
+      if (product.category.isEmpty)
+        throw Exception('Product category is required');
 
       final formData = dio.FormData.fromMap({
-        'ProductName': product.productName,
+        'ProductName': product.productName.trim(),
         'Rate': product.rate.toString(),
         'AvailableQuantity': product.availableQuantity.toString(),
-        'Category': product.category,
-        'Unit': product.unit,
-        'Description': product.description,
+        'Category': product.category.trim(),
+        'Unit': product.unit.trim(),
+        'Description': product.description.trim(),
         'Latitude': product.latitude.toString(),
         'Longitude': product.longitude.toString(),
         if (imageFile != null)
@@ -459,7 +227,13 @@ class UnifiedProductApiServices extends ApiService {
           ),
       });
 
-      final response = await _dio.put(
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Form data prepared: ${formData.fields}',
+      );
+      if (imageFile != null)
+        debugPrint('🔄 [UnifiedProductApiServices] Image: ${imageFile.path}');
+
+      final response = await dio.Dio().put(
         '${ApiConstants.updateProductEndpoint}/$productId',
         data: formData,
         queryParameters: {'EmailorPhone': product.farmerPhone},
@@ -467,25 +241,37 @@ class UnifiedProductApiServices extends ApiService {
         cancelToken: cancelToken,
       );
 
-      debugPrint('🔄 [API] Response status: ${response.statusCode}');
-      debugPrint('🔄 [API] Response data: ${response.data}');
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Response status: ${response.statusCode}',
+      );
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Response data: ${response.data}',
+      );
 
-      if (response.statusCode == 200) {
-        if (response.data['success'] == true) {
-          debugPrint('✅ [API] Product updated successfully');
-          return product.copyWith(
-            image:
-                imageFile != null
-                    ? '${ApiConstants.getProductImageEndpoint}/${basename(imageFile.path)}'
-                    : product.image,
-          );
-        }
-        throw Exception(response.data['message'] ?? 'Failed to update product');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        debugPrint(
+          '✅ [UnifiedProductApiServices] Product updated successfully',
+        );
+        return product.copyWith(
+          image:
+              imageFile != null
+                  ? '${ApiConstants.getProductImageEndpoint}/${basename(imageFile.path)}'
+                  : response.data['data']?['image'] ?? product.image,
+        );
       }
-      throw Exception('Server error: ${response.statusCode}');
+      throw Exception(response.data['message'] ?? 'Failed to update product');
     } catch (e) {
-      debugPrint('❌ [API] Update product error: $e');
-      rethrow;
+      debugPrint('❌ [UnifiedProductApiServices] Update product error: $e');
+      if (e is dio.DioException) {
+        debugPrint('❌ [UnifiedProductApiServices] Dio error type: ${e.type}');
+        debugPrint(
+          '❌ [UnifiedProductApiServices] Dio error message: ${e.message}',
+        );
+        debugPrint(
+          '❌ [UnifiedProductApiServices] Dio error response: ${e.response?.data}',
+        );
+      }
+      rethrow; // Let ApiService interceptors handle 401 errors
     }
   }
 
@@ -494,14 +280,11 @@ class UnifiedProductApiServices extends ApiService {
     dio.CancelToken? cancelToken,
   }) async {
     try {
-      debugPrint('🔄 [UnifiedProductApiServices] deleteProduct called');
-      debugPrint('🔄 [UnifiedProductApiServices] Product ID: $productId');
       debugPrint(
-        '🔄 [UnifiedProductApiServices] API endpoint: ${ApiConstants.deleteProductEndpoint}/$productId',
+        '🔄 [UnifiedProductApiServices] deleteProduct called for ID: $productId',
       );
-
-      final opts = await _jsonOptions();
-      final response = await _dio.delete(
+      final opts = await _getOptions();
+      final response = await dio.Dio().delete(
         '${ApiConstants.deleteProductEndpoint}/$productId',
         options: opts,
         cancelToken: cancelToken,
@@ -514,15 +297,14 @@ class UnifiedProductApiServices extends ApiService {
         '🔄 [UnifiedProductApiServices] Delete API response data: ${response.data}',
       );
 
-      if (response.statusCode == 200) {
-        final responseData = response.data;
-        if (responseData['success'] != true) {
-          throw Exception(
-            'Failed to delete product: ${responseData['message'] ?? 'Unknown error'}',
-          );
-        }
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        debugPrint(
+          '✅ [UnifiedProductApiServices] Product deleted successfully',
+        );
       } else {
-        throw Exception('Failed to delete product: ${response.statusCode}');
+        throw Exception(
+          'Failed to delete product: ${response.data['message'] ?? 'Unknown error'}',
+        );
       }
     } catch (e) {
       debugPrint('❌ [UnifiedProductApiServices] Delete product error: $e');
@@ -534,23 +316,8 @@ class UnifiedProductApiServices extends ApiService {
         debugPrint(
           '❌ [UnifiedProductApiServices] Dio error response: ${e.response?.data}',
         );
-        debugPrint(
-          '❌ [UnifiedProductApiServices] Dio error status code: ${e.response?.statusCode}',
-        );
-        debugPrint(
-          '❌ [UnifiedProductApiServices] Dio error headers: ${e.response?.headers}',
-        );
-        if (e.response?.data != null && e.response!.data is Map) {
-          final errorData = e.response!.data as Map;
-          throw Exception(
-            'Failed to delete product: ${errorData['message'] ?? e.message ?? 'Network error'}',
-          );
-        }
-        throw Exception(
-          'Failed to delete product: ${e.message ?? 'Network error'}',
-        );
       }
-      throw Exception('Failed to delete product: $e');
+      rethrow; // Let ApiService interceptors handle 401 errors
     }
   }
 
@@ -560,17 +327,10 @@ class UnifiedProductApiServices extends ApiService {
   ) async {
     try {
       debugPrint(
-        '🔄 [UnifiedProductApiServices] updateProductActiveStatus called',
+        '🔄 [UnifiedProductApiServices] updateProductActiveStatus called for ID: $productId, isActive: $isActive',
       );
-      debugPrint(
-        '🔄 [UnifiedProductApiServices] Product ID: $productId, isActive: $isActive',
-      );
-      debugPrint(
-        '🔄 [UnifiedProductApiServices] API endpoint: ${ApiConstants.updateProductStatusEndpoint}/$productId',
-      );
-
-      final opts = await _jsonOptions();
-      final response = await _dio.put(
+      final opts = await _getOptions();
+      final response = await dio.Dio().put(
         '${ApiConstants.updateProductStatusEndpoint}/$productId',
         data: {'isActive': isActive},
         options: opts,
@@ -583,9 +343,13 @@ class UnifiedProductApiServices extends ApiService {
         '🔄 [UnifiedProductApiServices] API response data: ${response.data}',
       );
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        debugPrint(
+          '✅ [UnifiedProductApiServices] Product status updated successfully',
+        );
+      } else {
         throw Exception(
-          'Failed to update product status: ${response.statusCode}',
+          'Failed to update product status: ${response.data['message'] ?? 'Unknown error'}',
         );
       }
     } catch (e) {
@@ -600,11 +364,8 @@ class UnifiedProductApiServices extends ApiService {
         debugPrint(
           '❌ [UnifiedProductApiServices] Dio error response: ${e.response?.data}',
         );
-        throw Exception(
-          'Failed to update product status: ${e.response?.data['message'] ?? 'Network error'}',
-        );
       }
-      throw Exception('Failed to update product status: $e');
+      rethrow; // Let ApiService interceptors handle 401 errors
     }
   }
 
@@ -617,13 +378,13 @@ class UnifiedProductApiServices extends ApiService {
       debugPrint(
         '🔄 [UnifiedProductApiServices] fetchUserDetailsByEmailOrPhone called with input: $input',
       );
-      final opts = await _jsonOptions();
+      final opts = await _getOptions();
       dio.Response response;
       if (isEmail(input)) {
         debugPrint(
           '🔄 [UnifiedProductApiServices] Fetching user details by email: $input',
         );
-        response = await _dio.get(
+        response = await dio.Dio().get(
           '${ApiConstants.getUserDetailsByEmail}?email=$input',
           options: opts,
         );
@@ -631,7 +392,7 @@ class UnifiedProductApiServices extends ApiService {
         debugPrint(
           '🔄 [UnifiedProductApiServices] Fetching user details by phone: $input',
         );
-        response = await _dio.get(
+        response = await dio.Dio().get(
           '${ApiConstants.getUserDetailsByPhoneNumber}/$input',
           options: opts,
         );
@@ -654,7 +415,7 @@ class UnifiedProductApiServices extends ApiService {
       debugPrint(
         '❌ [UnifiedProductApiServices] Error fetching user details: $e',
       );
-      throw Exception('Failed to fetch user details: $e');
+      rethrow; // Let ApiService interceptors handle 401 errors
     }
   }
 }
