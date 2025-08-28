@@ -35,7 +35,7 @@ import 'package:krishi_link/features/onboarding/screens/welcome_page.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
 import 'package:krishi_link/product_binding.dart';
 import 'package:krishi_link/services/device_service.dart';
-import 'package:krishi_link/widgets/notifications.dart';
+import 'package:krishi_link/widgets/notification/notifications.dart';
 import 'package:krishi_link/widgets/product_detail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
