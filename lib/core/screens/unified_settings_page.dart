@@ -1,8 +1,11 @@
+// lib/features/settings/unified_settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/controllers/settings_controller.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
+import 'package:krishi_link/core/widgets/app_widgets.dart';
+import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 
 class UnifiedSettingsPage extends StatelessWidget {
   const UnifiedSettingsPage({super.key});
@@ -16,14 +19,27 @@ class UnifiedSettingsPage extends StatelessWidget {
             : Get.put(AuthController());
     final role = authController.currentUser.value?.role ?? '';
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    debugPrint(
+      'UnifiedSettingsPage - Surface: ${colorScheme.surface}, Primary: ${colorScheme.primary}',
+    );
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('settings'.tr),
+        title: Text(
+          'settings'.tr,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: Icon(Icons.info_outline, color: colorScheme.onPrimary),
             onPressed: () => PopupService.info('${'app_name'.tr} v1.0.0'),
           ),
         ],
@@ -32,7 +48,10 @@ class UnifiedSettingsPage extends StatelessWidget {
         () => AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             children: [
               // Profile Section
               _buildSection(
@@ -49,8 +68,9 @@ class UnifiedSettingsPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                colorScheme: colorScheme,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // Notifications Section
               _buildSection(
                 title: 'notifications'.tr,
@@ -65,11 +85,13 @@ class UnifiedSettingsPage extends StatelessWidget {
                       _buildNotificationToggle('system_updates'.tr, true.obs),
                   ],
                 ),
+                colorScheme: colorScheme,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // Role-specific Settings
-              if (role.isNotEmpty) _buildRoleSpecificSettings(role),
-              const SizedBox(height: 16),
+              if (role.isNotEmpty)
+                _buildRoleSpecificSettings(role, colorScheme),
+              const SizedBox(height: AppSpacing.md),
               // Privacy & Security Section
               _buildSection(
                 title: 'privacy_security'.tr,
@@ -90,12 +112,16 @@ class UnifiedSettingsPage extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHigh,
+                          color: colorScheme.surface.withValues(
+                            alpha: 0.7,
+                          ), // Changed to surface
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'coming_soon'.tr,
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
@@ -107,8 +133,9 @@ class UnifiedSettingsPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                colorScheme: colorScheme,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // Help & Support Section
               _buildSection(
                 title: 'help_support'.tr,
@@ -134,8 +161,9 @@ class UnifiedSettingsPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                colorScheme: colorScheme,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // Language Section
               _buildSection(
                 title: 'language'.tr,
@@ -159,8 +187,9 @@ class UnifiedSettingsPage extends StatelessWidget {
                     ],
                   ),
                 ),
+                colorScheme: colorScheme,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // Theme Section
               _buildSection(
                 title: 'display'.tr,
@@ -176,8 +205,9 @@ class UnifiedSettingsPage extends StatelessWidget {
                     onChanged: (_) => settingsController.toggleTheme(),
                   ),
                 ),
+                colorScheme: colorScheme,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               // Logout Section
               _buildSection(
                 title: 'account'.tr,
@@ -189,6 +219,7 @@ class UnifiedSettingsPage extends StatelessWidget {
                     onPressed: () => _showLogoutDialog(context, authController),
                   ),
                 ),
+                colorScheme: colorScheme,
               ),
             ],
           ),
@@ -214,38 +245,31 @@ class UnifiedSettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              title,
-              style: Get.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          child,
-        ],
-      ),
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+    required ColorScheme colorScheme,
+  }) {
+    return AppWidgets.card(
+      title: title,
+      colorScheme: colorScheme,
+      child: child,
     );
   }
 
   Widget _buildProfileTile(BuildContext context, AuthController controller) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final user = controller.currentUser.value;
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       leading: CircleAvatar(
-        backgroundColor: theme.colorScheme.primary,
-        child: Icon(Icons.person, color: theme.colorScheme.onPrimary),
+        backgroundColor: colorScheme.primary,
+        child: Icon(Icons.person, color: colorScheme.onPrimary),
       ),
       title: Text(
         user?.fullName ?? 'guest_user'.tr,
@@ -258,17 +282,17 @@ class UnifiedSettingsPage extends StatelessWidget {
             user?.email ?? user?.phoneNumber ?? 'no_contact_info'.tr,
             style: theme.textTheme.bodyMedium,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
+              color: colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               (user?.role ?? 'guest').toString().capitalizeFirst ?? 'guest'.tr,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
+                color: colorScheme.onPrimaryContainer,
               ),
             ),
           ),
@@ -284,7 +308,10 @@ class UnifiedSettingsPage extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       leading: leading,
       title: title,
       trailing: trailing,
@@ -305,9 +332,10 @@ class UnifiedSettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRoleSpecificSettings(String role) {
+  Widget _buildRoleSpecificSettings(String role, ColorScheme colorScheme) {
     return _buildSection(
       title: 'features'.tr,
+      colorScheme: colorScheme,
       child: Column(
         children: [
           if (role == 'farmer') ...[
