@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -6,13 +8,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:krishi_link/core/components/product/product_form_data.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/components/product/location_picker.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
+import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProductForm extends StatefulWidget {
@@ -40,7 +43,6 @@ class _ProductFormState extends State<ProductForm>
   File? imageFile; // Temporary file for downloaded or picked image
   final RxString unit = 'kg'.obs;
   final RxBool isLoadingImage = false.obs;
-  final RxBool isSubmitting = false.obs;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -60,43 +62,82 @@ class _ProductFormState extends State<ProductForm>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
+    debugPrint(
+      '🔄 [ProductForm] initState called for product: ${widget.product?.productName ?? 'new product'}',
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.forward();
 
-    _initializeForm();
-    final user = authController.currentUser.value;
-    userRole = user?.role.toLowerCase() ?? '';
-    if (userRole == 'farmer') {
-      farmerContact =
-          user?.email?.isNotEmpty == true ? user?.email : user?.phoneNumber;
-      farmerContactController.text = farmerContact ?? '';
-    } else if (widget.product != null && widget.product!.farmerPhone != null) {
-      farmerContactController.text = widget.product!.farmerPhone!;
+    try {
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 800),
+        vsync: this,
+      );
+      _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      );
+      _animationController.forward();
+      debugPrint('✅ [ProductForm] Animation controller initialized');
+
+      _initializeForm();
+      debugPrint('✅ [ProductForm] Form initialized');
+
+      final user = authController.currentUser.value;
+      userRole = user?.role.toLowerCase() ?? '';
+      debugPrint('🔄 [ProductForm] User role: $userRole');
+
+      if (userRole == 'farmer') {
+        farmerContact =
+            user?.email?.isNotEmpty == true ? user?.email : user?.phoneNumber;
+        farmerContactController.text = farmerContact ?? '';
+        debugPrint('🔄 [ProductForm] Farmer contact set: $farmerContact');
+      } else if (widget.product != null &&
+          widget.product!.farmerPhone != null) {
+        farmerContactController.text = widget.product!.farmerPhone!;
+        debugPrint(
+          '🔄 [ProductForm] Product farmer contact set: ${widget.product!.farmerPhone}',
+        );
+      }
+
+      debugPrint('✅ [ProductForm] initState completed successfully');
+    } catch (e) {
+      debugPrint('❌ [ProductForm] Error in initState: $e');
+      // Don't rethrow - let the form continue to render
     }
   }
 
   void _initializeForm() {
-    formData =
-        widget.product != null
-            ? ProductFormData.fromProduct(widget.product!)
-            : ProductFormData();
-    productNameController.text = formData.productName;
-    descriptionController.text = formData.description;
-    rateController.text = formData.rate > 0 ? formData.rate.toString() : '';
-    quantityController.text =
-        formData.availableQuantity > 0
-            ? formData.availableQuantity.toString()
-            : '';
-    categoryController.text = formData.category;
-    unit.value = formData.unit;
-    if (widget.product != null) {
-      _downloadImage();
+    debugPrint('🔄 [ProductForm] _initializeForm called');
+    try {
+      formData =
+          widget.product != null
+              ? ProductFormData.fromProduct(widget.product!)
+              : ProductFormData();
+      debugPrint(
+        '✅ [ProductForm] FormData created: ${formData.productName}, ${formData.rate}, ${formData.category}',
+      );
+
+      productNameController.text = formData.productName;
+      descriptionController.text = formData.description;
+      rateController.text = formData.rate > 0 ? formData.rate.toString() : '';
+      quantityController.text =
+          formData.availableQuantity > 0
+              ? formData.availableQuantity.toString()
+              : '';
+      categoryController.text = formData.category;
+      unit.value = formData.unit;
+
+      debugPrint('✅ [ProductForm] Controllers initialized');
+
+      if (widget.product != null) {
+        debugPrint('🔄 [ProductForm] Product exists, downloading image');
+        _downloadImage();
+      } else {
+        debugPrint('🔄 [ProductForm] New product, no image to download');
+      }
+
+      debugPrint('✅ [ProductForm] _initializeForm completed successfully');
+    } catch (e) {
+      debugPrint('❌ [ProductForm] Error in _initializeForm: $e');
+      // Don't rethrow - let the form continue to render
     }
   }
 
@@ -114,10 +155,16 @@ class _ProductFormState extends State<ProductForm>
           newImagePath = file.path;
           formData.imagePath = widget.product!.image;
         });
-        PopupService.success('image_downloaded'.tr);
+        PopupService.showSnackbar(
+          type: PopupType.success,
+          title: 'image_downloaded'.tr,
+          message: 'image_downloaded',
+        );
       } else {
-        PopupService.error(
-          'failed_to_download_image'.trParams({
+        PopupService.showSnackbar(
+          type: PopupType.error,
+          title: 'failed_to_download_image'.tr,
+          message: 'failed_to_download_image'.trParams({
             'error': 'Status ${response.statusCode}',
           }),
         );
@@ -178,44 +225,271 @@ class _ProductFormState extends State<ProductForm>
   }
 
   void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      formData.productName = productNameController.text.trim();
-      formData.description = descriptionController.text.trim();
-      formData.rate = double.tryParse(rateController.text) ?? 0;
-      formData.availableQuantity =
-          double.tryParse(quantityController.text) ?? 0;
-      formData.category = categoryController.text.trim();
-      formData.unit = unit.value;
-      formData.farmerContact = farmerContactController.text.trim();
-      if (widget.product == null && imageFile == null) {
-        PopupService.error('image_required'.tr);
-        return;
-      }
-      if (formData.latitude == 0 || formData.longitude == 0) {
-        PopupService.error('location_required'.tr);
-        return;
-      }
-      isSubmitting.value = true;
-      try {
-        if (userRole == 'admin') {
-          final userDetails = await unifiedProductController
-              .fetchUserDetailsByEmailOrPhone(formData.farmerContact);
-          if (userDetails == null) {
-            PopupService.error('user_not_found'.tr);
-            isSubmitting.value = false;
-            return;
-          }
-          // Only sending email or phone as required
-        }
-        await widget.onSubmit(formData, newImagePath);
-      } catch (e) {
-        PopupService.error(e.toString());
-      } finally {
-        isSubmitting.value = false;
+    debugPrint('🔄 [ProductForm] _submitForm called');
+
+    // Collect validation errors (keep your existing validation)
+    final errors = <String>[];
+    if (productNameController.text.trim().isEmpty) {
+      errors.add('Product Name');
+    } else if (productNameController.text.trim().length < 2) {
+      errors.add('Product Name (must be at least 2 characters)');
+    }
+    if (categoryController.text.trim().isEmpty) errors.add('Category');
+    if (farmerContactController.text.trim().isEmpty) {
+      errors.add('Farmer Contact');
+    }
+
+    if (rateController.text.trim().isEmpty) {
+      errors.add('Rate');
+    } else {
+      final rate = double.tryParse(rateController.text);
+      if (rate == null) {
+        errors.add('Rate (must be a valid number)');
+      } else if (rate <= 0) {
+        errors.add('Rate (must be greater than 0)');
+      } else if (rate > 99999.99) {
+        errors.add('Rate (cannot exceed Rs. 99,999.99)');
       }
     }
+    if (quantityController.text.trim().isEmpty) {
+      errors.add('Available Quantity');
+    } else {
+      final qty = double.tryParse(quantityController.text);
+      if (qty == null) {
+        errors.add('Available Quantity (must be a valid number)');
+      } else if (qty < 0) {
+        errors.add('Available Quantity (cannot be negative)');
+      } else if (qty > 99999.99)
+        errors.add('Available Quantity (cannot exceed 99,999.99)');
+    }
+
+    if (widget.product == null && imageFile == null) {
+      errors.add('Product Image (required for new products)');
+    }
+    if (formData.latitude == 0 || formData.longitude == 0) {
+      errors.add('Location (please select a valid location)');
+    }
+
+    if (errors.isNotEmpty) {
+      debugPrint('❌ [ProductForm] Validation failed: $errors');
+
+      PopupService.showSnackbar(
+        type: PopupType.error,
+        title: 'validation_error'.tr,
+        message: errors.map((e) => '• $e').join('\n'),
+      );
+      PopupService.error(
+        'Please fill the following required fields:\n${errors.map((e) => '• $e').join('\n')}',
+        title: 'Missing Information',
+      );
+      return;
+    }
+
+    debugPrint('✅ [ProductForm] Form validation passed');
+
+    // Map controllers → formData
+    formData
+      ..productName = productNameController.text.trim()
+      ..description = descriptionController.text.trim()
+      ..rate = double.tryParse(rateController.text) ?? 0
+      ..availableQuantity = double.tryParse(quantityController.text) ?? 0
+      ..category = categoryController.text.trim()
+      ..unit = unit.value
+      ..farmerContact = farmerContactController.text.trim();
+
+    debugPrint('🔄 [ProductForm] Form data prepared');
+    debugPrint('  - Product Name: ${formData.productName}');
+    debugPrint('  - Rate: ${formData.rate}');
+    debugPrint('  - Category: ${formData.category}');
+    debugPrint('  - Available Quantity: ${formData.availableQuantity}');
+    debugPrint('  - Unit: ${formData.unit}');
+    debugPrint('  - Description: ${formData.description}');
+    debugPrint('  - Farmer Contact: ${formData.farmerContact}');
+    debugPrint('  - Latitude: ${formData.latitude}');
+    debugPrint('  - Longitude: ${formData.longitude}');
+    debugPrint('  - Image File: ${imageFile?.path}');
+    debugPrint('  - New Image Path: $newImagePath');
+
+    // Replace the existing _submitForm method's try-catch block with this:
+    try {
+      if (userRole == 'admin') {
+        debugPrint('🔄 [ProductForm] Admin user, checking farmer details');
+        final userDetails = await unifiedProductController
+            .fetchUserDetailsByEmailOrPhone(formData.farmerContact);
+        if (userDetails == null) {
+          PopupService.error('user_not_found'.tr);
+          return;
+        }
+      }
+
+      debugPrint('🔄 [ProductForm] About to call controller update');
+      if (widget.product != null) {
+        // Call controller's updateProduct method directly
+        await unifiedProductController.updateProduct(
+          widget.product!.id,
+          formData,
+          newImagePath,
+        );
+      }
+
+      debugPrint('🔄 [ProductForm] About to call widget.onSubmit');
+      await widget.onSubmit(formData, newImagePath);
+      debugPrint('✅ [ProductForm] onSubmit completed successfully');
+
+      if (!mounted) return;
+      debugPrint('🔄 [ProductForm] Closing form/dialog');
+      Get.back();
+    } catch (e, st) {
+      debugPrint('❌ [ProductForm] Error in onSubmit: $e');
+      debugPrint('❌ [ProductForm] Stack: $st');
+      PopupService.error('Failed to save product: $e');
+    }
   }
+
+  // void _submitForm() async {
+  //   debugPrint('🔄 [ProductForm] _submitForm called');
+
+  //   // Collect validation errors
+  //   final errors = <String>[];
+
+  //   // Validate fields
+  //   if (productNameController.text.trim().isEmpty) {
+  //     errors.add('Product Name');
+  //   } else if (productNameController.text.trim().length < 2) {
+  //     errors.add('Product Name (must be at least 2 characters)');
+  //   }
+
+  //   if (categoryController.text.trim().isEmpty) {
+  //     errors.add('Category');
+  //   }
+
+  //   if (farmerContactController.text.trim().isEmpty) {
+  //     errors.add('Farmer Contact');
+  //   }
+
+  //   if (rateController.text.trim().isEmpty) {
+  //     errors.add('Rate');
+  //   } else {
+  //     final rate = double.tryParse(rateController.text);
+  //     if (rate == null) {
+  //       errors.add('Rate (must be a valid number)');
+  //     } else if (rate <= 0) {
+  //       errors.add('Rate (must be greater than 0)');
+  //     } else if (rate > 99999.99) {
+  //       errors.add('Rate (cannot exceed Rs. 99,999.99)');
+  //     }
+  //   }
+
+  //   if (quantityController.text.trim().isEmpty) {
+  //     errors.add('Available Quantity');
+  //   } else {
+  //     final quantity = double.tryParse(quantityController.text);
+  //     if (quantity == null) {
+  //       errors.add('Available Quantity (must be a valid number)');
+  //     } else if (quantity < 0) {
+  //       errors.add('Available Quantity (cannot be negative)');
+  //     } else if (quantity > 99999.99) {
+  //       errors.add('Available Quantity (cannot exceed 99,999.99)');
+  //     }
+  //   }
+
+  //   if (widget.product == null && imageFile == null) {
+  //     errors.add('Product Image (required for new products)');
+  //   }
+
+  //   if (formData.latitude == 0 || formData.longitude == 0) {
+  //     errors.add('Location (please select a valid location)');
+  //   }
+
+  //   // Check if there are any errors
+  //   if (errors.isNotEmpty) {
+  //     debugPrint('❌ [ProductForm] Validation failed: $errors');
+  //     PopupService.error(
+  //       'Please fill the following required fields:\n${errors.map((e) => '• $e').join('\n')}',
+  //       title: 'Missing Information',
+  //     );
+  //     return;
+  //   }
+
+  //   debugPrint('✅ [ProductForm] Form validation passed');
+
+  //   formData.productName = productNameController.text.trim();
+  //   formData.description = descriptionController.text.trim();
+  //   formData.rate = double.tryParse(rateController.text) ?? 0;
+  //   formData.availableQuantity = double.tryParse(quantityController.text) ?? 0;
+  //   formData.category = categoryController.text.trim();
+  //   formData.unit = unit.value;
+  //   formData.farmerContact = farmerContactController.text.trim();
+
+  //   debugPrint('🔄 [ProductForm] Form data prepared:');
+  //   debugPrint('  - Product Name: ${formData.productName}');
+  //   debugPrint('  - Rate: ${formData.rate}');
+  //   debugPrint('  - Category: ${formData.category}');
+  //   debugPrint('  - Available Quantity: ${formData.availableQuantity}');
+  //   debugPrint('  - Unit: ${formData.unit}');
+  //   debugPrint('  - Description: ${formData.description}');
+  //   debugPrint('  - Farmer Contact: ${formData.farmerContact}');
+  //   debugPrint('  - Latitude: ${formData.latitude}');
+  //   debugPrint('  - Longitude: ${formData.longitude}');
+  //   debugPrint('  - Image File: ${imageFile?.path}');
+  //   debugPrint('  - New Image Path: $newImagePath');
+
+  //   // Remove manual loading state management - now handled by management layer
+  //   debugPrint('🔄 [ProductForm] Starting form submission process');
+
+  //   try {
+  //     await Future.delayed(const Duration(seconds: 1));
+  //     if (userRole == 'admin') {
+  //       debugPrint('🔄 [ProductForm] Admin user, checking farmer details');
+  //       final userDetails = await unifiedProductController
+  //           .fetchUserDetailsByEmailOrPhone(formData.farmerContact);
+  //       if (userDetails == null) {
+  //         debugPrint('❌ [ProductForm] User not found');
+  //         PopupService.error('user_not_found'.tr);
+  //         return;
+  //       }
+  //       debugPrint('✅ [ProductForm] Farmer details found');
+  //     }
+
+  //     debugPrint('🔄 [ProductForm] About to call widget.onSubmit');
+  //     debugPrint(
+  //       '🔄 [ProductForm] widget.onSubmit type: ${widget.onSubmit.runtimeType}',
+  //     );
+  //     await widget.onSubmit(formData, newImagePath);
+  //     debugPrint('✅ [ProductForm] onSubmit completed successfully');
+
+  //     if (unifiedProductController.isLoading.value) {
+  //       debugPrint(
+  //         '⚠️ [ProductForm] Form submission blocked: isLoading is true',
+  //       );
+  //       PopupService.error('Please wait for the current request to finish.');
+  //       return;
+  //     }
+  //     debugPrint('🔄 [ProductForm] _submitForm called');
+  //     try {
+  //       debugPrint('🔄 [ProductForm] About to call widget.onSubmit');
+  //       debugPrint(
+  //         '🔄 [ProductForm] widget.onSubmit type: ${widget.onSubmit.runtimeType}',
+  //       );
+  //       await widget.onSubmit(formData, newImagePath);
+  //       debugPrint('✅ [ProductForm] onSubmit completed successfully');
+  //     } catch (e) {
+  //       debugPrint('❌ [ProductForm] Error in onSubmit: $e');
+  //       debugPrint('❌ [ProductForm] Error type: ${e.runtimeType}');
+  //       debugPrint('❌ [ProductForm] Error stack trace: ${e.toString()}');
+  //       PopupService.error('Failed to save product: ${e.toString()}');
+  //     }
+  //     // Close the form/dialog
+  //     debugPrint('🔄 [ProductForm] Closing form/dialog');
+  //     Get.back();
+  //   } catch (e) {
+  //     debugPrint('❌ [ProductForm] Error in onSubmit: $e');
+  //     debugPrint('❌ [ProductForm] Error type: ${e.runtimeType}');
+  //     debugPrint('❌ [ProductForm] Error stack trace: ${e.toString()}');
+  //     PopupService.error('Failed to save product: ${e.toString()}');
+  //   }
+  //   // Note: Loading state is now managed by the management layer
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -223,79 +497,75 @@ class _ProductFormState extends State<ProductForm>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 120.0,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                widget.product == null ? 'add_product'.tr : 'edit_product'.tr,
-                style: TextStyle(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.8),
-                    ],
-                  ),
-                ),
-                child: Stack(
+      appBar: AppBar(
+        title: Text(
+          widget.product == null ? 'Add Product' : 'Update Product',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Positioned(
-                      right: -20,
-                      top: 20,
-                      child: Icon(
-                        Icons.agriculture_outlined,
-                        size: 100,
-                        color: colorScheme.onPrimary.withOpacity(0.1),
-                      ),
-                    ),
+                    _buildBasicInfoSection(colorScheme),
+                    const SizedBox(height: 24),
+                    _buildPricingSection(colorScheme),
+                    const SizedBox(height: 24),
+                    _buildImageSection(colorScheme),
+                    const SizedBox(height: 24),
+                    _buildLocationSection(colorScheme),
+                    const SizedBox(height: 32),
+                    _buildSubmitButton(colorScheme),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Form(
-                key: _formKey,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildBasicInfoSection(colorScheme),
-                      const SizedBox(height: 24),
-                      _buildPricingSection(colorScheme),
-                      const SizedBox(height: 24),
-                      _buildImageSection(colorScheme),
-                      const SizedBox(height: 24),
-                      _buildLocationSection(colorScheme),
-                      const SizedBox(height: 32),
-                      _buildSubmitButton(colorScheme),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                ),
-              ),
+            // Loading overlay
+            Obx(
+              () =>
+                  unifiedProductController.isLoading.value
+                      ? Container(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        child: const Center(
+                          child: Card(
+                            elevation: 8,
+                            child: Padding(
+                              padding: EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'Processing...',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      : const SizedBox.shrink(),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -310,11 +580,18 @@ class _ProductFormState extends State<ProductForm>
         children: [
           _buildEnhancedTextField(
             controller: productNameController,
-            labelText: 'product_name'.tr,
-            icon: Icons.inventory_outlined,
-            maxLength: 50,
-            validator:
-                (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
+            labelText: 'Product Name required',
+            icon: Icons.inventory_2_outlined,
+            maxLength: 100,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Please enter a product name';
+              }
+              if (v.trim().length < 2) {
+                return 'Product name must be at least 2 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 20),
           _buildEnhancedTextField(
@@ -327,22 +604,30 @@ class _ProductFormState extends State<ProductForm>
           const SizedBox(height: 20),
           _buildEnhancedTextField(
             controller: categoryController,
-            labelText: 'category'.tr,
+            labelText: 'Category *',
             icon: Icons.category_outlined,
             maxLength: 50,
-            validator:
-                (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Please select a category';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 20),
           _buildEnhancedTextField(
             controller: farmerContactController,
-            labelText: 'farmer_contact'.tr,
+            labelText: 'Farmer Contact *',
             icon: Icons.person_outline,
             readOnly: userRole == 'farmer',
             hintText:
                 userRole == 'admin' ? 'Enter farmer phone or email' : null,
-            validator:
-                (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Please enter farmer contact information';
+              }
+              return null;
+            },
           ),
         ],
       ),
@@ -353,66 +638,130 @@ class _ProductFormState extends State<ProductForm>
     return _buildAnimatedCard(
       colorScheme: colorScheme,
       icon: Icons.attach_money_outlined,
-      title: 'pricing_quantity'.tr,
+      title: 'Pricing & Quantity',
       iconColor: Colors.green,
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _buildEnhancedTextField(
-                  controller: rateController,
-                  labelText: 'rate'.tr,
-                  icon: Icons.currency_rupee_outlined,
-                  prefixText: 'Rs. ',
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  validator:
-                      (v) =>
-                          (v == null ||
-                                  double.tryParse(v) == null ||
-                                  double.parse(v) <= 0)
-                              ? 'invalid_rate'.tr
-                              : double.parse(v) > 99999.99
-                              ? 'rate_max_99999_99'.tr
-                              : null,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Obx(
-                  () => _buildEnhancedDropdown(
-                    value: unit.value,
-                    items: ['kg', 'liter', 'piece'],
-                    onChanged: (value) {
-                      if (value != null) {
-                        unit.value = value;
-                      }
-                    },
-                    labelText: 'unit'.tr,
-                    icon: Icons.straighten_outlined,
-                  ),
-                ),
-              ),
-            ],
+          // Rate and Unit in a responsive row
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 600) {
+                // Wide screen: side by side
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _buildEnhancedTextField(
+                        controller: rateController,
+                        labelText: 'Rate *',
+                        icon: Icons.currency_rupee_outlined,
+                        prefixText: 'Rs. ',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Please enter a rate';
+                          }
+                          if (double.tryParse(v) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (double.parse(v) <= 0) {
+                            return 'Rate must be greater than 0';
+                          }
+                          if (double.parse(v) > 99999.99) {
+                            return 'Rate cannot exceed Rs. 99,999.99';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Obx(
+                        () => _buildEnhancedDropdown(
+                          value: unit.value,
+                          items: ['kg', 'liter', 'piece'],
+                          onChanged: (value) {
+                            if (value != null) {
+                              unit.value = value;
+                            }
+                          },
+                          labelText: 'Unit',
+                          icon: Icons.straighten_outlined,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // Narrow screen: stacked
+                return Column(
+                  children: [
+                    _buildEnhancedTextField(
+                      controller: rateController,
+                      labelText: 'Rate *',
+                      icon: Icons.currency_rupee_outlined,
+                      prefixText: 'Rs. ',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Please enter a rate';
+                        }
+                        if (double.tryParse(v) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        if (double.parse(v) <= 0) {
+                          return 'Rate must be greater than 0';
+                        }
+                        if (double.parse(v) > 99999.99) {
+                          return 'Rate cannot exceed Rs. 99,999.99';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Obx(
+                      () => _buildEnhancedDropdown(
+                        value: unit.value,
+                        items: ['kg', 'liter', 'piece'],
+                        onChanged: (value) {
+                          if (value != null) {
+                            unit.value = value;
+                          }
+                        },
+                        labelText: 'Unit',
+                        icon: Icons.straighten_outlined,
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
           const SizedBox(height: 20),
           _buildEnhancedTextField(
             controller: quantityController,
-            labelText: 'available_quantity'.tr,
+            labelText: 'Available Quantity *',
             icon: Icons.inventory_2_outlined,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            validator:
-                (v) =>
-                    (v == null ||
-                            double.tryParse(v) == null ||
-                            double.parse(v) < 0)
-                        ? 'invalid_quantity'.tr
-                        : double.parse(v) > 99999.99
-                        ? 'quantity_max_99999_99'.tr
-                        : null,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Please enter available quantity';
+              }
+              if (double.tryParse(v) == null) {
+                return 'Please enter a valid number';
+              }
+              if (double.parse(v) < 0) {
+                return 'Quantity cannot be negative';
+              }
+              if (double.parse(v) > 99999.99) {
+                return 'Quantity cannot exceed 99,999.99';
+              }
+              return null;
+            },
           ),
         ],
       ),
@@ -431,10 +780,10 @@ class _ProductFormState extends State<ProductForm>
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.3),
+                color: colorScheme.outline.withValues(alpha: 0.3),
                 width: 2,
                 style: BorderStyle.solid,
               ),
@@ -449,7 +798,7 @@ class _ProductFormState extends State<ProductForm>
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -460,7 +809,7 @@ class _ProductFormState extends State<ProductForm>
                       child:
                           isLoadingImage.value
                               ? Container(
-                                color: colorScheme.surfaceVariant,
+                                color: colorScheme.surfaceContainerHighest,
                                 child: const Center(
                                   child: CircularProgressIndicator(),
                                 ),
@@ -490,6 +839,7 @@ class _ProductFormState extends State<ProductForm>
                   width: double.infinity,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                     children: [
                       ElevatedButton.icon(
                         icon: const Icon(Icons.image_outlined),
@@ -498,7 +848,10 @@ class _ProductFormState extends State<ProductForm>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorScheme.primaryContainer,
                           foregroundColor: colorScheme.onPrimaryContainer,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 8,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -512,7 +865,10 @@ class _ProductFormState extends State<ProductForm>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorScheme.primaryContainer,
                           foregroundColor: colorScheme.onPrimaryContainer,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 8,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -524,9 +880,19 @@ class _ProductFormState extends State<ProductForm>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'image_requirements'.tr,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                  widget.product == null
+                      ? 'Please select an image for your product'
+                      : 'Product image (optional for updates)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color:
+                        widget.product == null
+                            ? Colors.orange.shade700
+                            : Colors.grey.shade600,
+                    fontWeight:
+                        widget.product == null
+                            ? FontWeight.w500
+                            : FontWeight.normal,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -540,11 +906,32 @@ class _ProductFormState extends State<ProductForm>
 
   Widget _buildImagePlaceholder(ColorScheme colorScheme) {
     return Container(
-      color: colorScheme.surfaceVariant,
-      child: Icon(
-        Icons.add_photo_alternate_outlined,
-        size: 60,
-        color: colorScheme.onSurfaceVariant,
+      color: colorScheme.surfaceContainerHighest,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.add_photo_alternate_outlined,
+            size: 60,
+            color:
+                widget.product == null
+                    ? Colors.orange.shade600
+                    : colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.product == null ? 'Select Image' : 'No Image Selected',
+            style: TextStyle(
+              fontSize: 14,
+              color:
+                  widget.product == null
+                      ? Colors.orange.shade700
+                      : colorScheme.onSurfaceVariant,
+              fontWeight:
+                  widget.product == null ? FontWeight.w500 : FontWeight.normal,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -578,13 +965,13 @@ class _ProductFormState extends State<ProductForm>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -598,7 +985,7 @@ class _ProductFormState extends State<ProductForm>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
+                    color: iconColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: iconColor, size: 24),
@@ -645,7 +1032,7 @@ class _ProductFormState extends State<ProductForm>
         filled: true,
         fillColor: Theme.of(
           context,
-        ).colorScheme.surfaceVariant.withOpacity(0.3),
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -653,7 +1040,7 @@ class _ProductFormState extends State<ProductForm>
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -702,7 +1089,7 @@ class _ProductFormState extends State<ProductForm>
         filled: true,
         fillColor: Theme.of(
           context,
-        ).colorScheme.surfaceVariant.withOpacity(0.3),
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -710,7 +1097,7 @@ class _ProductFormState extends State<ProductForm>
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -730,25 +1117,34 @@ class _ProductFormState extends State<ProductForm>
   }
 
   Widget _buildSubmitButton(ColorScheme colorScheme) {
-    return Obx(
-      () => Container(
+    return Obx(() {
+      final loading = unifiedProductController.isLoading.value;
+      final colors =
+          loading
+              ? [
+                colorScheme.primary.withOpacity(0.5),
+                colorScheme.primary.withOpacity(0.3),
+              ]
+              : [colorScheme.primary, colorScheme.primary.withOpacity(0.8)];
+
+      return Container(
         width: double.infinity,
         height: 56,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
-          ),
+          gradient: LinearGradient(colors: colors),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.3),
+              color: colorScheme.primary.withOpacity(loading ? 0.1 : 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
           ],
         ),
         child: ElevatedButton(
-          onPressed: isSubmitting.value ? null : _submitForm,
+          onPressed:
+              unifiedProductController.isLoading.value ? null : _submitForm,
+
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
@@ -757,7 +1153,7 @@ class _ProductFormState extends State<ProductForm>
             ),
           ),
           child:
-              isSubmitting.value
+              loading
                   ? const SizedBox(
                     height: 24,
                     width: 24,
@@ -789,8 +1185,8 @@ class _ProductFormState extends State<ProductForm>
                     ],
                   ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   @override
