@@ -9,6 +9,7 @@ String googleLogoPath = '$imagePath/google_logo.png';
 String appleLogoPath = '$imagePath/apple_logo.png';
 String facebookLogoPath = '$imagePath/facebook_logo.png';
 // String defaultProfileImagePath = '$imagePath/guest.png';
+String earlyBlightImage = '$imagePath/tomato_early_blight.png';
 
 String loginBackgroundPath = 'lib/core/assets/images/login_background.jpg';
 
@@ -43,5 +44,7 @@ const List<String> guestAllowedEndpoints = [
   '/api/KrishilinkAuth/registerUser',
   '/api/KrishilinkAuth/passwordLogin',
   '/api/KrishilinkAuth/verifyotp',
+  '/api/Weather/getWeatherDetails',
+  '/api/Notification/GetNotifications',
   // Add more if needed, but only those that exist in ApiConstants
 ];

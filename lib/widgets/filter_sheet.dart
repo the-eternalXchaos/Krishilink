@@ -413,7 +413,7 @@ Future<void> _showNearbyProducts(BuildContext context) async {
       return;
     }
     Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+       desiredAccuracy: LocationAccuracy.high,
     );
     await Get.find<ProductController>().fetchNearbyProducts(
       position.latitude,

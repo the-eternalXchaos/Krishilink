@@ -191,7 +191,7 @@ class _AppBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: SpacingConstants.largePadding,
             offset: const Offset(0, 2),
           ),
@@ -257,7 +257,7 @@ class _AppBar extends StatelessWidget {
                             'Chatting with $userName',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -371,13 +371,13 @@ class _EmptyState extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: SpacingConstants.extraLargePadding,
                   offset: const Offset(0, 10),
                 ),
               ],
             ),
-            child: LottieWidget(
+            child: LottieWidget(    
               path: LottieAssets.aiLogo,
               height: SpacingConstants.lottieSizeLarge,
             ),
@@ -492,7 +492,7 @@ class _TypingIndicator extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: SpacingConstants.mediumRadius,
                   offset: const Offset(0, 2),
                 ),
@@ -619,7 +619,7 @@ class _MessageBubble extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: SpacingConstants.mediumRadius,
                       offset: const Offset(0, 2),
                     ),
@@ -637,7 +637,7 @@ class _MessageBubble extends StatelessWidget {
                           userName,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
                           ),
                         ),
@@ -666,7 +666,7 @@ class _MessageBubble extends StatelessWidget {
                             fontSize: 11,
                             color:
                                 isUser
-                                    ? Colors.white.withOpacity(0.7)
+                                    ? Colors.white.withValues(alpha: 0.7)
                                     : (isDarkMode
                                         ? Colors.grey[400]
                                         : Colors.grey[500]),
@@ -748,7 +748,7 @@ class _InputArea extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: SpacingConstants.largePadding,
             offset: const Offset(0, -4),
           ),
@@ -806,7 +806,7 @@ class _ImagePickerButton extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: SpacingConstants.mediumRadius,
             offset: const Offset(0, 2),
           ),
@@ -902,7 +902,7 @@ class _SendButton extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: SpacingConstants.mediumRadius,
                 offset: const Offset(0, 2),
               ),
@@ -939,14 +939,14 @@ class _SendButton extends StatelessWidget {
               hasText
                   ? [
                     BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
+                      color: Colors.green.withValues(alpha: 0.3),
                       blurRadius: SpacingConstants.largePadding,
                       offset: const Offset(0, 2),
                     ),
                   ]
                   : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: SpacingConstants.mediumRadius,
                       offset: const Offset(0, 2),
                     ),

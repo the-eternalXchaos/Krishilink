@@ -198,14 +198,18 @@ class UnifiedProductApiServices extends ApiService {
       );
       final opts = await _getOptions(isFormData: true);
 
-      if (product.productName.isEmpty)
+      if (product.productName.isEmpty) {
         throw Exception('Product name is required');
-      if (product.rate <= 0)
+      }
+      if (product.rate <= 0) {
         throw Exception('Product rate must be greater than 0');
-      if (product.availableQuantity <= 0)
+      }
+      if (product.availableQuantity <= 0) {
         throw Exception('Available quantity must be greater than 0');
-      if (product.category.isEmpty)
+      }
+      if (product.category.isEmpty) {
         throw Exception('Product category is required');
+      }
 
       final formData = dio.FormData.fromMap({
         'ProductName': product.productName.trim(),
@@ -230,8 +234,9 @@ class UnifiedProductApiServices extends ApiService {
       debugPrint(
         '🔄 [UnifiedProductApiServices] Form data prepared: ${formData.fields}',
       );
-      if (imageFile != null)
+      if (imageFile != null) {
         debugPrint('🔄 [UnifiedProductApiServices] Image: ${imageFile.path}');
+      }
 
       final response = await dio.Dio().put(
         '${ApiConstants.updateProductEndpoint}/$productId',

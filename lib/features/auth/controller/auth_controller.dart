@@ -119,13 +119,13 @@ class AuthController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('role', user.role);
-    await prefs.setString('uid', user.uid ?? '');
+    await prefs.setString('uid', user.id);
     await prefs.setString('fullName', user.fullName);
     await prefs.setString('email', user.email ?? 'krishilink@gmail.com');
     await prefs.setString('phoneNumber', user.phoneNumber ?? '9800000000');
     await prefs.setString('address', user.address ?? '');
     await prefs.setString('profileImageUrl', user.profileImageUrl ?? '');
-    await prefs.setString('deviceId', user.deviceId);
+    await prefs.setString('deviceId', user.deviceId.toString());
 
     currentUser.value = user;
 
@@ -161,7 +161,7 @@ class AuthController extends GetxController {
 
       final prefs = await SharedPreferences.getInstance();
       currentUser.value = UserModel(
-        uid: prefs.getString('uid') ?? '',
+        id: prefs.getString('uid') ?? '',
         fullName: prefs.getString('fullName') ?? '',
         email: prefs.getString('email'),
         phoneNumber: prefs.getString('phoneNumber') ?? '9800000000',
@@ -205,14 +205,15 @@ class AuthController extends GetxController {
     );
 
     currentUser.value = UserModel(
-      uid: 'admin1',
+      id: 'admin1',
       fullName: 'Admin User dfsdfsdfsddddddddddddfsf',
       email: 'admin@krishilink.com',
       phoneNumber: '9811111111',
       role: 'farmer',
       address: 'Sainik',
       profileImageUrl: '',
-      token: 'mock_admin_token',
+      token:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImIwM2RlZmQwLTAyMmItNDI5MC04YTZjLWZkNjM2MTMzNGEzZSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJTYW5kZWVwIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoiV0FHTEVTQU5ERUVQOEBHTUFJTC5DT00iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJhZG1pbiIsImV4cCI6MTc1NjQ2MTg2NywiaXNzIjoiU1JCIiwiYXVkIjoiS3Jpc2hpbGlua0FQSSJ9.72g9f7KJPmc8zEpuLcq5ngmYybsPNtNqA4vBXNUoNEo',
       deviceId: 'SUPER_ADMIN',
     );
 
@@ -300,7 +301,7 @@ class AuthController extends GetxController {
         }
 
         final user = UserModel(
-          uid: data['id'] ?? '',
+          id: data['id'] ?? '',
           fullName: data['fullName'] ?? '',
           email: data['email'] ?? '',
           phoneNumber: data['phoneNumber'] ?? '',

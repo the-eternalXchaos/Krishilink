@@ -1,7 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/product/examples/unified_product_controller.dart';
+import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/features/admin/controllers/component_animation_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
@@ -10,7 +10,7 @@ import 'package:lottie/lottie.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:krishi_link/core/constants/constants.dart';
 import 'package:krishi_link/features/admin/controllers/admin_category_controller.dart';
-import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';        
+import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_user_controller.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
@@ -47,9 +47,47 @@ class AdminHomePage extends StatelessWidget {
 
     // Trigger initial animations for visible components
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Get.find<ComponentAnimationController>(tag: 'header').animate();
-      Get.find<ComponentAnimationController>(tag: 'sales_chart').animate();
-      Get.find<ComponentAnimationController>(tag: 'quick_stats').animate();
+      if (Get.isRegistered<ComponentAnimationController>(tag: 'header')) {
+        Get.find<ComponentAnimationController>(tag: 'header').animate();
+      } else {
+        Get.put(ComponentAnimationController(), tag: 'header');
+      }
+      if (Get.isRegistered<ComponentAnimationController>(tag: 'sales_chart')) {
+        Get.find<ComponentAnimationController>(tag: 'sales_chart').animate();
+      } else {
+        Get.put(ComponentAnimationController(), tag: 'sales_chart');
+      }
+      if (Get.isRegistered<ComponentAnimationController>(tag: 'quick_stats')) {
+        Get.find<ComponentAnimationController>(tag: 'quick_stats').animate();
+      } else {
+        Get.put(ComponentAnimationController(), tag: 'quick_stats');
+      }
+      if (Get.isRegistered<ComponentAnimationController>(
+        tag: 'dashboard_metrics',
+      )) {
+        Get.find<ComponentAnimationController>(
+          tag: 'dashboard_metrics',
+        ).animate();
+      } else {
+        Get.put(ComponentAnimationController(), tag: 'dashboard_metrics');
+      }
+      if (Get.isRegistered<ComponentAnimationController>(
+        tag: 'quick_actions',
+      )) {
+        Get.find<ComponentAnimationController>(tag: 'quick_actions').animate();
+      } else {
+        Get.put(ComponentAnimationController(), tag: 'quick_actions');
+      }
+      if (Get.isRegistered<ComponentAnimationController>(
+        tag: 'recent_activities',
+      )) {
+        Get.find<ComponentAnimationController>(
+          tag: 'recent_activities',
+        ).animate();
+      } else {
+        Get.put(ComponentAnimationController(), tag: 'recent_activities');
+      }
+
       // Other components animate via VisibilityDetector on scroll
     });
 
@@ -99,9 +137,13 @@ class AdminHomePage extends StatelessWidget {
                     case 3:
                       Get.toNamed('/admin/orders');
                       break;
+                    // user menu plus
+                    // add  for the message box  , like chat box
+
                     case 4:
                       _showMenuBottomSheet(context);
                       break;
+                    // user menu plus
                   }
                 },
               ),
@@ -157,7 +199,10 @@ class AdminHomePage extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(tag: 'header');
+      final controller =
+          Get.isRegistered()
+              ? Get.find<ComponentAnimationController>(tag: 'header')
+              : Get.put(ComponentAnimationController(), tag: 'header');
       return VisibilityDetector(
         key: const Key('header'),
         onVisibilityChanged: (info) {
@@ -225,9 +270,10 @@ class AdminHomePage extends StatelessWidget {
     //     .map((e) => _SalesData('Day ${e.key + 1}', e.value.totalPrice))
     //     .toList();
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(
-        tag: 'sales_chart',
-      );
+      final controller =
+          Get.isRegistered()
+              ? Get.find<ComponentAnimationController>(tag: 'sales_chart')
+              : Get.put(ComponentAnimationController(), tag: 'sales_chart');
       return VisibilityDetector(
         key: const Key('sales-chart'),
         onVisibilityChanged: (info) {
@@ -300,9 +346,10 @@ class AdminHomePage extends StatelessWidget {
     AdminOrderController orderController,
   ) {
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(
-        tag: 'quick_stats',
-      );
+      final controller =
+          Get.isRegistered()
+              ? Get.find<ComponentAnimationController>(tag: 'quick_stats')
+              : Get.put(ComponentAnimationController(), tag: 'quick_stats');
       return VisibilityDetector(
         key: const Key('quick-stats'),
         onVisibilityChanged: (info) {
@@ -342,14 +389,15 @@ class AdminHomePage extends StatelessWidget {
                   _buildStatCard(
                     context,
                     'active_farmers'.tr,
-                    userController.activeFarmers.toString(),
+                    // userController.activeFarmers.toString(), //TODO do actual signalr for determining active farmer
+                    '0',
                     Icons.agriculture,
                     Theme.of(context).colorScheme.primary.withAlpha(140),
                   ),
                   _buildStatCard(
                     context,
                     'total_products'.tr,
-                    productController.totalProducts.toString(),
+                    productController.getProductStats()['total'].toString(),
                     Icons.grass,
                     Theme.of(context).colorScheme.primary.withAlpha(140),
                   ),
@@ -373,7 +421,7 @@ class AdminHomePage extends StatelessWidget {
       final controller =
           Get.isRegistered<ComponentAnimationController>()
               ? Get.find<ComponentAnimationController>(tag: 'dashboard_metrics')
-              : Get.put(ComponentAnimationController());
+              : Get.put(ComponentAnimationController( ));
       return VisibilityDetector(
         key: const Key('dashboard-metrics'),
         onVisibilityChanged: (info) {
@@ -406,7 +454,7 @@ class AdminHomePage extends StatelessWidget {
                   _buildMetricCard(
                     context,
                     'products'.tr,
-                    productController.totalProducts.toString(),
+                    productController.getProductStats()['total'].toString(),
                     Icons.grass,
                     Theme.of(context).colorScheme.secondary,
                   ),
@@ -442,9 +490,10 @@ class AdminHomePage extends StatelessWidget {
 
   Widget _buildQuickActions(BuildContext context) {
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(
-        tag: 'quick_actions',
-      );
+      final controller =
+          Get.isRegistered<ComponentAnimationController>(tag: 'quick_actions')
+              ? Get.find<ComponentAnimationController>(tag: 'quick_actions')
+              : Get.put(ComponentAnimationController(), tag: 'quick_actions');
       return VisibilityDetector(
         key: const Key('quick-actions'),
         onVisibilityChanged: (info) {
@@ -543,9 +592,13 @@ class AdminHomePage extends StatelessWidget {
     ];
 
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(
-        tag: 'recent_activities',
-      );
+      final controller =
+          Get.isRegistered()
+              ? Get.find<ComponentAnimationController>(tag: 'recent_activities')
+              : Get.put(
+                ComponentAnimationController(),
+                tag: 'recent_activities',
+              );
       return VisibilityDetector(
         key: const Key('recent-activities'),
         onVisibilityChanged: (info) {
@@ -629,9 +682,10 @@ class AdminHomePage extends StatelessWidget {
 
   Widget _buildProfileCard(BuildContext context) {
     return Obx(() {
-      final controller = Get.find<ComponentAnimationController>(
+      final controller = 
+       Get.isRegistered() ?Get.find<ComponentAnimationController>(
         tag: 'profile_card',
-      );
+      ) :Get.put(ComponentAnimationController(),  tag: 'profile_card',);
       return VisibilityDetector(
         key: const Key('profile-card'),
         onVisibilityChanged: (info) {

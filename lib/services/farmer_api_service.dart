@@ -9,7 +9,7 @@ import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/farmer/models/crop_model.dart';
 import 'package:krishi_link/features/farmer/models/tutorial_model.dart';
-import 'package:krishi_link/features/farmer/models/weather_model.dart';
+import 'package:krishi_link/features/weather/weather_model.dart';
 import 'package:path/path.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
 
@@ -55,34 +55,7 @@ class FarmerApiServices {
     );
   }
 
-  Future<Weather> fetchWeather(String location) async {
-    try {
-      final response = await _dio.get(
-        ApiConstants.getWeatherEndpoint,
-        queryParameters: {
-          'q': location,
-          'appid': ApiConstants.weatherApiKey,
-          'units': 'metric', // For Celsius
-        },
-      );
-      if (response.statusCode == 200) {
-        return Weather.fromJson(response.data);
-      }
-      throw Exception('Failed to fetch weather: ${response.statusCode}');
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching weather: $e');
-      }
-      if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
-        throw Exception(
-          'Failed to fetch weather: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
-        );
-      }
-      rethrow;
-    }
-  }
-
+ 
   // Future<Product> addProduct({
   //   required String productName,
   //   required File image,
@@ -335,9 +308,9 @@ class FarmerApiServices {
       }
       throw Exception('Failed to fetch tutorials: ${response.statusCode}');
     } catch (e) {
-      print('Error fetching tutorials: $e');
+      debugPrint('Error fetching tutorials: $e');
       if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         throw Exception(
           'Failed to fetch tutorials: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
         );
@@ -362,9 +335,9 @@ class FarmerApiServices {
       }
       throw Exception('Failed to fetch crops: ${response.statusCode}');
     } catch (e) {
-      print('Error fetching crops: $e');
+      debugPrint('Error fetching crops: $e');
       if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         throw Exception(
           'Failed to fetch crops: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
         );
@@ -422,9 +395,9 @@ class FarmerApiServices {
       }
       throw Exception('Failed to add crop: ${response.statusCode}');
     } catch (e) {
-      print('Error adding crop: $e');
+      debugPrint('Error adding crop: $e');
       if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         throw Exception(
           'Failed to add crop: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
         );
@@ -461,9 +434,9 @@ class FarmerApiServices {
       }
       throw Exception('Failed to update crop: ${response.statusCode}');
     } catch (e) {
-      print('Error updating crop: $e');
+      debugPrint('Error updating crop: $e');
       if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         throw Exception(
           'Failed to update crop: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
         );
@@ -483,9 +456,9 @@ class FarmerApiServices {
         throw Exception('Failed to delete crop: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error deleting crop: $e');
+      debugPrint('Error deleting crop: $e');
       if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         throw Exception(
           'Failed to delete crop: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
         );
@@ -510,63 +483,11 @@ class FarmerApiServices {
       }
       throw Exception('Failed to fetch orders: ${response.statusCode}');
     } catch (e) {
-      print('Error fetching orders: $e');
+      debugPrint('Error fetching orders: $e');
       if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
+        debugPrint('Dio error details: ${e.response?.data}');
         throw Exception(
           'Failed to fetch orders: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
-        );
-      }
-      rethrow;
-    }
-  }
-
-  //TODO notification working stuffs
-  Future<List<NotificationModel>> fetchNotifications() async {
-    try {
-      final opts = await _jsonOptions();
-      final response = await _dio.get(
-        ApiConstants.getNotificationsEndpoint,
-        options: opts,
-      );
-      if (response.statusCode == 200) {
-        final data = response.data['data'] ?? response.data;
-        if (data is List) {
-          return data.map((e) => NotificationModel.fromJson(e)).toList();
-        }
-        return [];
-      }
-      throw Exception('Failed to fetch notifications: ${response.statusCode}');
-    } catch (e) {
-      print('Error fetching notifications: $e');
-      if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
-        throw Exception(
-          'Failed to fetch notifications: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
-        );
-      }
-      rethrow;
-    }
-  }
-
-  Future<void> markNotificationAsRead(String notificationId) async {
-    try {
-      final opts = await _jsonOptions();
-      final response = await _dio.put(
-        '${ApiConstants.markNotificationAsReadEndpoint}/$notificationId',
-        options: opts,
-      );
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to mark notification as read: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      print('Error marking notification as read: $e');
-      if (e is DioException) {
-        print('Dio error details: ${e.response?.data}');
-        throw Exception(
-          'Failed to mark notification as read: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
         );
       }
       rethrow;

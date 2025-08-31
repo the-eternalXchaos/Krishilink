@@ -98,7 +98,7 @@ class OtpVerificationScreenState extends State<OtpVerificationScreen> {
         await authController.verifyOtp(widget.identifier, currentOtp.value);
         debugPrint('[OTP] Verification successful');
         // TODO: Navigate to next screen
-      } on AppException catch (e) {
+      } on AppException {
         PopupService.error('OTP verification failed');
       } catch (e) {
         PopupService.error('OTP verification failed');

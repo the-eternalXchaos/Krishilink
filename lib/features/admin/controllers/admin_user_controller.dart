@@ -1,65 +1,4 @@
-// import 'package:get/get.dart';
-// import 'package:krishi_link/features/admin/models/user_model.dart';
-
-// class AdminUserController extends GetxController {
-//   final RxList<UserModel> users = <UserModel>[].obs;
-//   final RxInt totalUsers = 0.obs;
-//   final RxInt newUsersToday = 0.obs;
-//   final RxInt activeFarmers = 0.obs;
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     fetchUsers();
-//   }
-
-//   void fetchUsers() {
-//     // Mock data
-//     final mockUsers = [
-//       UserModel(
-//         uid: '1',
-//         fullName: 'Ram Bahadur',
-//         email: 'ram@krishilink.com',
-//         phoneNumber: '9801234567',
-//         role: 'farmer',
-//         createdAt: DateTime.now().subtract(const Duration(days: 30)),
-//       ),
-//       UserModel(
-//         uid: '2',
-//         fullName: 'Sita Kumari',
-//         email: 'sita@krishilink.com',
-//         phoneNumber: '9812345678',
-//         role: 'buyer',
-//         createdAt: DateTime.now().subtract(const Duration(days: 1)),
-//       ),
-//       UserModel(
-//         uid: '3',
-//         fullName: 'Hari Prasad',
-//         email: 'hari@krishilink.com',
-//         phoneNumber: '9823456789',
-//         role: 'farmer',
-//         createdAt: DateTime.now(),
-//       ),
-//     ];
-//     users.assignAll(mockUsers);
-//     totalUsers.value = mockUsers.length;
-//     newUsersToday.value =
-//         mockUsers
-//             .where(
-//               (user) =>
-//                   user.createdAt?.day == DateTime.now().day &&
-//                   user.createdAt?.month == DateTime.now().month &&
-//                   user.createdAt?.year == DateTime.now().year,
-//             )
-//             .length;
-//     activeFarmers.value =
-//         mockUsers.where((user) => user.role == 'farmer').length;
-//   }
-// }
-
-// lib/features/admin/controller/admin_user_controller.dart
 import 'dart:convert';
-import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/core/lottie/popup.dart';
@@ -70,25 +9,20 @@ import 'package:krishi_link/services/token_service.dart';
 
 class AdminUserController extends GetxController {
   final users = <UserModel>[].obs;
+  final filteredUsers = <UserModel>[].obs;
   final isLoading = false.obs;
   final totalUsers = 0.obs;
-  final activeFarmers = 0.obs;
+  final activeUsers = 0.obs; // Changed from activeFarmers
   final newUsersToday = 0.obs;
-
-  final dio.Dio _dio = dio.Dio(
-    dio.BaseOptions(
-      baseUrl: ApiConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-    ),
-  );
+  final RxString searchQuery = ''.obs;
+  final RxString selectedStatusFilter = 'All'.obs; // Changed to filter by isActive/isBlocked
 
   @override
   void onInit() {
     super.onInit();
-
-    Future.delayed(const Duration(milliseconds: 50), () => fetchUsers());
-    // fetchUsers();
+    fetchUsers();
+    ever(searchQuery, (_) => _applyFilters());
+    ever(selectedStatusFilter, (_) => _applyFilters());
   }
 
   Future<void> fetchUsers() async {
@@ -104,6 +38,7 @@ class AdminUserController extends GetxController {
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
+          'Accept': '*/*',
         },
       );
 
@@ -112,17 +47,12 @@ class AdminUserController extends GetxController {
         final List<dynamic> data = body['data'] ?? [];
         users.assignAll(data.map((json) => UserModel.fromJson(json)).toList());
         totalUsers.value = users.length;
-        activeFarmers.value =
-            users
-                .where((u) => u.role.toLowerCase() == 'farmer' && u.isActive)
-                .length;
-        newUsersToday.value =
-            users.where((u) {
-              return u.createdAt != null &&
-                  u.createdAt!.isAfter(
-                    DateTime.now().subtract(const Duration(days: 1)),
-                  );
-            }).length;
+        activeUsers.value = users.where((u) => u.isActive).length;
+        newUsersToday.value = users.where((u) {
+          return u.createdAt != null &&
+              u.createdAt!.isAfter(DateTime.now().subtract(const Duration(days: 1)));
+        }).length;
+        _applyFilters();
       } else {
         throw Exception('Failed to fetch users: ${response.statusCode}');
       }
@@ -133,35 +63,12 @@ class AdminUserController extends GetxController {
     }
   }
 
-  Future<Map<String, dynamic>> fetchFarmerDetails(String phone) async {
-    try {
-      final token = await TokenService.getAccessToken();
-      if (token == null) throw Exception('No authentication token');
-      final response = await _dio.get(
-        '${ApiConstants.getUserDetailsByPhoneNumber}/$phone',
-        options: dio.Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-
-      if (response.statusCode == 200) {
-        return {
-          'farmerId': response.data['farmerId']?.toString() ?? '',
-          'farmerName': response.data['fullName']?.toString() ?? '',
-        };
-      } else {
-        return {};
-      }
-    } catch (e) {
-      PopupService.error('Failed to fetch farmer: $e');
-      return {};
-    }
-  }
-
-  Future<void> toggleUserStatus(String uid) async {
+  Future<void> toggleUserStatus(String id) async {
     try {
       isLoading(true);
-      final user = users.firstWhere((u) => u.uid == uid);
+      final user = users.firstWhere((u) => u.id == id);
       final response = await http.put(
-        Uri.parse('${ApiConstants.updateProfileEndpoint}?uid=$uid'),
+        Uri.parse('${ApiConstants.updateProfileEndpoint}?id=$id'),
         headers: {
           'Authorization': 'Bearer ${await TokenService.getAccessToken()}',
           'Content-Type': 'application/json',
@@ -171,9 +78,8 @@ class AdminUserController extends GetxController {
 
       if (response.statusCode == 200) {
         users[users.indexOf(user)] = user.copyWith(isActive: !user.isActive);
-        PopupService.info(
-          'User ${user.isActive ? 'deactivated' : 'activated'}',
-        );
+        _applyFilters();
+        PopupService.info('User ${user.isActive ? 'deactivated' : 'activated'}');
       } else {
         throw Exception('Failed to update user status');
       }
@@ -188,20 +94,20 @@ class AdminUserController extends GetxController {
     }
   }
 
-  Future<void> deleteUser(String uid) async {
+  Future<void> deleteUser(String id) async {
     try {
       isLoading(true);
-      // Hypothetical endpoint; replace with actual if available
       final response = await http.delete(
-        Uri.parse('${ApiConstants.deleteUserEndpoint}/$uid'),
+        Uri.parse('${ApiConstants.deleteUserEndpoint}/$id'),
         headers: {
           'Authorization': 'Bearer ${await TokenService.getAccessToken()}',
         },
       );
 
       if (response.statusCode == 200) {
-        users.removeWhere((u) => u.uid == uid);
+        users.removeWhere((u) => u.id == id);
         totalUsers.value = users.length;
+        _applyFilters();
         PopupService.showSnackbar(
           type: PopupType.success,
           title: 'Success',
@@ -219,5 +125,35 @@ class AdminUserController extends GetxController {
     } finally {
       isLoading(false);
     }
+  }
+
+  void updateSearchQuery(String query) {
+    searchQuery.value = query;
+  }
+
+  void filterUsersByStatus(String? status) {
+    selectedStatusFilter.value = status ?? 'All';
+  }
+
+  void _applyFilters() {
+    var result = users.toList();
+    if (searchQuery.value.isNotEmpty) {
+      final lowerQuery = searchQuery.value.toLowerCase();
+      result = result.where((user) {
+        return user.fullName.toLowerCase().contains(lowerQuery) ||
+            (user.email?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (user.phoneNumber?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (user.address?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (user.city?.toLowerCase().contains(lowerQuery) ?? false);
+      }).toList();
+    }
+    if (selectedStatusFilter.value != 'All') {
+      if (selectedStatusFilter.value == 'Active') {
+        result = result.where((user) => user.isActive).toList();
+      } else if (selectedStatusFilter.value == 'Blocked') {
+        result = result.where((user) => user.isBlocked).toList();
+      }
+    }
+    filteredUsers.assignAll(result);
   }
 }

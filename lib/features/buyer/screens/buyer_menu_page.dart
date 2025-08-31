@@ -216,7 +216,7 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
                 Text(
                   role.tr,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withAlpha(150),
+                      color: colorScheme.onSurface.withValues(alpha: 0.15),
                   ),
                 ),
               ],
@@ -275,13 +275,13 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
             vertical: 8,
           ),
           tileColor: colorScheme.surface,
-          splashColor: colorScheme.primary.withOpacity(0.15),
+          splashColor: colorScheme.primary.withValues(alpha: 0.15),
           trailing: Icon(
             Icons.chevron_right,
             color:
                 isLogout
                     ? colorScheme.error
-                    : colorScheme.onSurface.withOpacity(0.5),
+                    : colorScheme.onSurface.withValues(alpha: 0.5),
             size: 20,
           ),
         ),

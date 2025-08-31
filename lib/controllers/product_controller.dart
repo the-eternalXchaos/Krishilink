@@ -433,7 +433,7 @@ class ProductController extends GetxController {
 
       guestOptions();
 
-      reviewsModel.assignAll(fetchedReviews);
+      reviewsModel.assignAll(fetchedReviews as Iterable<ReviewModel>);
     } catch (e) {
       debugPrint('Failed to load reviews');
       PopupService.error('failed_to_load_reviews'.tr);

@@ -7,6 +7,7 @@ import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
 import 'package:krishi_link/widgets/language_switcher.dart';
+import 'package:krishi_link/widgets/notification/notification_controller.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isGuest;
@@ -19,10 +20,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
-    final farmerController =
-        Get.isRegistered<FarmerController>()
-            ? Get.find<FarmerController>()
-            : Get.put(FarmerController());
+    final notificationController =
+        Get.isRegistered<NotificationController>()
+            ? Get.find<NotificationController>()
+            : Get.put(NotificationController());
 
     final theme = Theme.of(context);
 
@@ -85,10 +86,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                             color: theme.colorScheme.primary,
                           ),
                           onPressed: () {
-                            Get.toNamed('/notifications'); // Stubbed screen
+                            Get.toNamed('/notifications');
                           },
                         ),
-                        if (farmerController.unreadNotificationCount > 0)
+                        if (notificationController.unreadNotificationCount > 0)
                           Positioned(
                             right: 8,
                             top: 8,
@@ -99,7 +100,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
-                                '${farmerController.unreadNotificationCount}',
+                                '${notificationController.unreadNotificationCount}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,

@@ -119,7 +119,7 @@ class RegisterController extends GetxController {
           }
         }
         errorMessage.value = errorMsg;
-        debugPrint('Registration error: ' + errorMsg);
+        debugPrint('Registration error: $errorMsg');
         PopupService.error(errorMessage.value);
       }
     } catch (e) {

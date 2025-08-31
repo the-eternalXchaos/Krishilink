@@ -102,6 +102,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
+import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/farmer/models/tutorial_model.dart';
 
 class TutorialsScreen extends StatelessWidget {
@@ -118,7 +119,8 @@ class TutorialsScreen extends StatelessWidget {
       content:
           '1. Use resistant varieties.\n2. Apply fungicides early.\n3. Remove infected leaves.\n4. Ensure proper spacing.',
       createdAt: DateTime.now().subtract(const Duration(days: 10)),
-      imageUrl: 'https://example.com/blight.jpg',
+      imageUrl: earlyBlightImage,
+      
     ),
     TutorialModel(
       id: '2',

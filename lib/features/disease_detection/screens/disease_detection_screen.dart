@@ -12,10 +12,10 @@ class DiseaseDetectionScreen extends StatefulWidget {
   const DiseaseDetectionScreen({super.key});
 
   @override
-  _DiseaseDetectionScreenState createState() => _DiseaseDetectionScreenState();
+  DiseaseDetectionScreenState createState() => DiseaseDetectionScreenState();
 }
 
-class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
+class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
     with SingleTickerProviderStateMixin {
   final DiseaseController controller = Get.put(DiseaseController());
   final RxString imagePath = ''.obs;
@@ -148,7 +148,7 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -242,7 +242,7 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 6,
-                            shadowColor: Colors.black.withOpacity(0.2),
+                            shadowColor: Colors.black.withValues(alpha: 0.2),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child:
@@ -406,7 +406,7 @@ class _DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           elevation: 5,
-          shadowColor: Colors.black.withOpacity(0.2),
+                shadowColor: Colors.black.withValues(alpha: 0.2),
         ),
         onPressed: onPressed,
       ),

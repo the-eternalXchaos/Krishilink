@@ -69,7 +69,8 @@
 //               if (product == null) {
 //                 await controller.addProductFromForm(formData, imagePath);
 //               } else {
-//                 await controller.updateProductFromForm(
+//                 
+// tFromForm(
 //                   product.id,
 //                   formData,
 //                   imagePath,

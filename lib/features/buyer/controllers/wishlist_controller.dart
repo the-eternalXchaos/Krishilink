@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:krishi_link/core/lottie/popup.dart';
@@ -34,7 +35,7 @@ class WishlistController extends GetxController {
         );
       }
     } catch (e) {
-      print('Error loading wishlist: $e');
+      debugPrint('Error loading wishlist: $e');
     }
   }
 
@@ -44,7 +45,7 @@ class WishlistController extends GetxController {
       final jsonList = _wishlistItems.map((item) => item.toJson()).toList();
       _storage.write('wishlist_items', jsonEncode(jsonList));
     } catch (e) {
-      print('Error saving wishlist: $e');
+      debugPrint('Error saving wishlist: $e');
     }
   }
 

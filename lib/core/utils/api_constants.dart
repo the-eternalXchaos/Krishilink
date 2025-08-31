@@ -1,5 +1,7 @@
 class ApiConstants {
-  static const String baseUrl = 'https://krishilink.shamir.com.np';
+  // static const String baseUrl = 'https://krishilink.shamir.com.np';
+  static const String baseUrl =
+      'https://w1vqqn7ucvzpndp9xsvdkd15gzcedswvilahs3agd6b3dljo7tg24pbklk4u.shamir.com.np';
   //   static const String baseUrl = 'http://192.168.23.5';
 
   // -------------------- AUTH --------------------
@@ -81,18 +83,23 @@ class ApiConstants {
   static const String deleteUserEndpoint =
       '$baseUrl/api/User/Delete'; // + /{uid}
 
+  // chat
+  static const String getChatHistoryEndpoint =
+      '$baseUrl/api/Chat/getChatHistory'; // + /{user2Id}
+  static const String sendMessageEndpoint =
+      '$baseUrl/api/Chat/sendMessage'; // + /{user2Id}
+
   // -------------------- MISC --------------------
   static const String getUserDetailsByPhoneNumber =
       '$baseUrl/api/User/GetUserDetailsByPhoneNumber/';
   static const String getUserDetailsByEmail =
       '$baseUrl/api/User/GetUserDetailsByEmail/';
   // -------------------- MISC --------------------
-  static const String weatherApiBaseUrl =
-      'https://api.openweathermap.org/data/2.5';
-  static const String weatherApiEndpoint =
-      '$baseUrl/weather/getWeatherDetails'; // + /{latitude}/{longitude}
-  static const String weatherApiKey =
-      'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your API key
+
+  // weatherEndpoints
+  static const String getWeatherEndpoint =
+      '$baseUrl/api/Weather/getWeatherDetails'; // + /{latitude}/{longitude}
+
   // --------------------------------------Cart -----------------------------------------
 
   static String getCartEndpoint = '$baseUrl/api/Product/getCartItems';
@@ -107,9 +114,6 @@ class ApiConstants {
 
   static var updateProductStatusEndpoint =
       '$baseUrl/api/Product/updateProductStatus'; // + /{productId}
-
-  static String getWeatherEndpoint =
-      '$weatherApiEndpoint?appid=$weatherApiKey&units=metric';
 
   static String getCropsEndpoint = '$baseUrl/api/Product/getCrops';
 
@@ -126,10 +130,10 @@ class ApiConstants {
   static String getOrdersEndpoint = '$baseUrl/api/Product/getOrders';
 
   static String getNotificationsEndpoint =
-      '$baseUrl/api/Product/getNotifications';
+      '$baseUrl/api/Notification/GetNotifications';
 
   static var markNotificationAsReadEndpoint =
-      '$baseUrl/api/Product/markNotificationAsRead'; // + /{notificationId}
+      '$baseUrl/api/Notification/markNotificationAsRead'; // + /{notificationId}
 
   // You can add more endpoints here if the Swagger spec updates
 }

@@ -18,7 +18,7 @@ class AdminSettingsController extends GetxController {
       isLoading(true);
       // Mock; replace with API
       adminProfile.value = UserModel(
-        uid: 'admin1',
+        id: 'admin1',
         fullName: 'Admin User',
         email: 'admin@krishilink.com',
         role: 'admin',

@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
 
-class SettingsMenuItem extends StatelessWidget {
-  const SettingsMenuItem({super.key});
+// class SettingsMenuItem extends StatelessWidget {
+//   const SettingsMenuItem({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.settings),
-      title: Text('settings'.tr),
-      onTap: () => Get.toNamed('/settings'),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListTile(
+//       leading: const Icon(Icons.settings),
+//       title: Text('settings'.tr),
+//       onTap: () => Get.toNamed('/settings'),
+//     );
+//   }
+// }

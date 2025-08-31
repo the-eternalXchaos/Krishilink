@@ -57,7 +57,7 @@ class WishlistScreen extends StatelessWidget {
                   Text(
                     'add_products_to_wishlist'.tr,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -123,7 +123,7 @@ class WishlistScreen extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.image_not_supported,
-                            color: colorScheme.onSurface.withOpacity(0.5),
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
                             size: 30,
                           ),
                         ),
@@ -165,7 +165,7 @@ class WishlistScreen extends StatelessWidget {
                                 child: Text(
                                   item.location,
                                   style: textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -177,7 +177,7 @@ class WishlistScreen extends StatelessWidget {
                           Text(
                             'farmer'.trParams({'name': item.farmerName}),
                             style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.6),
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],

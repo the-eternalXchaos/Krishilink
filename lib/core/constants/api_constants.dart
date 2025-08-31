@@ -95,10 +95,11 @@ class ApiConstants {
   static const String getUserDetailsByPhoneNumber =
       '$baseUrl/api/User/GetUserDetailsByPhoneNumber/';
   // -------------------- MISC --------------------
-  static const String weatherApiBaseUrl =
-      'https://api.openweathermap.org/data/2.5';
-  static const String weatherApiEndpoint =
-      '$baseUrl/weather/getWeatherDetails'; // + /{latitude}/{longitude}
+  // static const String weatherApiBaseUrl =
+  //     'https://api.openweathermap.org/data/2.5';
+  static const String getWeatherApiEndpoint =
+      '$baseUrl/api/Weather/getWeatherDetails'; // + /{latitude}/{longitude}
+
   static const String weatherApiKey =
       'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your API key
   // --------------------------------------Cart -----------------------------------------
@@ -116,9 +117,6 @@ class ApiConstants {
   static var updateProductStatusEndpoint =
       '$baseUrl/api/Product/updateProductStatus'; // + /{productId}
 
-  static String getWeatherEndpoint =
-      '$weatherApiEndpoint?appid=$weatherApiKey&units=metric';
-
   static String getCropsEndpoint = '$baseUrl/api/Product/getCrops';
 
   static String getTutorialsEndpoint = '$baseUrl/api/Product/getTutorials';
@@ -133,11 +131,17 @@ class ApiConstants {
 
   static String getOrdersEndpoint = '$baseUrl/api/Product/getOrders';
 
-  static String getNotificationsEndpoint =
-      '$baseUrl/api/Product/getNotifications';
-
-  static var markNotificationAsReadEndpoint =
-      '$baseUrl/api/Product/markNotificationAsRead'; // + /{notificationId}
+  // -------------------- NOTIFICATION --------------------
+  static const String getNotificationsEndpoint =
+      '$baseUrl/api/Notification/GetNotifications';
+  static const String markNotificationAsReadEndpoint =
+      '$baseUrl/api/Notification/MarkAsRead'; // + /{notificationId}
+  static const String deleteNotificationEndpoint =
+      '$baseUrl/api/Notification/DeleteNotification'; // + /{notificationId}
+  static const String clearAllNotificationsEndpoint =
+      '$baseUrl/api/Notification/ClearAllNotifications';
+  static const String markAllAsReadEndpoint =
+      '$baseUrl/api/Notification/MarkAllAsRead';
 
   // You can add more endpoints here if the Swagger spec updates
 }

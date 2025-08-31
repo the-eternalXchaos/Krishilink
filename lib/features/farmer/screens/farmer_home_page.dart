@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_screen.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
@@ -9,9 +10,12 @@ import 'package:krishi_link/features/farmer/screens/add_crop_screen.dart';
 import 'package:krishi_link/features/farmer/screens/crop_detail_screen.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 import 'package:krishi_link/features/farmer/widgets/crop_card.dart';
-import 'package:krishi_link/features/farmer/widgets/weather_widget.dart';
+import 'package:krishi_link/features/weather/controller/weather_controller.dart';
+import 'package:krishi_link/features/weather/page/weather_details_page.dart';
+import 'package:krishi_link/features/weather/weather_widget.dart';
 import 'package:krishi_link/features/farmer/widgets/tips_banner.dart';
 import 'package:krishi_link/widgets/custom_app_bar.dart';
+import 'package:krishi_link/widgets/notification/notification_controller.dart';
 
 class FarmerHomePage extends StatefulWidget {
   const FarmerHomePage({super.key});
@@ -21,7 +25,14 @@ class FarmerHomePage extends StatefulWidget {
 }
 
 class FarmerHomePageState extends State<FarmerHomePage> {
+  final WeatherController _weatherController =
+      Get.isRegistered<WeatherController>()
+          ? Get.find<WeatherController>()
+          : Get.put(WeatherController());
   final FarmerController controller = Get.put(FarmerController());
+  final NotificationController _notificationController = Get.put(
+    NotificationController(),
+  );
   final AuthController authController = Get.find<AuthController>();
   int _currentIndex = 0;
   // late String location = authController.user.value.location;
@@ -30,17 +41,8 @@ class FarmerHomePageState extends State<FarmerHomePage> {
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, () {
-      // final location =
-      //     authController.currentUser.value?.address?.trimRight() ?? 'pokhara';
-      // if (location.isNotEmpty) {
-      //   controller.fetchWeather(location);
-      // } else {
-      //   debugPrint(' Location is empty');
-      // }
-      controller.fetchWeather(); // Default location, can be dynamic later
-
       controller.fetchCrops();
-      controller.fetchNotifications();
+      _notificationController.fetchNotifications();
     });
   }
 
@@ -52,26 +54,6 @@ class FarmerHomePageState extends State<FarmerHomePage> {
     return Scaffold(
       appBar: CustomAppBar(isGuest: authController.isLoggedIn),
 
-      // AppBar(
-      //   title: Text('app_name'.tr),
-      //   actions: [
-      //     IconButton(
-      //       icon: const Icon(Icons.language),
-      //       tooltip: 'language'.tr,
-      //       onPressed: () {
-      //         final currentLocale = Get.locale?.languageCode;
-      //         if (currentLocale == 'en') {
-      //           Get.updateLocale(const Locale('ne', 'NP'));
-      //         } else {
-      //           Get.updateLocale(const Locale('en', 'US'));
-      //         }
-      //       },
-      //     ),
-      //   ],
-      //   backgroundColor: theme.colorScheme.primary,
-      //   foregroundColor: theme.colorScheme.onPrimary,
-      //   elevation: 0,
-      // ),
       body: Obx(
         () =>
             controller.isLoading.value
@@ -133,7 +115,26 @@ class FarmerHomePageState extends State<FarmerHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FadeInDown(child: WeatherWidget()),
+          FadeInDown(
+            child: GestureDetector(
+              onTap: () {
+                if (_weatherController.weather.value != null) {
+                  Get.to(() => WeatherDetailsPage());
+                } else {
+                  PopupService.error('Weather data not loaded yet.');
+                }
+              },
+              child: Obx(() {
+                final weather = _weatherController.weather.value;
+                return weather != null
+                    ? WeatherWidget(weather: weather)
+                    : const SizedBox(
+                      height: 120,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+              }),
+            ),
+          ),
           const SizedBox(height: 16),
           FadeInUp(child: TipsBanner()),
           const SizedBox(height: 16),
@@ -163,14 +164,17 @@ class FarmerHomePageState extends State<FarmerHomePage> {
                                   delay: Duration(
                                     milliseconds: 100 * entry.key,
                                   ),
-                                  child: CropCard(
-                                    crop: entry.value,
-                                    onTap:
-                                        () => Get.to(
-                                          () => CropDetailScreen(
-                                            crop: entry.value,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: CropCard(
+                                      crop: entry.value,
+                                      onTap:
+                                          () => Get.to(
+                                            () => CropDetailScreen(
+                                              crop: entry.value,
+                                            ),
                                           ),
-                                        ),
+                                    ),
                                   ),
                                 ),
                               )
@@ -226,23 +230,27 @@ class FarmerHomePageState extends State<FarmerHomePage> {
                                   delay: Duration(
                                     milliseconds: 100 * entry.key,
                                   ),
-                                  child: CropCard(
-                                    crop: entry.value,
-                                    onTap:
-                                        () => Get.to(
-                                          () => CropDetailScreen(
-                                            crop: entry.value,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: CropCard(
+                                      crop: entry.value,
+                                      onTap:
+                                          () => Get.to(
+                                            () => CropDetailScreen(
+                                              crop: entry.value,
+                                            ),
                                           ),
-                                        ),
-                                    onEdit:
-                                        () => Get.to(
-                                          () =>
-                                              AddCropScreen(crop: entry.value),
-                                        ),
-                                    onDelete:
-                                        () => controller.deleteCrop(
-                                          entry.value.id,
-                                        ),
+                                      onEdit:
+                                          () => Get.to(
+                                            () => AddCropScreen(
+                                              crop: entry.value,
+                                            ),
+                                          ),
+                                      onDelete:
+                                          () => controller.deleteCrop(
+                                            entry.value.id,
+                                          ),
+                                    ),
                                   ),
                                 ),
                               )

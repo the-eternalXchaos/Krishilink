@@ -4,7 +4,7 @@ import 'package:krishi_link/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 
-import '../../../core/components/product/examples/unified_product_management.dart';
+import '../../../core/components/product/management/unified_product_management.dart';
 
 class FarmerMenu extends StatelessWidget {
   const FarmerMenu({super.key});

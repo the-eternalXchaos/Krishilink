@@ -1,5 +1,5 @@
 class UserModel {
-  final String? uid;
+  final String id;
   final String fullName;
   final String? email;
   final String? token;
@@ -10,14 +10,21 @@ class UserModel {
   final String? profileImageUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? deviceId;
   final String? accessToken;
   final String? refreshToken;
   final String? expiration;
   final bool isActive;
-  final String deviceId;
+  final String? globalPlusCode;
+  final String? city;
+  final String? province;
+  final String? country;
+  final int reputationCount;
+  final int reportCount;
+  final bool isBlocked;
 
   UserModel({
-    required this.uid,
+    required this.id,
     this.fullName = '',
     this.email,
     this.token,
@@ -28,72 +35,90 @@ class UserModel {
     this.profileImageUrl,
     this.createdAt,
     this.updatedAt,
+    this.deviceId,
     this.accessToken,
     this.refreshToken,
     this.expiration,
-    required this.deviceId,
     this.isActive = false,
+    this.globalPlusCode,
+    this.city,
+    this.province,
+    this.country,
+    this.reputationCount = 0,
+    this.reportCount = 0,
+    this.isBlocked = false,
   });
 
-  /// Factory to create a user from JSON, handling all fallback keys
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      uid: (json['uid'] ?? json['id'] ?? '').toString(),
-      fullName: json['full_name'] ?? json['fullName'] ?? '',
+      id: (json['id'] ?? json['uid'] ?? '').toString(),
+      fullName: json['fullName'] ?? json['full_name'] ?? '',
       email: json['email'],
-      phoneNumber: json['phone_number'] ?? json['phoneNumber'] ?? '9800000000',
-      role: json['role'] ?? 'buyer',
+      phoneNumber: json['phoneNumber'] ?? json['phone_number'] ?? '9800000000',
+      role: json['role'] ?? 'buyer', // Fallback to 'buyer' as in original
       address: json['address'] ?? 'N/A',
       gender: json['gender'] ?? 'N/A',
       profileImageUrl:
+          json['profileImageUrl'] ??
           json['profile_image_url'] ??
-          json['profile_image'] ??
-          json['profileImageUrl'],
+          json['profile_image'],
       token: json['token'],
-      deviceId: json['device_id'] ?? json['deviceId'] ?? '',
+      deviceId: json['deviceId'] ?? json['device_id'] ?? '',
       createdAt:
-          json['created_at'] != null
-              ? DateTime.tryParse(json['created_at'].toString())
-              : json['createdAt'] != null
+          json['createdAt'] != null
               ? DateTime.tryParse(json['createdAt'].toString())
+              : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'].toString())
               : null,
       updatedAt:
-          json['updated_at'] != null
-              ? DateTime.tryParse(json['updated_at'].toString())
-              : json['updatedAt'] != null
+          json['updatedAt'] != null
               ? DateTime.tryParse(json['updatedAt'].toString())
+              : json['updated_at'] != null
+              ? DateTime.tryParse(json['updated_at'].toString())
               : null,
-      accessToken: json['access_token'] ?? json['accessToken'],
-      refreshToken: json['refresh_token'] ?? json['refreshToken'],
+      accessToken: json['accessToken'] ?? json['access_token'],
+      refreshToken: json['refreshToken'] ?? json['refresh_token'],
       expiration: json['expiration'],
       isActive:
-          json['is_active'] as bool? ?? json['isActive'] as bool? ?? false,
+          json['isActive'] as bool? ?? json['is_active'] as bool? ?? false,
+      globalPlusCode: json['globalPlusCode'],
+      city: json['city'],
+      province: json['province'],
+      country: json['country'],
+      reputationCount: json['reputationCount'] as int? ?? 0,
+      reportCount: json['reportCount'] as int? ?? 0,
+      isBlocked: json['isBlocked'] as bool? ?? false,
     );
   }
 
-  /// Convert to JSON - you can choose either snake_case or camelCase for API
   Map<String, dynamic> toJson() => {
-    'uid': uid,
-    'full_name': fullName,
+    'id': id,
+    'fullName': fullName,
     'email': email,
-    'phone_number': phoneNumber ?? '9800000000',
+    'phoneNumber': phoneNumber ?? '9800000000',
     'role': role,
     'address': address,
     'gender': gender,
-    'profile_image_url': profileImageUrl,
-    'created_at': createdAt?.toIso8601String(),
-    'updated_at': updatedAt?.toIso8601String(),
+    'profileImageUrl': profileImageUrl,
+    'createdAt': createdAt?.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
     'token': token,
-    'device_id': deviceId,
-    'access_token': accessToken,
-    'refresh_token': refreshToken,
+    'deviceId': deviceId,
+    'accessToken': accessToken,
+    'refreshToken': refreshToken,
     'expiration': expiration,
-    'is_active': isActive,
+    'isActive': isActive,
+    'globalPlusCode': globalPlusCode,
+    'city': city,
+    'province': province,
+    'country': country,
+    'reputationCount': reputationCount,
+    'reportCount': reportCount,
+    'isBlocked': isBlocked,
   };
 
-  /// Make editable clone
   UserModel copyWith({
-    String? uid,
+    String? id,
     String? fullName,
     String? email,
     String? token,
@@ -109,9 +134,16 @@ class UserModel {
     String? refreshToken,
     String? expiration,
     bool? isActive,
+    String? globalPlusCode,
+    String? city,
+    String? province,
+    String? country,
+    int? reputationCount,
+    int? reportCount,
+    bool? isBlocked,
   }) {
     return UserModel(
-      uid: uid ?? this.uid,
+      id: id ?? this.id,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
       token: token ?? this.token,
@@ -127,6 +159,13 @@ class UserModel {
       refreshToken: refreshToken ?? this.refreshToken,
       expiration: expiration ?? this.expiration,
       isActive: isActive ?? this.isActive,
+      globalPlusCode: globalPlusCode ?? this.globalPlusCode,
+      city: city ?? this.city,
+      province: province ?? this.province,
+      country: country ?? this.country,
+      reputationCount: reputationCount ?? this.reputationCount,
+      reportCount: reportCount ?? this.reportCount,
+      isBlocked: isBlocked ?? this.isBlocked,
     );
   }
 }

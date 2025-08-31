@@ -19,8 +19,16 @@ import 'package:krishi_link/services/token_service.dart';
 
 class ApiService {
   final Dio _dio;
+
+  Future<Options> getJsonOptions() => _jsonOptions();
+
+  // Protected getter for _dio to allow access in subclasses
+  @protected
+  Dio get dio => _dio;
+
   bool _isRefreshing = false;
   static const _maxRetries = 3;
+
   ApiService()
     : _dio = Dio(
         BaseOptions(
@@ -31,6 +39,11 @@ class ApiService {
         ),
       ) {
     _configureInterceptors();
+  }
+  //            token
+  Future<String?> _token() async {
+    final authController = Get.find<AuthController>();
+    return authController.currentUser.value?.token;
   }
 
   void _configureInterceptors() {
@@ -85,7 +98,11 @@ class ApiService {
                 'Please login to continue',
                 title: 'Session Expired',
               );
-              Get.offAllNamed('/login');
+              // Get.offAllNamed('/login');
+              PopupService.error(
+                'Failed to build auth headers Login Again',
+                title: 'Auth Headers Error',
+              );
             }
             return handler.next(error);
           }
@@ -153,26 +170,6 @@ class ApiService {
     }
   }
 
-  // --- PRODUCT CRUD LOGIC ---
-  // (keep all robust product methods as previously refactored)
-  // ...
-
-  // --- REVIEW LOGIC ---
-  // (keep all robust review methods as previously refactored)
-  // ...
-
-  // --- ORDER LOGIC ---
-  // (keep all robust order methods as previously refactored)
-  // ...
-
-  // --- USER LOGIC ---
-  // (keep all robust user methods as previously refactored)
-  // ...
-
-  // --- AUTH/REGISTER/OTP LOGIC ---
-  // (keep only one version of each method, the robust one)
-  // ...
-
   // --- OTP LOGIC ---
   Future<Map<String, dynamic>> sendOtp(
     String identifier,
@@ -199,12 +196,10 @@ class ApiService {
 
   // --- SOCIAL LOGIN LOGIC ---
   Future<UserModel> loginWithGoogle(String accessToken) async {
-    // Placeholder: Implement actual Google login API call if backend supports
     throw UnimplementedError('Google login is not implemented on backend');
   }
 
   Future<UserModel> loginWithFacebook(String accessToken) async {
-    // Placeholder: Implement actual Facebook login API call if backend supports
     throw UnimplementedError('Facebook login is not implemented on backend');
   }
 
@@ -212,7 +207,6 @@ class ApiService {
     required String identityToken,
     required String authorizationCode,
   }) async {
-    // Placeholder: Implement actual Apple login API call if backend supports
     throw UnimplementedError('Apple login is not implemented on backend');
   }
 
@@ -319,7 +313,7 @@ class ApiService {
     try {
       final response = await _dio.post(
         ApiConstants.chatWithAiEndpoint,
-        data: jsonEncode(message), // Ensure the string is sent as JSON
+        data: jsonEncode(message),
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
       return response.data.toString();
@@ -333,7 +327,7 @@ class ApiService {
     try {
       final response = await _dio.get(ApiConstants.healthEndpoint);
       return response.statusCode == 200;
-    } on DioException catch (e) {
+    } on DioException {
       PopupService.error(
         'Failed to check health',
         title: 'Health Check Failed',
@@ -378,7 +372,7 @@ class ApiService {
       );
       final dataMap = response.data['data'];
       return UserModel(
-        uid: dataMap['id'] ?? '',
+        id: dataMap['id'] ?? '',
         fullName: dataMap['fullName'] ?? '',
         email: dataMap['email'] ?? '',
         phoneNumber: dataMap['phoneNumber'] ?? '',
@@ -398,6 +392,22 @@ class ApiService {
       throw _parseDioError(e);
     }
   }
+  // token fetchng
+
+  // json options
+  Future<Options> _jsonOptions() async {
+    final token = await _token();
+    if (token == null || token.isEmpty) {
+      throw Exception('No authentication token found');
+    }
+    return Options(
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+  }
 
   // --- ERROR HANDLING ---
   AppException _parseDioError(DioException e) {
@@ -413,5 +423,10 @@ class ApiService {
       message = e.message ?? 'Network error';
     }
     return AppException(message);
+  }
+
+  // Method to dispose of resources
+  void dispose() {
+    _dio.close();
   }
 }

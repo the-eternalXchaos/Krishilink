@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart'; // Import PopupService
+import 'package:url_launcher/url_launcher.dart';
 
 class LocationPicker extends StatefulWidget {
   final double initialLatitude;
@@ -68,9 +71,13 @@ class _LocationPickerState extends State<LocationPicker>
   void _initializeLocation() {
     locationController.text = widget.initialAddress;
     latitudeController.text =
-        widget.initialLatitude != 0 ? widget.initialLatitude.toString() : '';
+        widget.initialLatitude != 0
+            ? widget.initialLatitude.toStringAsFixed(6)
+            : '';
     longitudeController.text =
-        widget.initialLongitude != 0 ? widget.initialLongitude.toString() : '';
+        widget.initialLongitude != 0
+            ? widget.initialLongitude.toStringAsFixed(6)
+            : '';
 
     if (widget.initialLatitude != 0 && widget.initialLongitude != 0) {
       currentLocation = LatLng(widget.initialLatitude, widget.initialLongitude);
@@ -85,63 +92,61 @@ class _LocationPickerState extends State<LocationPicker>
       isLoadingLocation.value = true;
       _pulseController.repeat(reverse: true);
 
-      // Check location services
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _showSnackbar('error'.tr, 'location_services_disabled'.tr, Colors.red);
+        PopupService.showSnackbar(
+          type: PopupType.error,
+          message: 'location_services_disabled'.tr,
+          title: 'Error',
+        );
         return;
       }
 
-      // Check permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          _showSnackbar(
-            'error'.tr,
-            'location_permission_denied'.tr,
-            Colors.red,
+          PopupService.showSnackbar(
+            type: PopupType.error,
+            message: 'location_permission_denied'.tr,
+            title: 'Error',
           );
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        _showSnackbar(
-          'error'.tr,
-          'location_permission_denied_forever'.tr,
-          Colors.red,
+        PopupService.showSnackbar(
+          type: PopupType.error,
+          message: 'location_permission_denied_forever'.tr,
+          title: 'Error',
         );
         await Geolocator.openAppSettings();
         return;
       }
 
-      // Get current position
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
 
-      // Get address from coordinates
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-
       final placemark = placemarks.isNotEmpty ? placemarks.first : null;
       final address =
           placemark != null
               ? '${placemark.locality}, ${placemark.administrativeArea}, ${placemark.country}'
-              : 'Unknown location';
+              : 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
 
       _updateLocation(position.latitude, position.longitude, address);
-
-      _showSnackbar('success'.tr, 'current_location_fetched'.tr, Colors.green);
+      PopupService.success('current_location_fetched'.tr);
     } catch (e) {
-      _showSnackbar(
-        'error'.tr,
-        'failed_to_get_location'.trParams({'error': e.toString()}),
-        Colors.red,
+      PopupService.showSnackbar(
+        type: PopupType.error,
+        message: 'failed_to_get_location'.trParams({'error': e.toString()}),
+        title: 'Error',
       );
     } finally {
       isLoadingLocation.value = false;
@@ -152,7 +157,11 @@ class _LocationPickerState extends State<LocationPicker>
 
   Future<void> _searchLocation(String query) async {
     if (query.trim().isEmpty) {
-      _showSnackbar('error'.tr, 'enter_location_to_search'.tr, Colors.orange);
+      PopupService.showSnackbar(
+        type: PopupType.error,
+        message: 'enter_location_to_search'.tr,
+        title: 'Error',
+      );
       return;
     }
 
@@ -163,23 +172,69 @@ class _LocationPickerState extends State<LocationPicker>
       if (locations.isNotEmpty) {
         final location = locations.first;
         _updateLocation(location.latitude, location.longitude, query);
-
-        _showSnackbar('success'.tr, 'location_found'.tr, Colors.green);
+        PopupService.success('location_found'.tr);
       } else {
-        _showSnackbar('error'.tr, 'no_location_found'.tr, Colors.orange);
+        PopupService.error('no_location_found'.tr, title: 'Error');
       }
     } catch (e) {
-      _showSnackbar(
-        'error'.tr,
+      PopupService.error(
         'failed_to_search_location'.trParams({'error': e.toString()}),
-        Colors.red,
+        title: 'Error',
       );
     } finally {
       isLoadingLocation.value = false;
     }
   }
 
+  Future<void> _searchOnGoogleMaps() async {
+    if (currentLocation == null ||
+        currentLocation!.latitude == 0 ||
+        currentLocation!.longitude == 0) {
+      PopupService.error(
+        'Please select a valid location before searching.',
+        title: 'Error',
+      );
+      return;
+    }
+
+    final latitude = currentLocation!.latitude;
+    final longitude = currentLocation!.longitude;
+    if (latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180) {
+      PopupService.error('Invalid coordinates selected.', title: 'Error');
+      return;
+    }
+
+    final mapsUrl =
+        'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+    final uri = Uri.parse(mapsUrl);
+    debugPrint('🔄 [LocationPicker] Launching Google Maps with URL: $mapsUrl');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        PopupService.success('Opened Google Maps successfully.');
+      } else {
+        PopupService.error('Could not open Google Maps.', title: 'Error');
+      }
+    } catch (e) {
+      PopupService.error('Failed to open Google Maps: $e', title: 'Error');
+    }
+  }
+
   void _updateLocation(double latitude, double longitude, String address) {
+    if (latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180) {
+      PopupService.error(
+        'Invalid coordinates: Latitude must be between -90 and 90, Longitude between -180 and 180.',
+        title: 'Error',
+      );
+      return;
+    }
+
     setState(() {
       currentLocation = LatLng(latitude, longitude);
       locationController.text = address;
@@ -193,8 +248,10 @@ class _LocationPickerState extends State<LocationPicker>
     });
 
     widget.onLocationSelected(latitude, longitude, address);
+    debugPrint(
+      '🔄 [LocationPicker] Updated location: $latitude, $longitude, $address',
+    );
 
-    // Update map camera if controller is available
     if (mapController != null) {
       mapController!.animateCamera(
         CameraUpdate.newLatLngZoom(currentLocation!, 15),
@@ -205,13 +262,10 @@ class _LocationPickerState extends State<LocationPicker>
   void _onMapTap(LatLng position) async {
     try {
       isLoadingLocation.value = true;
-
-      // Get address from coordinates
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-
       final placemark = placemarks.isNotEmpty ? placemarks.first : null;
       final address =
           placemark != null
@@ -220,7 +274,6 @@ class _LocationPickerState extends State<LocationPicker>
 
       _updateLocation(position.latitude, position.longitude, address);
     } catch (e) {
-      // Fallback to coordinates if geocoding fails
       _updateLocation(
         position.latitude,
         position.longitude,
@@ -231,27 +284,6 @@ class _LocationPickerState extends State<LocationPicker>
     }
   }
 
-  void _showSnackbar(String title, String message, Color color) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: color.withValues(alpha: 0.9),
-      colorText: Colors.white,
-      borderRadius: 12,
-      margin: const EdgeInsets.all(16),
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 3),
-      icon: Icon(
-        color == Colors.green
-            ? Icons.check_circle
-            : color == Colors.orange
-            ? Icons.warning
-            : Icons.error,
-        color: Colors.white,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -259,22 +291,13 @@ class _LocationPickerState extends State<LocationPicker>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Enhanced Location Search Field
         _buildLocationSearchField(colorScheme),
         const SizedBox(height: 20),
-
-        // Enhanced Coordinates Display
         _buildCoordinatesSection(colorScheme),
         const SizedBox(height: 20),
-
-        // Enhanced Map Controls
         _buildMapControls(colorScheme),
         const SizedBox(height: 16),
-
-        // Enhanced Map Widget
         _buildMapSection(colorScheme),
-
-        // Enhanced Instructions
         _buildInstructions(context),
       ],
     );
@@ -319,20 +342,29 @@ class _LocationPickerState extends State<LocationPicker>
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+            borderSide: BorderSide(
+              color: colorScheme.outline.withValues(alpha: 0.2),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: colorScheme.primary, width: 2),
           ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 16,
           ),
+          errorStyle: const TextStyle(height: 0, color: Colors.transparent),
         ),
         maxLength: 100,
-        validator:
-            (v) => (v == null || v.trim().isEmpty) ? 'required'.tr : null,
         onFieldSubmitted: (value) => _searchLocation(value),
       ),
     );
@@ -344,7 +376,7 @@ class _LocationPickerState extends State<LocationPicker>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Search Button
+          // Address Search Button
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
             child: Material(
@@ -361,6 +393,29 @@ class _LocationPickerState extends State<LocationPicker>
                   child: const Icon(
                     Icons.search,
                     color: Colors.green,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Google Maps Search Button
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: _searchOnGoogleMaps,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    color: Colors.blue,
                     size: 20,
                   ),
                 ),
@@ -494,18 +549,27 @@ class _LocationPickerState extends State<LocationPicker>
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
         ),
-        labelStyle: TextStyle(fontSize: 12),
+        labelStyle: const TextStyle(fontSize: 12),
+        errorStyle: const TextStyle(height: 0, color: Colors.transparent),
       ),
       readOnly: true,
       style: const TextStyle(fontSize: 12),
-      validator:
-          (v) => (v == null || v.isEmpty) ? 'location_required'.tr : null,
     );
   }
 
@@ -648,7 +712,6 @@ class _LocationPickerState extends State<LocationPicker>
                             compassEnabled: true,
                             mapToolbarEnabled: false,
                           ),
-                          // Custom Map Controls
                           Positioned(
                             top: 16,
                             right: 16,
@@ -674,12 +737,13 @@ class _LocationPickerState extends State<LocationPicker>
                               ],
                             ),
                           ),
-                          // Loading Overlay
                           Obx(
                             () =>
                                 isLoadingLocation.value
                                     ? Container(
-                                      color: Colors.black.withValues(alpha: 0.3),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       child: const Center(
                                         child: CircularProgressIndicator(
                                           color: Colors.white,
@@ -728,9 +792,11 @@ class _LocationPickerState extends State<LocationPicker>
                   margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: Colors.blue.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [

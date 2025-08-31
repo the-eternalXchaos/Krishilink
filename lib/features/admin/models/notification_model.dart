@@ -3,22 +3,29 @@ class NotificationModel {
   final String message;
   final bool isRead;
   final DateTime createdAt;
-  final String? title; // Optional: for notification title
-  final String? type; // Optional: for notification type (e.g., "order", "product")
-  final String? relatedId; // Optional: ID of related entity (e.g., product or order)
+  final String title;
+  final String type;
+  final String? relatedId;
 
   NotificationModel({
     required this.id,
     required this.message,
     required this.isRead,
     required this.createdAt,
-    this.title,
-    this.type,
+    String? title,
+    String? type,
     this.relatedId,
-  });
+  }) : title = title ?? 'Notification',
+       type = type ?? 'info';
 
-  // Getter for timestamp to support NotificationsScreen
-  DateTime get timestamp => createdAt;
+  // Time ago Helper
+  String get timeAgo {
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    return '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
+  }
 
   // Create NotificationModel from JSON
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -40,13 +47,13 @@ class NotificationModel {
       'message': message,
       'isRead': isRead,
       'createdAt': createdAt.toIso8601String(),
-      if (title != null) 'title': title,
-      if (type != null) 'type': type,
+      'title': title,
+      'type': type,
       if (relatedId != null) 'relatedId': relatedId,
     };
   }
 
-  // Create a copy with updated fields
+  // Copy with updated fields
   NotificationModel copyWith({
     String? id,
     String? message,

@@ -12,7 +12,7 @@ import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller_new.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
-import 'package:krishi_link/features/farmer/widgets/weather_widget.dart';
+import 'package:krishi_link/features/weather/weather_widget.dart';
 import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/widgets/buy_product_dialog.dart';
 import 'package:krishi_link/widgets/related_products_widget.dart';
@@ -74,7 +74,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 ''';
 
       if (imageUrl.isEmpty) {
+        // user share plus
         await Share.share(text, subject: 'KrishiLink | $name');
+        PopupService.success('Product shared successfully');
+        // user share plus
         return;
       }
 
@@ -98,6 +101,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       }
 
       await Share.shareXFiles(
+        // user share plus , instance , share x files
         [XFile(imagePath)],
         text: text,
         subject: 'KrishiLink | $name',
@@ -189,7 +193,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       // for talking to
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.to(() => const WeatherWidget());
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('button pressed  chat section coming coon '),
+            ),
+          );
         },
         backgroundColor: colorScheme.primary,
       ),

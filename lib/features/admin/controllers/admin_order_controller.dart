@@ -10,6 +10,7 @@ import 'package:krishi_link/core/lottie/popup_service.dart';
 
 class AdminOrderController extends GetxController {
   final orders = <OrderModel>[].obs;
+  final filteredOrders = <OrderModel>[].obs; // Store filtered orders
   final isLoading = false.obs;
   final totalOrders = 0.obs;
   final pendingOrders = 0.obs;
@@ -37,9 +38,10 @@ class AdminOrderController extends GetxController {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        orders.assignAll(
-          data.map((json) => OrderModel.fromJson(json)).toList(),
-        );
+        final orderList =
+            data.map((json) => OrderModel.fromJson(json)).toList();
+        orders.assignAll(orderList);
+        filteredOrders.assignAll(orderList); // Initialize filteredOrders
         totalOrders.value = orders.length;
         pendingOrders.value =
             orders
@@ -67,7 +69,7 @@ class AdminOrderController extends GetxController {
       isLoading(true);
       PopupService.lottieLoading();
       final order = orders.firstWhere((o) => o.orderId == orderId);
-      final endpoint = switch (status) {
+      final endpoint = switch (status.toLowerCase()) {
         'confirmed' => ApiConstants.confirmOrderEndpoint,
         'shipped' => ApiConstants.shipOrderEndpoint,
         'delivered' => ApiConstants.deliverOrderEndpoint,
@@ -83,7 +85,10 @@ class AdminOrderController extends GetxController {
       );
 
       if (response.statusCode == 200) {
-        orders[orders.indexOf(order)] = order.copyWith(orderStatus: status);
+        final updatedOrder = order.copyWith(orderStatus: status);
+        final index = orders.indexOf(order);
+        orders[index] = updatedOrder;
+        filteredOrders[index] = updatedOrder; // Update filtered list
         pendingOrders.value =
             orders
                 .where((o) => o.orderStatus.toLowerCase() == 'pending')
@@ -102,6 +107,101 @@ class AdminOrderController extends GetxController {
         type: PopupType.error,
         title: 'Error',
         message: 'Failed to update order: $e',
+        autoDismiss: true,
+      );
+    } finally {
+      isLoading(false);
+      PopupService.close();
+    }
+  }
+
+  void searchOrders(String query) {
+    if (query.isEmpty) {
+      filteredOrders.assignAll(orders);
+    } else {
+      filteredOrders.assignAll(
+        orders
+            .where(
+              (order) =>
+                  order.productId.toLowerCase().contains(query.toLowerCase()) ||
+                  order.orderId.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList(),
+      );
+    }
+    totalOrders.value = filteredOrders.length;
+    pendingOrders.value =
+        filteredOrders
+            .where((o) => o.orderStatus.toLowerCase() == 'pending')
+            .length;
+    totalRevenue.value = filteredOrders.fold(
+      0.0,
+      (sum, o) => sum + o.totalPrice,
+    );
+  }
+
+  void filterOrdersByStatus(String? status) {
+    if (status == null || status.toLowerCase() == 'all') {
+      filteredOrders.assignAll(orders);
+    } else {
+      filteredOrders.assignAll(
+        orders
+            .where(
+              (order) =>
+                  order.orderStatus.toLowerCase() == status.toLowerCase(),
+            )
+            .toList(),
+      );
+    }
+    totalOrders.value = filteredOrders.length;
+    pendingOrders.value =
+        filteredOrders
+            .where((o) => o.orderStatus.toLowerCase() == 'pending')
+            .length;
+    totalRevenue.value = filteredOrders.fold(
+      0.0,
+      (sum, o) => sum + o.totalPrice,
+    );
+  }
+
+  Future<void> deleteOrder(String orderId) async {
+    try {
+      isLoading(true);
+      PopupService.lottieLoading();
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.deleteOrderEndpoint}/$orderId'),
+        headers: {
+          'Authorization': 'Bearer ${await TokenService.getAccessToken()}',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        orders.removeWhere((order) => order.orderId == orderId);
+        filteredOrders.removeWhere((order) => order.orderId == orderId);
+        totalOrders.value = filteredOrders.length;
+        pendingOrders.value =
+            filteredOrders
+                .where((o) => o.orderStatus.toLowerCase() == 'pending')
+                .length;
+        totalRevenue.value = filteredOrders.fold(
+          0.0,
+          (sum, o) => sum + o.totalPrice,
+        );
+        PopupService.show(
+          type: PopupType.success,
+          title: 'Success',
+          message: 'Order deleted successfully',
+          autoDismiss: true,
+        );
+      } else {
+        throw Exception('Failed to delete order: ${response.statusCode}');
+      }
+    } catch (e) {
+      PopupService.show(
+        type: PopupType.error,
+        title: 'Error',
+        message: 'Failed to delete order: $e',
         autoDismiss: true,
       );
     } finally {

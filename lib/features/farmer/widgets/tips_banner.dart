@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
+import 'package:path/path.dart';
 
 class TipsBanner extends StatelessWidget {
   const TipsBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<FarmerController>();
+    final controller =
+        Get.isRegistered<FarmerController>()
+            ? Get.find<FarmerController>()
+            : FarmerController();
     final theme = Theme.of(context);
 
     return Obx(

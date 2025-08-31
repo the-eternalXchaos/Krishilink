@@ -166,22 +166,22 @@ class _SplashScreenState extends State<SplashScreen>
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.95),
                                 borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
+                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.15),
+                                    color: Colors.black.withValues(alpha: 0.15),
                                     blurRadius: 32,
                                     offset: const Offset(0, 16),
                                     spreadRadius: 0,
                                   ),
                                   BoxShadow(
-                                    color: Colors.white.withOpacity(0.1),
+                                    color: Colors.white.withValues(alpha: 0.1),
                                     blurRadius: 16,
                                     offset: const Offset(0, -8),
                                     spreadRadius: 0,
                                   ),
                                 ],
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -231,7 +231,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 'Connecting Farmers to Success',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w300,
                                   letterSpacing: 0.5,
                                 ),
@@ -255,7 +255,7 @@ class _SplashScreenState extends State<SplashScreen>
                             width: 200,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(2),
                             ),
                             child: Stack(
@@ -270,7 +270,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     borderRadius: BorderRadius.circular(2),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.white.withOpacity(0.3),
+                                        color: Colors.white.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         spreadRadius: 1,
                                       ),
@@ -284,7 +284,7 @@ class _SplashScreenState extends State<SplashScreen>
                           Text(
                             'Loading...',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 14,
                               fontWeight: FontWeight.w300,
                             ),
@@ -312,7 +312,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Text(
                           'Powered by Modern Agriculture',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 12,
                             fontWeight: FontWeight.w300,
                           ),
@@ -322,7 +322,7 @@ class _SplashScreenState extends State<SplashScreen>
                           width: 40,
                           height: 2,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -361,11 +361,11 @@ class _SplashScreenState extends State<SplashScreen>
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1 + (index % 2) * 0.1),
+                color: Colors.white.withValues(alpha: 0.1 + (index % 2) * 0.1),
                 borderRadius: BorderRadius.circular(size / 2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                     blurRadius: 4,
                     spreadRadius: 1,
                   ),

@@ -106,7 +106,7 @@ class _UnifiedProductManagementState extends State<UnifiedProductManagement> {
             '❌ [UnifiedProductManagement] Failed to toggle product ${product.id}: $e',
           );
           PopupService.error('Failed to toggle product status: $e');
-          throw e;
+          rethrow;
         }
       },
     );

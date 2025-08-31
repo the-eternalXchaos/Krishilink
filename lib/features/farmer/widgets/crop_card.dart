@@ -1,4 +1,8 @@
+// lib/features/farmer/screens/crop_card.dart
 import 'package:flutter/material.dart';
+import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/core/theme/app_theme.dart';
+import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/features/farmer/models/crop_model.dart';
 
 class CropCard extends StatelessWidget {
@@ -18,43 +22,46 @@ class CropCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppWidgets.card(
+      colorScheme: colorScheme,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
+                backgroundColor: colorScheme.surface,
                 child: Text(
                   crop.name[0],
-                  style: TextStyle(color: theme.colorScheme.primary),
+                  style: TextStyle(color: colorScheme.primary),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(crop.name, style: theme.textTheme.titleLarge),
                     Text(
-                      ' ${crop.status}',
+                      crop.status ?? 'Unknown',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color:
                             crop.status == 'Healthy'
                                 ? Colors.green
+                                : crop.status == 'At Risk'
+                                ? Colors.orange
                                 : Colors.red,
                       ),
                     ),
-                    Text(
-                      '${crop.suggestions}',
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    if (crop.suggestions != null &&
+                        crop.suggestions!.isNotEmpty)
+                      Text(
+                        crop.suggestions!,
+                        style: theme.textTheme.bodyMedium,
+                      ),
                   ],
                 ),
               ),

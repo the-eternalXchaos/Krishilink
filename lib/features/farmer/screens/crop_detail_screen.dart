@@ -1,11 +1,14 @@
+// lib/features/farmer/screens/crop_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:intl/intl.dart';
+import 'package:krishi_link/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
+import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 import 'package:krishi_link/features/farmer/models/crop_model.dart';
 import 'package:krishi_link/features/farmer/screens/add_crop_screen.dart';
-import 'package:intl/intl.dart';
 
 class CropDetailScreen extends StatelessWidget {
   final CropModel crop;
@@ -15,179 +18,155 @@ class CropDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final controller = Get.find<FarmerController>();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(crop.name.tr, style: theme.textTheme.titleLarge),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         actions: [
           IconButton(
-            icon: Icon(Icons.edit, color: theme.colorScheme.primary),
+            icon: Icon(Icons.edit, color: colorScheme.onPrimary),
             onPressed: () => Get.to(() => AddCropScreen(crop: crop)),
             tooltip: 'Edit Crop'.tr,
           ),
           IconButton(
-            icon: Icon(Icons.camera_alt, color: theme.colorScheme.primary),
-            onPressed:
-                () => Get.toNamed('/disease-detection'), // Stubbed ML screen
+            icon: Icon(Icons.camera_alt, color: colorScheme.onPrimary),
+            onPressed: () => Get.toNamed('/disease-detection'),
             tooltip: 'Scan Leaf'.tr,
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FadeInDown(
-              child: Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Crop Overview'.tr,
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 12),
+              child: AppWidgets.card(
+                colorScheme: colorScheme,
+                title: 'Crop Overview'.tr,
+                icon: Icons.grass,
+                iconColor: colorScheme.primary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow(
+                      context,
+                      icon: Icons.tag,
+                      label: 'Status'.tr,
+                      value: crop.status?.tr ?? 'Unknown'.tr,
+                      valueColor:
+                          crop.status == 'Healthy'
+                              ? Colors.green
+                              : crop.status == 'At Risk'
+                              ? Colors.orange
+                              : Colors.red,
+                    ),
+                    _buildDetailRow(
+                      context,
+                      icon: Icons.calendar_today,
+                      label: 'Planting Date'.tr,
+                      value:
+                          crop.plantedAt != null
+                              ? DateFormat(
+                                'MMM dd, yyyy',
+                              ).format(crop.plantedAt!)
+                              : 'N/A',
+                    ),
+                    if (crop.note != null && crop.note!.isNotEmpty)
                       _buildDetailRow(
                         context,
-                        icon: Icons.tag,
-                        label: 'Status'.tr,
-                        value: crop.status!.tr,
-                        valueColor:
-                            crop.status == 'Healthy'
-                                ? Colors.green
-                                : crop.status == 'At Risk'
-                                ? Colors.orange
-                                : Colors.red,
+                        icon: Icons.note,
+                        label: 'Notes'.tr,
+                        value: crop.note!,
                       ),
+                    if (crop.description != null &&
+                        crop.description!.isNotEmpty)
                       _buildDetailRow(
                         context,
-                        icon: Icons.calendar_today,
-                        label: 'Planting Date'.tr,
-                        value: DateFormat(
-                          'MMM dd, yyyy',
-                        ).format(crop.plantedAt as DateTime),
-
-                        // value:
-
-                        //  '${crop.plantedAt}',
+                        icon: Icons.description,
+                        label: 'Description'.tr,
+                        value: crop.description!,
                       ),
-                      // value: DateFormat('MMM dd, yyyy').format(crop.plantingDate),
-                      if (crop.note!.isNotEmpty)
-                        _buildDetailRow(
-                          context,
-                          icon: Icons.note,
-                          label: 'Notes'.tr,
-                          value: '${crop.note}',
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             FadeInUp(
-              child: Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Disease Detection'.tr,
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      if (crop.disease != null && crop.disease!.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+              child: AppWidgets.card(
+                colorScheme: colorScheme,
+                title: 'Disease Detection'.tr,
+                icon: Icons.warning,
+                iconColor: colorScheme.primary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (crop.disease != null && crop.disease!.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDetailRow(
+                            context,
+                            icon: Icons.warning,
+                            label: 'Detected Disease'.tr,
+                            value: crop.disease!.tr,
+                          ),
+                          if (crop.careInstructions != null &&
+                              crop.careInstructions!.isNotEmpty)
                             _buildDetailRow(
                               context,
-                              icon: Icons.warning,
-                              label: 'Detected Disease'.tr,
-                              value: crop.disease!.tr,
+                              icon: Icons.healing,
+                              label: 'Care Instructions'.tr,
+                              value: crop.careInstructions!.tr,
                             ),
-                            if (crop.careInstructions != null &&
-                                crop.careInstructions!.isNotEmpty)
-                              _buildDetailRow(
-                                context,
-                                icon: Icons.healing,
-                                label: 'Care Instructions'.tr,
-                                value: crop.careInstructions!.tr,
-                              ),
-                          ],
-                        )
-                      else
-                        Text(
-                          'No disease detected. Scan leaves to check health.'
-                              .tr,
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () => Get.toNamed('/disease-detection'),
-                        icon: const Icon(Icons.camera_alt),
-                        label: Text('Scan Leaf Again'.tr),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                        ],
+                      )
+                    else
+                      Text(
+                        'No disease detected. Scan leaves to check health.'.tr,
+                        style: theme.textTheme.bodyLarge,
                       ),
-                    ],
-                  ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppWidgets.button(
+                      text: 'Scan Leaf Again'.tr,
+                      icon: Icons.camera_alt,
+                      onPressed: () => Get.toNamed('/disease-detection'),
+                      colorScheme: colorScheme,
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             FadeInUp(
               delay: const Duration(milliseconds: 200),
-              child: Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Health History'.tr,
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Health history graph coming soon!'.tr,
-                        style: theme.textTheme.bodyLarge,
-                      ),
-                      // Placeholder for future graph implementation
-                      Container(
-                        height: 150,
-                        color: theme.colorScheme.primaryContainer,
-                        child: Center(
-                          child: Text(
-                            'Graph Placeholder'.tr,
-                            style: theme.textTheme.bodyMedium,
-                          ),
+              child: AppWidgets.card(
+                colorScheme: colorScheme,
+                title: 'Health History'.tr,
+                icon: Icons.history,
+                iconColor: colorScheme.primary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Health history graph coming soon!'.tr,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    Container(
+                      height: 150,
+                      color: colorScheme.primaryContainer,
+                      child: Center(
+                        child: Text(
+                          'holder'.tr,
+                          style: theme.textTheme.bodyMedium,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -206,18 +185,18 @@ class CropDetailScreen extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         children: [
           Icon(icon, size: 20, color: theme.colorScheme.primary),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Text(
             '$label:',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               value,

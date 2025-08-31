@@ -148,13 +148,13 @@ class BuyProductDialog extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Get.back(),
-                        child: const Text('Cancel'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
+                        child: const Text('Cancel'),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -162,14 +162,16 @@ class BuyProductDialog extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           // Place order logic here, disabled if loading
+                          // user place order plus
+                          // user place order plus
                         },
-                        child: const Text('Confirm Purchase'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
+                        child: const Text('Confirm Purchase'),
                       ),
                     ),
                   ],
