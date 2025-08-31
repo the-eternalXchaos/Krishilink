@@ -7,7 +7,7 @@ import 'package:krishi_link/core/components/material_ui/popup.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/exceptions/app_exception.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
-import 'package:krishi_link/services/api_service.dart';
+import 'package:krishi_link/services/api_services/api_service.dart';
 import 'package:krishi_link/services/device_service.dart';
 import 'package:krishi_link/services/token_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -212,8 +212,7 @@ class AuthController extends GetxController {
       role: 'farmer',
       address: 'Sainik',
       profileImageUrl: '',
-      token:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImIwM2RlZmQwLTAyMmItNDI5MC04YTZjLWZkNjM2MTMzNGEzZSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJTYW5kZWVwIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoiV0FHTEVTQU5ERUVQOEBHTUFJTC5DT00iLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJhZG1pbiIsImV4cCI6MTc1NjQ2MTg2NywiaXNzIjoiU1JCIiwiYXVkIjoiS3Jpc2hpbGlua0FQSSJ9.72g9f7KJPmc8zEpuLcq5ngmYybsPNtNqA4vBXNUoNEo',
+      token: 'mock_admin_token',
       deviceId: 'SUPER_ADMIN',
     );
 

@@ -75,11 +75,15 @@ class WeatherDetailsPage extends StatelessWidget {
 
         return RefreshIndicator(
           onRefresh: () async {
-            await controller.fetchWeather(
-              latitude: weather.latitude,
-              longitude: weather.longitude,
+            debugPrint(
+              'Refreshing weather for ${weather.latitude}, ${weather.longitude}',
+            );
+            controller.refreshWeather;
+            debugPrint(
+              'Refreshing weather for ${weather.latitude}, ${weather.longitude}',
             );
           },
+
           color: colorScheme.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

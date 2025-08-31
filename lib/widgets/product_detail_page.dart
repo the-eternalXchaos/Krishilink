@@ -315,8 +315,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (_productController.reviewsModel.isEmpty) {
-                      return Text('no_reviews_yet'.tr);
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.rate_review_outlined,
+                                size: 48,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'no_reviews_yet'.tr,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     }
+
                     return ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),

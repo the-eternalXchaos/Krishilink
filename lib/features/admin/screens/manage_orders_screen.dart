@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:krishi_link/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
@@ -157,7 +158,9 @@ class _ManageOrdersScreenState extends State<ManageOrdersScreen>
                                 AppWidgets.button(
                                   text: 'Add New Order',
                                   icon: Icons.add,
-                                  onPressed: () => Get.toNamed('/add-order'),
+                                  // onPressed: () => Get.toNamed('/add-order'),
+                                  onPressed:
+                                      () => PopupService.error('Coming soon'),
                                   colorScheme: colorScheme,
                                 ),
                               ],

@@ -2,12 +2,9 @@ class Weather {
   final String location;
   final double latitude;
   final double longitude;
-  // maps weatherMain
-  final String condition;
-  // maps weatherDescription
-  final String description;
-  // maps weatherIcon
-  final String iconUrl;
+  final String condition; // weatherMain
+  final String description; // weatherDescription
+  final String iconUrl; // weatherIcon
   final double temperature;
   final double feelsLike;
   final int humidity;
@@ -30,6 +27,7 @@ class Weather {
     this.observationTime,
   });
 
+  /// ✅ Parse from SharedPreferences (cached JSON)
   factory Weather.fromJson(Map<String, dynamic> json) {
     return Weather(
       location: json['location'] ?? '',
@@ -40,7 +38,7 @@ class Weather {
       iconUrl: json['weatherIcon'] ?? '',
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0,
       feelsLike: (json['feelsLike'] as num?)?.toDouble() ?? 0,
-      humidity: json['humidity'] ?? 0,
+      humidity: (json['humidity'] as num?)?.toInt() ?? 0,
       windSpeed: (json['windSpeed'] as num?)?.toDouble() ?? 0,
       isDaytime: json['isDaytime'] ?? true,
       observationTime:
@@ -50,7 +48,7 @@ class Weather {
     );
   }
 
-  // convert to json
+  /// ✅ Convert to JSON (for caching)
   Map<String, dynamic> toJson() {
     return {
       'location': location,
@@ -70,23 +68,23 @@ class Weather {
 
   factory Weather.empty() => Weather();
 
+  /// ✅ Parse directly from API response
   factory Weather.fromApiResponse(Map<String, dynamic> json) {
-    final data = json['data'] ?? {};
     return Weather(
-      location: data['location'] ?? '',
-      latitude: (data['latitude'] as num?)?.toDouble() ?? 0,
-      longitude: (data['longitude'] as num?)?.toDouble() ?? 0,
-      condition: data['weatherMain'] ?? '',
-      description: data['weatherDescription'] ?? '',
-      iconUrl: data['weatherIcon'] ?? '',
-      temperature: (data['temperature'] as num?)?.toDouble() ?? 0,
-      feelsLike: (data['feelsLike'] as num?)?.toDouble() ?? 0,
-      humidity: data['humidity'] ?? 0,
-      windSpeed: (data['windSpeed'] as num?)?.toDouble() ?? 0,
-      isDaytime: data['isDaytime'] ?? true,
+      location: json['location'] ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      condition: json['weatherMain'] ?? '',
+      description: json['weatherDescription'] ?? '',
+      iconUrl: json['weatherIcon'] ?? '',
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0,
+      feelsLike: (json['feelsLike'] as num?)?.toDouble() ?? 0,
+      humidity: (json['humidity'] as num?)?.toInt() ?? 0,
+      windSpeed: (json['windSpeed'] as num?)?.toDouble() ?? 0,
+      isDaytime: json['isDaytime'] ?? true,
       observationTime:
-          data['observationTime'] != null
-              ? DateTime.tryParse(data['observationTime'])
+          json['observationTime'] != null
+              ? DateTime.tryParse(json['observationTime'])
               : null,
     );
   }

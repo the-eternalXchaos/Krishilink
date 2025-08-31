@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:krishi_link/core/components/material_ui/popup.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/core/utils/constants.dart';
@@ -98,11 +99,7 @@ class ApiService {
                 'Please login to continue',
                 title: 'Session Expired',
               );
-              // Get.offAllNamed('/login');
-              PopupService.error(
-                'Failed to build auth headers Login Again',
-                title: 'Auth Headers Error',
-              );
+              Get.offAllNamed('/login');
             }
             return handler.next(error);
           }
@@ -211,24 +208,99 @@ class ApiService {
   }
 
   // --- REVIEW LOGIC ---
+
+  //   // --- REVIEW LOGIC ---
+  //   Future<List<ReviewModel>> getReviews(String productId) async {
+  //     try {
+  //       final response = await _dio.get(
+  //         '${ApiConstants.getProductReviewsEndpoint}/$productId',
+  //         options: Options(headers: {'accept': '*/*'}),
+  //       );
+  //       if (response.statusCode == 200 && response.data is List) {
+  //         return (response.data as List)
+  //             .map((e) => ReviewModel.fromJson(e))
+  //             .toList();
+  //       } else if (response.data is Map && response.data['data'] is List) {
+  //         return (response.data['data'] as List)
+  //             .map((e) => ReviewModel.fromJson(e))
+  //             .toList();
+  //       }
+  //       return [];
+  //     } on DioException catch (e) {
+  //       throw _parseDioError(e);
+  //     }
+  //   }
+
+  //   Future<void> submitReview(ReviewModel review) async {
+  //     try {
+  //       final formData = FormData.fromMap({
+  //         'productId': review.productId,
+  //         'review': review.review,
+  //       });
+  //       final response = await _dio.post(
+  //         ApiConstants.addReviewEndpoint,
+  //         data: formData,
+  //         options: Options(headers: {'accept': '*/*'}),
+  //       );
+  //       if (response.statusCode != 200) {
+  //         throw AppException('Failed to submit review');
+  //       }
+  //     } on DioException catch (e) {
+  //       throw _parseDioError(e);
+  //     }
+  //   }
   Future<List<ReviewModel>> getReviews(String productId) async {
     try {
+      debugPrint('🔍 [Review API] Fetching reviews for product: $productId');
+      debugPrint(
+        '🔍 [Review API] Endpoint: ${ApiConstants.getProductReviewsEndpoint}/$productId',
+      );
+
       final response = await _dio.get(
         '${ApiConstants.getProductReviewsEndpoint}/$productId',
         options: Options(headers: {'accept': '*/*'}),
       );
+
+      debugPrint('🔍 [Review API] Response status: ${response.statusCode}');
+      debugPrint(
+        '🔍 [Review API] Response data type: ${response.data.runtimeType}',
+      );
+      debugPrint('🔍 [Review API] Response data: ${response.data}');
+
       if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List)
-            .map((e) => ReviewModel.fromJson(e))
-            .toList();
+        final reviews =
+            (response.data as List)
+                .map((e) => ReviewModel.fromJson(e))
+                .toList();
+        debugPrint(
+          '🔍 [Review API] Parsed ${reviews.length} reviews from List',
+        );
+        return reviews;
       } else if (response.data is Map && response.data['data'] is List) {
-        return (response.data['data'] as List)
-            .map((e) => ReviewModel.fromJson(e))
-            .toList();
+        final reviews =
+            (response.data['data'] as List)
+                .map((e) => ReviewModel.fromJson(e))
+                .toList();
+        debugPrint(
+          '🔍 [Review API] Parsed ${reviews.length} reviews from Map.data',
+        );
+        return reviews;
+      } else if (response.data is Map && response.data['success'] == true) {
+        // Handle case where API returns success but no data
+        debugPrint('🔍 [Review API] API returned success but no review data');
+        return [];
       }
+
+      debugPrint('🔍 [Review API] No reviews found, returning empty list');
       return [];
     } on DioException catch (e) {
+      debugPrint('❌ [Review API] DioException: ${e.message}');
+      debugPrint('❌ [Review API] Status code: ${e.response?.statusCode}');
+      debugPrint('❌ [Review API] Response data: ${e.response?.data}');
       throw _parseDioError(e);
+    } catch (e) {
+      debugPrint('❌ [Review API] General error: $e');
+      throw AppException('Failed to load reviews: $e');
     }
   }
 
@@ -302,6 +374,32 @@ class ApiService {
       if (e.response != null) {
         debugPrint(
           '[registerUser] DioException response data: ${e.response?.data}',
+        );
+        final data = e.response?.data;
+
+        String title = 'Registration Failed';
+        String message = 'Something went wrong';
+
+        if (data is Map<String, dynamic>) {
+          if (data['title'] != null) {
+            title = data['title'].toString();
+          }
+
+          // extract first error message
+          if (data['errors'] != null && data['errors'] is Map) {
+            final errors = data['errors'] as Map;
+            final firstKey = errors.keys.first;
+            final firstError = errors[firstKey];
+            if (firstError is List && firstError.isNotEmpty) {
+              message = firstError.first.toString();
+            }
+          }
+        }
+
+        PopupService.showSnackbar(
+          type: PopupType.error,
+          title: title,
+          message: message,
         );
       }
       throw _parseDioError(e);
@@ -412,16 +510,49 @@ class ApiService {
   // --- ERROR HANDLING ---
   AppException _parseDioError(DioException e) {
     String message = 'An error occurred';
+
     if (e.response != null && e.response!.data != null) {
       final responseData = e.response!.data;
+      debugPrint('🔍 [Error Parser] Response data: $responseData');
+
       if (responseData is String) {
         message = responseData;
       } else if (responseData is Map<String, dynamic>) {
-        message = responseData['message'] ?? 'Failed to process request';
+        // Try to get the most specific error message
+        if (responseData['errors'] != null) {
+          final errors = responseData['errors'];
+          if (errors is Map && errors.isNotEmpty) {
+            final firstError = errors.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              message = firstError.first.toString();
+            } else {
+              message = firstError.toString();
+            }
+          } else if (errors is List && errors.isNotEmpty) {
+            message = errors.first.toString();
+          }
+        } else if (responseData['message'] != null) {
+          message = responseData['message'];
+        } else if (responseData['title'] != null) {
+          message = responseData['title'];
+        } else {
+          message = 'Server error: ${e.response?.statusCode}';
+        }
       }
     } else {
-      message = e.message ?? 'Network error';
+      // Handle network-level errors
+      if (e.type == DioExceptionType.connectionTimeout) {
+        message = 'Connection timeout - please check your internet connection';
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        message = 'Request timeout - server is taking too long to respond';
+      } else if (e.type == DioExceptionType.connectionError) {
+        message = 'Connection error - please check your internet connection';
+      } else {
+        message = e.message ?? 'Network error occurred';
+      }
     }
+
+    debugPrint('🔍 [Error Parser] Final error message: $message');
     return AppException(message);
   }
 

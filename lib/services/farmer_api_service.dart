@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:krishi_link/core/constants/api_constants.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/notification_model.dart';
 import 'package:krishi_link/features/admin/models/order_model.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';

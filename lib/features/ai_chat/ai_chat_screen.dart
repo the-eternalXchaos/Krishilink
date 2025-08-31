@@ -1,14 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/constants/constants.dart';
 import 'package:krishi_link/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
-import 'package:krishi_link/core/components/app_text_input_field.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 
 import 'ai_chat_controller.dart';
 
@@ -26,11 +23,16 @@ class _AiChatScreenState extends State<AiChatScreen>
   late final Animation<double> _fadeAnimation;
   late final FocusNode _textFieldFocusNode;
   Timer? _debounceTimer;
-  final AiChatController controller = Get.put(AiChatController());
+  late final AiChatController controller;
+  // final controller = Get.put(AuthController());
 
   @override
   void initState() {
     super.initState();
+    controller =
+        Get.isRegistered<AiChatController>()
+            ? Get.find<AiChatController>()
+            : Get.put(AiChatController());
     controller.setUserName(widget.name);
 
     _animationController = AnimationController(
@@ -104,7 +106,7 @@ class _AiChatScreenState extends State<AiChatScreen>
   }
 
   void _sendMessage() {
-    if (controller.inputText.value.trim().isNotEmpty) {
+    if (controller.inputController.text.trim().isNotEmpty) {
       controller.sendMessage();
       HapticFeedback.lightImpact();
     }
@@ -114,14 +116,12 @@ class _AiChatScreenState extends State<AiChatScreen>
     HapticFeedback.lightImpact();
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SpacingConstants.largeRadius),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: isDarkMode ? Colors.grey[850] : Colors.white,
         title: Row(
           children: [
             Icon(Icons.delete_outline, color: Colors.red[600]),
-            const SizedBox(width: SpacingConstants.smallPadding),
+            const SizedBox(width: 8),
             Text(
               'clear_chat'.tr,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -151,9 +151,7 @@ class _AiChatScreenState extends State<AiChatScreen>
               backgroundColor: Colors.red[600],
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  SpacingConstants.mediumRadius,
-                ),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: Text('clear'.tr),
@@ -191,25 +189,22 @@ class _AppBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: SpacingConstants.largePadding,
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpacingConstants.largePadding,
-            vertical: SpacingConstants.mediumPadding,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               IconButton(
                 icon: const Icon(
                   Icons.arrow_back_ios,
                   color: Colors.white,
-                  size: SpacingConstants.iconSizeLarge,
+                  size: 24,
                 ),
                 onPressed: Get.back,
                 tooltip: 'Back',
@@ -218,28 +213,20 @@ class _AppBar extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors:
-                              isDarkMode
-                                  ? [Colors.grey[800]!, Colors.grey[700]!]
-                                  : [Colors.green[100]!, Colors.green[50]!],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          SpacingConstants.mediumRadius,
-                        ),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Semantics(
                         label: 'KrishiLink AI Chatbot',
                         child: LottieWidget(
                           path: LottieAssets.aiLogo,
-                          height: SpacingConstants.lottieSizeLarge * 0.5,
+                          height: 32,
                         ),
                       ),
                     ),
-                    const SizedBox(width: SpacingConstants.mediumPadding),
+                    const SizedBox(width: 12),
                     Flexible(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +244,7 @@ class _AppBar extends StatelessWidget {
                             'Chatting with $userName',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: Colors.white.withOpacity(0.8),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -271,7 +258,7 @@ class _AppBar extends StatelessWidget {
                 icon: const Icon(
                   Icons.delete_outline,
                   color: Colors.white,
-                  size: SpacingConstants.iconSizeLarge,
+                  size: 24,
                 ),
                 tooltip: 'clear_chat'.tr,
                 onPressed: onClearChat,
@@ -304,14 +291,7 @@ class _ChatArea extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors:
-              isDarkMode
-                  ? [Colors.grey[900]!, Colors.grey[850]!]
-                  : [Colors.grey[50]!, Colors.green[50]!],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        color: isDarkMode ? Colors.grey[900] : Colors.grey[50],
       ),
       child: Obx(() {
         if (controller.messages.isEmpty && !controller.isLoading.value) {
@@ -319,12 +299,12 @@ class _ChatArea extends StatelessWidget {
         }
 
         return ListView.builder(
-          reverse: true,
+          reverse: true, // Messages appear from bottom
           padding: EdgeInsets.only(
-            left: screenWidth * SpacingConstants.chatHorizontalPaddingFactor,
-            right: screenWidth * SpacingConstants.chatHorizontalPaddingFactor,
-            top: SpacingConstants.mediumPadding,
-            bottom: SpacingConstants.largePadding,
+            left: screenWidth * 0.04,
+            right: screenWidth * 0.04,
+            top: 10,
+            bottom: 16,
           ),
           controller: controller.scrollController,
           itemCount:
@@ -360,49 +340,48 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(SpacingConstants.extraLargePadding),
-            decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey[800] : Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: SpacingConstants.extraLargePadding,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey[800] : Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: LottieWidget(path: LottieAssets.aiLogo, height: 80),
             ),
-            child: LottieWidget(    
-              path: LottieAssets.aiLogo,
-              height: SpacingConstants.lottieSizeLarge,
+            const SizedBox(height: 24),
+            Text(
+              'Welcome to KrishiLink AI!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.grey[800],
+              ),
             ),
-          ),
-          const SizedBox(height: SpacingConstants.extraLargePadding),
-          Text(
-            'Welcome to KrishiLink AI!',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : Colors.grey[800],
+            const SizedBox(height: 8),
+            Text(
+              'Start a conversation by typing a message below',
+              style: TextStyle(
+                fontSize: 16,
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: SpacingConstants.smallPadding),
-          Text(
-            'Start a conversation by typing a message below',
-            style: TextStyle(
-              fontSize: 16,
-              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: SpacingConstants.extraLargePadding * 1.33),
-          _SuggestedQuestions(),
-        ],
+            const SizedBox(height: 32),
+            _SuggestedQuestions(),
+          ],
+        ),
       ),
     );
   }
@@ -421,30 +400,25 @@ class _SuggestedQuestions extends StatelessWidget {
     final controller = Get.find<AiChatController>();
 
     return Wrap(
-      spacing: SpacingConstants.smallPadding,
-      runSpacing: SpacingConstants.smallPadding,
+      spacing: 8,
+      runSpacing: 8,
       children:
           questions
               .map(
                 (question) => InkWell(
                   onTap: () {
                     controller.inputController.text = question;
-                    controller.inputText.value = question;
                     controller.sendMessage();
                   },
-                  borderRadius: BorderRadius.circular(
-                    SpacingConstants.extraLargeRadius,
-                  ),
+                  borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: SpacingConstants.largePadding,
-                      vertical: SpacingConstants.smallPadding,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: isDarkMode ? Colors.grey[800] : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        SpacingConstants.extraLargeRadius,
-                      ),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color:
                             isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
@@ -471,29 +445,18 @@ class _TypingIndicator extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: SpacingConstants.smallPadding,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(SpacingConstants.mediumPadding),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors:
-                    isDarkMode
-                        ? [Colors.grey[800]!, Colors.grey[700]!]
-                        : [Colors.white, Colors.green[50]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(
-                SpacingConstants.extraLargeRadius,
-              ),
+              color: isDarkMode ? Colors.grey[800] : Colors.white,
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: SpacingConstants.mediumRadius,
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -501,11 +464,8 @@ class _TypingIndicator extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                LottieWidget(
-                  path: LottieAssets.aiLogo,
-                  height: SpacingConstants.lottieSizeMedium,
-                ),
-                const SizedBox(width: SpacingConstants.smallPadding),
+                LottieWidget(path: LottieAssets.aiLogo, height: 20),
+                const SizedBox(width: 8),
                 const TypingIndicator(),
               ],
             ),
@@ -542,9 +502,7 @@ class _MessageBubble extends StatelessWidget {
     return FadeTransition(
       opacity: fadeAnimation,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: SpacingConstants.smallPadding / 2,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           mainAxisAlignment:
               isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -552,75 +510,43 @@ class _MessageBubble extends StatelessWidget {
           children: [
             if (!isUser) ...[
               Container(
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors:
-                        isDarkMode
-                            ? [Colors.green[800]!, Colors.green[700]!]
-                            : [Colors.green[100]!, Colors.green[50]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.green[100],
                   shape: BoxShape.circle,
                 ),
-                child: LottieWidget(
-                  path: LottieAssets.aiLogo,
-                  height: SpacingConstants.lottieSizeMedium,
-                ),
+                child: LottieWidget(path: LottieAssets.aiLogo, height: 24),
               ),
-              const SizedBox(width: SpacingConstants.smallPadding),
+              const SizedBox(width: 8),
             ],
             Flexible(
               child: Container(
-                constraints: BoxConstraints(
-                  maxWidth:
-                      screenWidth * SpacingConstants.messageMaxWidthFactor,
-                ),
+                constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingConstants.largePadding,
-                  vertical: SpacingConstants.mediumPadding,
+                  horizontal: 16,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors:
-                        isUser
-                            ? (isDarkMode
-                                ? [Colors.green[700]!, Colors.green[600]!]
-                                : [Colors.green[500]!, Colors.green[400]!])
-                            : (isDarkMode
-                                ? [Colors.grey[800]!, Colors.grey[700]!]
-                                : [Colors.white, Colors.green[50]!]),
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color:
+                      isUser
+                          ? (isDarkMode ? Colors.green[700] : Colors.green[500])
+                          : (isDarkMode ? Colors.grey[800] : Colors.white),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(
-                      SpacingConstants.extraLargeRadius,
-                    ),
-                    topRight: const Radius.circular(
-                      SpacingConstants.extraLargeRadius,
-                    ),
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
                     bottomLeft:
                         isUser
-                            ? const Radius.circular(
-                              SpacingConstants.extraLargeRadius,
-                            )
-                            : const Radius.circular(
-                              SpacingConstants.smallRadius,
-                            ),
+                            ? const Radius.circular(20)
+                            : const Radius.circular(6),
                     bottomRight:
                         isUser
-                            ? const Radius.circular(
-                              SpacingConstants.smallRadius,
-                            )
-                            : const Radius.circular(
-                              SpacingConstants.extraLargeRadius,
-                            ),
+                            ? const Radius.circular(6)
+                            : const Radius.circular(20),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: SpacingConstants.mediumRadius,
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -630,14 +556,12 @@ class _MessageBubble extends StatelessWidget {
                   children: [
                     if (isUser)
                       Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: SpacingConstants.smallPadding / 2,
-                        ),
+                        padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
                           userName,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Colors.white.withOpacity(0.9),
                             fontSize: 12,
                           ),
                         ),
@@ -657,16 +581,14 @@ class _MessageBubble extends StatelessWidget {
                     ),
                     if (timestamp != null)
                       Padding(
-                        padding: const EdgeInsets.only(
-                          top: SpacingConstants.smallPadding / 2,
-                        ),
+                        padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}',
                           style: TextStyle(
                             fontSize: 11,
                             color:
                                 isUser
-                                    ? Colors.white.withValues(alpha: 0.7)
+                                    ? Colors.white.withOpacity(0.7)
                                     : (isDarkMode
                                         ? Colors.grey[400]
                                         : Colors.grey[500]),
@@ -675,22 +597,17 @@ class _MessageBubble extends StatelessWidget {
                       ),
                     if (message['error'] == true)
                       Padding(
-                        padding: const EdgeInsets.only(
-                          top: SpacingConstants.smallPadding,
-                        ),
+                        padding: const EdgeInsets.only(top: 8),
                         child: TextButton.icon(
                           onPressed: onRetry,
-                          icon: const Icon(
-                            Icons.refresh,
-                            size: SpacingConstants.iconSizeSmall,
-                          ),
+                          icon: const Icon(Icons.refresh, size: 16),
                           label: Text('retry'.tr),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.red[600],
                             minimumSize: Size.zero,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: SpacingConstants.smallPadding,
-                              vertical: SpacingConstants.smallPadding / 2,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                           ),
                         ),
@@ -700,9 +617,9 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
             if (isUser) ...[
-              const SizedBox(width: SpacingConstants.smallPadding),
+              const SizedBox(width: 8),
               CircleAvatar(
-                radius: SpacingConstants.avatarSize,
+                radius: 16,
                 backgroundColor: Colors.green[100],
                 child: Text(
                   userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
@@ -738,42 +655,29 @@ class _InputArea extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors:
-              isDarkMode
-                  ? [Colors.grey[900]!, Colors.grey[850]!]
-                  : [Colors.white, Colors.green[50]!],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        color: isDarkMode ? Colors.grey[900] : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: SpacingConstants.largePadding,
-            offset: const Offset(0, -4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 70),
-          padding: const EdgeInsets.fromLTRB(
-            SpacingConstants.mediumPadding,
-            SpacingConstants.smallPadding,
-            SpacingConstants.mediumPadding,
-            SpacingConstants.smallPadding,
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _ImagePickerButton(controller: controller),
-              const SizedBox(width: SpacingConstants.smallPadding),
+              _ImagePickerButton(),
+              const SizedBox(width: 12),
               _TextInputField(
                 controller: controller,
                 focusNode: focusNode,
                 onSend: onSend,
               ),
-              const SizedBox(width: SpacingConstants.smallPadding),
+              const SizedBox(width: 12),
               _SendButton(controller: controller, onSend: onSend),
             ],
           ),
@@ -784,56 +688,38 @@ class _InputArea extends StatelessWidget {
 }
 
 class _ImagePickerButton extends StatelessWidget {
-  final AiChatController controller;
-
-  const _ImagePickerButton({required this.controller});
-
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: SpacingConstants.smallPadding / 2),
+      margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors:
-              isDarkMode
-                  ? [Colors.grey[800]!, Colors.grey[700]!]
-                  : [Colors.grey[100]!, Colors.grey[50]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: SpacingConstants.mediumRadius,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: IconButton(
         icon: Icon(
           Icons.add_photo_alternate_outlined,
-          color: Theme.of(context).colorScheme.onSurface,
-          size: SpacingConstants.iconSizeMedium,
+          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          size: 24,
         ),
         tooltip: 'send_image'.tr,
-        onPressed: () async {
-          final result = await FilePicker.platform.pickFiles(
-            type: FileType.image,
-            allowMultiple: false,
-          );
-          if (result != null && result.files.single.path != null) {
-            final file = File(result.files.single.path!);
-            final message = controller.inputController.text.trim();
-            await controller.sendImageMessage(message, file);
-            controller.inputController.clear();
-            controller.inputText.value = '';
-            HapticFeedback.lightImpact();
-          }
-        },
+        onPressed: () => _showImageUploadSnackbar(isDarkMode),
       ),
+    );
+  }
+
+  void _showImageUploadSnackbar(bool isDarkMode) {
+    Get.snackbar(
+      'Coming Soon',
+      'Image upload is an upcoming feature. For now, please send text only.',
+      backgroundColor: isDarkMode ? Colors.orange[800] : Colors.orange[100],
+      colorText: isDarkMode ? Colors.white : Colors.orange[900],
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      icon: const Icon(Icons.info_outline, color: Colors.orange),
     );
   }
 }
@@ -856,14 +742,56 @@ class _TextInputField extends StatefulWidget {
 class _TextInputFieldState extends State<_TextInputField> {
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Expanded(
-      child: AppTextInputField(
-        controller: widget.controller.inputController,
-        focusNode: widget.focusNode,
-        hint: 'type_your_message'.tr,
-        maxLines: 2,
-        keyboardType: TextInputType.multiline,
-        validator: null,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44, maxHeight: 120),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+            width: 1,
+          ),
+        ),
+        child: TextField(
+          controller: widget.controller.inputController,
+          focusNode: widget.focusNode,
+          textInputAction: TextInputAction.newline,
+          keyboardType: TextInputType.multiline,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: 'type_your_message'.tr,
+            hintStyle: TextStyle(
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+              fontSize: 15,
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 12,
+            ),
+            isDense: true,
+          ),
+          maxLines: null,
+          minLines: 1,
+          style: TextStyle(
+            fontSize: 15,
+            color: isDarkMode ? Colors.white : Colors.grey[800],
+            height: 1.4,
+          ),
+          onChanged: (value) {
+            // Update the reactive text value for the send button
+            widget.controller.inputText.value = value;
+            setState(() {});
+          },
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              widget.onSend();
+            }
+          },
+        ),
       ),
     );
   }
@@ -877,40 +805,21 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Obx(() {
       final isLoading = controller.isLoading.value;
-      final hasText =
-          controller.inputText.value.trim().isNotEmpty; // Use inputText
+      final hasText = controller.inputText.value.trim().isNotEmpty;
 
       if (isLoading) {
         return Container(
-          margin: const EdgeInsets.only(
-            bottom: SpacingConstants.smallPadding / 2,
-          ),
-          padding: const EdgeInsets.all(SpacingConstants.mediumPadding),
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors:
-                  isDarkMode
-                      ? [Colors.grey[600]!, Colors.grey[500]!]
-                      : [Colors.grey[400]!, Colors.grey[300]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Colors.grey[400],
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: SpacingConstants.mediumRadius,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: const SizedBox(
-            width: SpacingConstants.iconSizeSmall,
-            height: SpacingConstants.iconSizeSmall,
+            width: 20,
+            height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: Colors.white,
@@ -921,43 +830,23 @@ class _SendButton extends StatelessWidget {
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(
-          bottom: SpacingConstants.smallPadding / 2,
-        ),
-        transform: Matrix4.identity()..scale(hasText ? 1.0 : 0.9),
+        margin: const EdgeInsets.only(bottom: 4),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors:
-                isDarkMode
-                    ? [Colors.green[600]!, Colors.green[500]!]
-                    : [Colors.green[600]!, Colors.green[400]!],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: hasText ? Colors.green[600] : Colors.grey[400],
           shape: BoxShape.circle,
           boxShadow:
               hasText
                   ? [
                     BoxShadow(
-                      color: Colors.green.withValues(alpha: 0.3),
-                      blurRadius: SpacingConstants.largePadding,
+                      color: Colors.green.withOpacity(0.3),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ]
-                  : [
-                    BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: SpacingConstants.mediumRadius,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  : [],
         ),
         child: IconButton(
-          icon: const Icon(
-            Icons.send_rounded,
-            color: Colors.white,
-            size: SpacingConstants.iconSizeSmall,
-          ),
+          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
           onPressed: hasText ? onSend : null,
           tooltip: 'send_message'.tr,
         ),
@@ -1009,9 +898,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
             final scale = (1 - (animationValue * 2 - 1).abs()).clamp(0.5, 1.0);
 
             return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpacingConstants.smallPadding / 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Transform.scale(
                 scale: scale,
                 child: Container(

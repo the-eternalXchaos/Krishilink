@@ -12,7 +12,7 @@ import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/models/review_model.dart';
-import 'package:krishi_link/services/api_service.dart';
+import 'package:krishi_link/services/api_services/api_service.dart';
 import 'package:krishi_link/services/token_service.dart';
 
 class ProductController extends GetxController {
@@ -428,15 +428,27 @@ class ProductController extends GetxController {
 
   Future<void> loadProductReviews(String productId) async {
     try {
+      debugPrint(
+        '🔄 [ProductController] Loading reviews for product: $productId',
+      );
+
+      // Clear previous reviews to prevent showing wrong product's reviews
+      reviewsModel.clear();
+      errorMessage.value = '';
       isLoadingReviews.value = true;
+
       final fetchedReviews = await _apiService.getReviews(productId);
 
-      guestOptions();
-
-      reviewsModel.assignAll(fetchedReviews as Iterable<ReviewModel>);
+      debugPrint(
+        '✅ [ProductController] Successfully loaded ${fetchedReviews.length} reviews',
+      );
+      reviewsModel.assignAll(fetchedReviews);
     } catch (e) {
-      debugPrint('Failed to load reviews');
-      PopupService.error('failed_to_load_reviews'.tr);
+      debugPrint('❌ [ProductController] Failed to load reviews: $e');
+      errorMessage.value = 'failed_to_load_reviews'.tr;
+
+      // Don't show popup for review loading errors - just log them
+      // PopupService.info(errorMessage.value);
     } finally {
       isLoadingReviews.value = false;
     }
@@ -516,6 +528,8 @@ class ProductController extends GetxController {
 
   void addToCart(Product product) {
     // Implement cart logic TODO Add the cart logic
+
+    PopupService.success('added_to_cart'.tr);
   }
 
   void initiateCheckout(Product product) {
@@ -571,5 +585,13 @@ class ProductController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Clear reviews when switching products or on errors
+  void clearReviews() {
+    debugPrint('🧹 [ProductController] Clearing reviews');
+    reviewsModel.clear();
+    errorMessage.value = '';
+    isLoadingReviews.value = false;
   }
 }

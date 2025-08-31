@@ -124,7 +124,8 @@ class UnifiedProductController extends GetxController {
     // Check network connectivity
     if (!await _checkNetworkConnectivity()) {
       debugPrint('❌ [Controller] No network connectivity');
-      PopupService.error('No internet connection. Please check your network.');
+      _showNetworkError();
+      // PopupService.error('No internet connection. Please check your network.');
       return;
     }
 

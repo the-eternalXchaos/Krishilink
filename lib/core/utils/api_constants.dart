@@ -68,6 +68,7 @@ class ApiConstants {
   static const String addReviewEndpoint = '$baseUrl/api/Review/AddReview';
   static const String addOffensiveWordEndpoint =
       '$baseUrl/api/Review/AddOffensiveWord';
+      
   static const String getProductReviewsEndpoint =
       '$baseUrl/api/Review/getProductReviews'; // + /{productId}
   static const String getNewReviewsEndpoint =
@@ -133,7 +134,9 @@ class ApiConstants {
       '$baseUrl/api/Notification/GetNotifications';
 
   static var markNotificationAsReadEndpoint =
-      '$baseUrl/api/Notification/markNotificationAsRead'; // + /{notificationId}
+      '$baseUrl/api/Notification/markNotificationAsRead';
+
+  static var deleteOrderEndpoint; // + /{notificationId}
 
   // You can add more endpoints here if the Swagger spec updates
 }

@@ -343,7 +343,7 @@ class UnifiedSettingsPage extends StatelessWidget {
               leading: const Icon(Icons.store),
               title: Text('manage_products'.tr),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Get.toNamed('/farmer/unified-product-management'),
+              onTap: () => Get.toNamed('/product-management'),
             ),
             _buildSettingTile(
               leading: const Icon(Icons.analytics),
