@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart' hide Message;
 import 'package:get/get.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:logger/logger.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../controllers/chat_controller.dart';
@@ -85,7 +87,7 @@ class ChatNotificationService extends GetxService {
     final deviceInfo = DeviceInfoPlugin();
     if (Theme.of(Get.context!).platform == TargetPlatform.android) {
       final androidInfo = await deviceInfo.androidInfo;
-      _deviceId = androidInfo.androidId;
+      _deviceId = androidInfo.device;
     } else {
       final iosInfo = await deviceInfo.iosInfo;
       _deviceId = iosInfo.identifierForVendor;
@@ -233,4 +235,14 @@ class ChatNotificationService extends GetxService {
     _channel?.sink.close();
     super.onClose();
   }
+
+  Future<void> clearChatNotifications(String chatRoomId) async {}
+
+  Future<void> unsubscribeFromChatRoom(String chatRoomId) async {}
+
+  Future<void> subscribeToUserTopic(String id) async {}
+
+  Future<void> subscribeToChatRoom(String chatRoomId) async {}
+
+  Future<void> updateUserToken() async {}
 }

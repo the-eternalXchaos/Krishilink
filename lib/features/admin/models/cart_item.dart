@@ -40,4 +40,27 @@ class CartItem {
       quantity: quantity,
     );
   }
+
+  // from json
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      id: json['id'],
+      name: json['name'],
+      price: json['price'],
+      imageUrl: json['imageUrl'],
+      quantity: json['quantity'],
+    );
+  }
+
+  // .tojson() format
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'imageUrl': imageUrl,
+      'quantity': quantity,
+    };
+  }
 }

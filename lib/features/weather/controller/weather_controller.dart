@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,23 +9,25 @@ import 'package:krishi_link/features/weather/weather_model.dart';
 class WeatherController extends GetxController {
   final Rx<Weather?> weather = Rx<Weather?>(null);
   final RxString errorMessage = ''.obs;
+  final RxDouble latitude = 28.1994.obs;
+  final RxDouble longitude = 83.9784.obs;
   final RxBool isLoading = false.obs;
 
   final WeatherApiServices _apiServices =
       Get.isRegistered<WeatherApiServices>()
           ? Get.find<WeatherApiServices>()
-          : Get.put(WeatherApiServices());
+          : WeatherApiServices();
 
   static const String _weatherKey = 'saved_weather';
 
   @override
   void onInit() {
     super.onInit();
-    // _loadSavedWeather();
-    // fetchWeather(
-    //   latitude: weather.value?.latitude ?? 28.0,
-    //   longitude: weather.value?.longitude ?? 84.0,
-    // );
+    _loadSavedWeather();
+  }
+
+  Future<void> _updateLoading(bool value) async {
+    isLoading.value = value;
   }
 
   Future<void> fetchWeather({
@@ -34,7 +35,7 @@ class WeatherController extends GetxController {
     required double longitude,
   }) async {
     try {
-      isLoading.value = true;
+      await _updateLoading(true);
       errorMessage.value = '';
 
       final weatherData = await _apiServices.fetchWeather(
@@ -43,61 +44,51 @@ class WeatherController extends GetxController {
       );
 
       weather.value = weatherData;
-      debugPrint(weather.value.toString());
+
+      // Save latest values for persistence
       await _saveWeather(weatherData);
+
+      // Update local lat/long state
+      this.latitude.value = weatherData.latitude ?? latitude;
+      this.longitude.value = weatherData.longitude ?? longitude;
     } catch (e) {
-      errorMessage.value = _mapError(e);
-      weather.value ??= Weather.empty();
+      errorMessage.value = 'failed_to_fetch_weather'.trParams({
+        'error': e.toString(),
+      });
       PopupService.error(errorMessage.value);
+
+      if (weather.value == null) {
+        weather.value = Weather.empty();
+      }
     } finally {
-      isLoading.value = false;
+      await _updateLoading(false);
     }
   }
 
-  /// Load last saved weather
-  ///
-  /// Expose a getter for loading saved weather
-  Future<void> get loadSavedWeather => _loadSavedWeather();
+  void loadSavedWeather() {
+    _loadSavedWeather();
+  }
 
   Future<void> _loadSavedWeather() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_weatherKey);
+    final weatherJson = prefs.getString(_weatherKey);
 
-    if (jsonStr != null) {
-      final saved = Weather.fromJson(jsonDecode(jsonStr));
-      weather.value = saved;
+    if (weatherJson != null) {
+      final weatherData = Weather.fromJson(jsonDecode(weatherJson));
+      weather.value = weatherData;
 
-      // Optionally refresh in background with latest
-      fetchWeather(latitude: saved.latitude, longitude: saved.longitude);
+      // Update lat/lon state as well
+      latitude.value = weatherData.latitude ?? latitude.value;
+      debugPrint(latitude.value.toString());
+      longitude.value = weatherData.longitude ?? longitude.value;
     }
+
+    // Always try to refresh latest
+    fetchWeather(latitude: latitude.value, longitude: longitude.value);
   }
 
-  Future<void> refreshWeather(
-    // required double latitude,
-    // required double longitude,
-  ) async {
-    if (weather.value != null && weather.value!.latitude != 0) {
-      await fetchWeather(
-        latitude: weather.value!.latitude,
-        longitude: weather.value!.longitude,
-      );
-    } else {
-      // fallback: use GPS or default coords
-      await fetchWeather(latitude: 28.2, longitude: 84.0);
-    }
-  }
-
-  /// Save weather locally
-  Future<void> _saveWeather(Weather data) async {
+  Future<void> _saveWeather(Weather weatherData) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_weatherKey, jsonEncode(data.toJson()));
-  }
-
-  /// Map different errors into user-friendly message
-  String _mapError(dynamic e) {
-    if (e is DioException) {
-      return e.response?.data['message'] ?? e.message ?? 'Network error';
-    }
-    return e.toString();
+    await prefs.setString(_weatherKey, jsonEncode(weatherData.toJson()));
   }
 }

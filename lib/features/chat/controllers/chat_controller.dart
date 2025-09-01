@@ -7,16 +7,31 @@ import '../models/message.dart';
 import '../services/chat_api_service.dart';
 import '../services/chat_cache_service.dart';
 import '../services/signalr_service.dart';
-import '../services/fcm_service.dart';
+import '../services/chat_notification_service.dart';
 import '../../../features/auth/controller/auth_controller.dart';
 
 class ChatController extends GetxController {
   final Logger _logger = Logger();
-  final AuthController _authController = Get.find<AuthController>();
-  final ChatApiService _apiService = Get.find<ChatApiService>();
-  final ChatCacheService _cacheService = Get.find<ChatCacheService>();
-  final SignalRService _signalRService = Get.find<SignalRService>();
-  final FcmService _fcmService = Get.find<FcmService>();
+  final AuthController _authController =
+      Get.isRegistered()
+          ? Get.find<AuthController>()
+          : Get.put(AuthController());
+  final ChatApiService _apiService =
+      Get.isRegistered()
+          ? Get.find<ChatApiService>()
+          : Get.put(ChatApiService());
+  final ChatCacheService _cacheService =
+      Get.isRegistered()
+          ? Get.find<ChatCacheService>()
+          : Get.put(ChatCacheService());
+  final SignalRService _signalRService =
+      Get.isRegistered()
+          ? Get.find<SignalRService>()
+          : Get.put(SignalRService());
+  final ChatNotificationService chatNotificationService =
+      Get.isRegistered()
+          ? Get.find<ChatNotificationService>()
+          : Get.put(ChatNotificationService());
 
   // Observables
   final RxList<ChatRoom> chatRooms = <ChatRoom>[].obs;
@@ -483,7 +498,7 @@ class ChatController extends GetxController {
   Future<void> initializeFCM() async {
     try {
       if (_authController.currentUser.value?.id != null) {
-        await _fcmService.subscribeToUserTopic(
+        await chatNotificationService.subscribeToUserTopic(
           _authController.currentUser.value!.id,
         );
         _logger.i(
@@ -498,7 +513,7 @@ class ChatController extends GetxController {
   /// Subscribe to chat room notifications
   Future<void> subscribeToChatRoomNotifications(String chatRoomId) async {
     try {
-      await _fcmService.subscribeToChatRoom(chatRoomId);
+      await chatNotificationService.subscribeToChatRoom(chatRoomId);
       _logger.i('Subscribed to chat room notifications: $chatRoomId');
     } catch (e) {
       _logger.e('Failed to subscribe to chat room notifications: $e');
@@ -508,7 +523,7 @@ class ChatController extends GetxController {
   /// Unsubscribe from chat room notifications
   Future<void> unsubscribeFromChatRoomNotifications(String chatRoomId) async {
     try {
-      await _fcmService.unsubscribeFromChatRoom(chatRoomId);
+      await chatNotificationService.unsubscribeFromChatRoom(chatRoomId);
       _logger.i('Unsubscribed from chat room notifications: $chatRoomId');
     } catch (e) {
       _logger.e('Failed to unsubscribe from chat room notifications: $e');
@@ -518,7 +533,7 @@ class ChatController extends GetxController {
   /// Clear notifications for a specific chat room
   Future<void> clearChatNotifications(String chatRoomId) async {
     try {
-      await _fcmService.clearChatNotifications(chatRoomId);
+      await chatNotificationService.clearChatNotifications(chatRoomId);
       _logger.i('Cleared notifications for chat room: $chatRoomId');
     } catch (e) {
       _logger.e('Failed to clear chat notifications: $e');
@@ -528,7 +543,7 @@ class ChatController extends GetxController {
   /// Update FCM token when user logs in
   Future<void> updateFCMToken() async {
     try {
-      await _fcmService.updateUserToken();
+      await chatNotificationService.updateUserToken();
       _logger.i('FCM token updated');
     } catch (e) {
       _logger.e('Failed to update FCM token: $e');

@@ -76,12 +76,28 @@ class WeatherDetailsPage extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () async {
             debugPrint(
-              'Refreshing weather for ${weather.latitude}, ${weather.longitude}',
+              'Refreshing weather for ${controller.latitude}, ${controller.longitude}',
             );
-            controller.refreshWeather;
-            debugPrint(
-              'Refreshing weather for ${weather.latitude}, ${weather.longitude}',
-            );
+
+            // controller.fetchWeather(
+            //   latitude: controller.latitude.value,
+            //   longitude: controller.longitude.value,
+            // );
+            // controller.refreshWeather();
+
+            // Future.delayed(const Duration(seconds: 1), () {
+            //   controller.fetchWeather(
+            //     latitude: weather.latitude,
+            //     longitude: weather.longitude,
+            //   );
+            // });
+            // debugPrint(
+            //   'Refreshing weather for ${weather.latitude}, ${weather.longitude}',
+            // );
+
+            // debugPrint(
+            //   'Refreshing weather for ${weather.latitude}, ${weather.longitude}',
+            // );
           },
 
           color: colorScheme.primary,

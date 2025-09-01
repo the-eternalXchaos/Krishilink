@@ -47,4 +47,6 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx:24.0.0") // Firestore
     implementation("com.google.firebase:firebase-messaging-ktx:23.1.0") // Firebase Messaging
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    // coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.2.0")
+
 }
