@@ -31,29 +31,17 @@ class CartItem {
     );
   }
 
-  factory CartItem.fromProduct(Product product, {required int quantity}) {
-    return CartItem(
-      id: product.id,
-      name: product.productName,
-      price: product.rate.toString(),
-      imageUrl: product.image,
-      quantity: quantity,
-    );
-  }
-
-  // from json
+//  factory CartItem.fromJson(Map<String, dynamic> json) {
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      id: json['id'],
-      name: json['name'],
-      price: json['price'],
-      imageUrl: json['imageUrl'],
-      quantity: json['quantity'],
+      id: json['id'] as String,
+      name: json['name'] as String,
+      price: json['price'] as String,
+      imageUrl: json['imageUrl'] as String,
+      quantity: json['quantity'] as int,
     );
   }
-
-  // .tojson() format
-
+  // to json
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -62,5 +50,15 @@ class CartItem {
       'imageUrl': imageUrl,
       'quantity': quantity,
     };
+  }
+
+   factory CartItem.fromProduct(Product product, {required int quantity}) {
+    return CartItem(
+      id: product.id,
+      name: product.productName,
+      price: product.rate.toString(),
+      imageUrl: product.image,
+      quantity: quantity,
+    );
   }
 }

@@ -216,7 +216,7 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
                 Text(
                   role.tr,
                   style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.15),
+                    color: colorScheme.onSurface.withValues(alpha: 0.15),
                   ),
                 ),
               ],

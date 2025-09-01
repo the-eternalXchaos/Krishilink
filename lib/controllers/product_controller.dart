@@ -11,6 +11,7 @@ import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/models/review_model.dart';
 import 'package:krishi_link/services/api_services/api_service.dart';
 import 'package:krishi_link/services/token_service.dart';
@@ -527,9 +528,16 @@ class ProductController extends GetxController {
   }
 
   void addToCart(Product product) {
-    // Implement cart logic TODO Add the cart logic
-
-    PopupService.success('added_to_cart'.tr);
+    final cartController =
+        Get.isRegistered()
+            ? Get.find<CartController>()
+            : Get.put(CartController());
+    cartController.addProductToCart(
+      product.id,
+      product.productName,
+      product.rate.toString(),
+      product.image,
+    );
   }
 
   void initiateCheckout(Product product) {

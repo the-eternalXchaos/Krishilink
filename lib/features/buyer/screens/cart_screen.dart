@@ -23,9 +23,18 @@ class CartScreen extends StatelessWidget {
     final AuthController authController = Get.find<AuthController>();
 
     return Scaffold(
+      // silverbar
+      // silverappbar
       appBar: AppBar(
         title: Text('your_cart'.tr),
         backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        actions: [
+          IconButton(
+            onPressed: () => cartController.clearCart(),
+            icon: const Icon(Icons.delete, color: Colors.red),
+          ),
+        ],
       ),
       body: Obx(() {
         final cartItems = cartController.cartItems;
@@ -106,7 +115,7 @@ class CartScreen extends StatelessWidget {
                           Icons.remove_circle_outline,
                           color: Colors.red,
                         ),
-                        onPressed: () => cartController.removeFromCart(item),
+                        onPressed: () => cartController.removeFromCart(item.id),
                       ),
                     ),
                   );
@@ -117,37 +126,44 @@ class CartScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Obx(() {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                return Column(
                   children: [
-                    Text(
-                      '${'total'.tr}: RS ${cartController.totalPrice.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed:
-                          cartController.cartItems.isEmpty
-                              ? null
-                              : () {
-                                Get.to(
-                                  () => CheckoutScreen(
-                                    items: cartController.cartItems,
-                                    isFromCart: true,
-                                  ),
-                                );
-                              },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${'total'.tr}: RS ${cartController.totalPrice.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      child: Text('checkout'.tr),
+                        Row(
+                          children: [
+                            ElevatedButton(
+                              onPressed:
+                                  cartController.cartItems.isEmpty
+                                      ? null
+                                      : () {
+                                        Get.to(
+                                          () => CheckoutScreen(
+                                            items: cartController.cartItems,
+                                            isFromCart: true,
+                                          ),
+                                        );
+                                      },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: Text('checkout'.tr),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 );

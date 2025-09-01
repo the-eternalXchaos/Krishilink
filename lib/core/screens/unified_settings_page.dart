@@ -364,6 +364,12 @@ class UnifiedSettingsPage extends StatelessWidget {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => Get.toNamed('/buyer/saved'),
             ),
+            _buildSettingTile(
+              leading: const Icon(Icons.payment),
+              title: Text('payment_history'.tr),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => Get.toNamed('/payment-history'),
+            ),
           ] else if (role == 'admin') ...[
             _buildSettingTile(
               leading: const Icon(Icons.store),

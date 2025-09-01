@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/components/app_text_input_field.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/admin/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/core/components/material_ui/popup.dart';
+import 'package:krishi_link/services/payment_service.dart';
+import 'package:krishi_link/core/components/product/location_picker.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final List<CartItem>? items;
@@ -26,12 +29,18 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final AuthController authController = Get.find<AuthController>();
   final CartController cartController = Get.find<CartController>();
-  
+  final PaymentService paymentService = Get.put(PaymentService());
+
   String selectedPaymentMethod = 'cash_on_delivery';
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
+  // Location variables
+  double selectedLatitude = 0.0;
+  double selectedLongitude = 0.0;
+  String selectedLocationAddress = '';
+
   bool isProcessingPayment = false;
 
   List<CartItem> get checkoutItems {
@@ -83,15 +92,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             // Order Summary
             _buildOrderSummary(colorScheme, textTheme),
             const SizedBox(height: 20),
-            
+
             // Delivery Information
             _buildDeliveryInfo(colorScheme, textTheme),
             const SizedBox(height: 20),
-            
+
             // Payment Methods
             _buildPaymentMethods(colorScheme, textTheme),
             const SizedBox(height: 20),
-            
+
             // Order Notes
             _buildOrderNotes(colorScheme, textTheme),
             const SizedBox(height: 100), // Space for bottom button
@@ -117,25 +126,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            ...checkoutItems.map((item) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${item.name} x${item.quantity}',
-                      style: textTheme.bodyMedium,
+            ...checkoutItems.map(
+              (item) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${item.name} x${item.quantity}',
+                        style: textTheme.bodyMedium,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Rs ${(double.parse(item.price) * item.quantity).toStringAsFixed(2)}',
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    Text(
+                      'Rs ${(double.parse(item.price) * item.quantity).toStringAsFixed(2)}',
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
             const Divider(),
             Row(
               children: [
@@ -191,26 +202,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _addressController,
-              decoration: InputDecoration(
-                labelText: 'delivery_address'.tr,
-                hintText: 'enter_your_full_address'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.location_on),
-              ),
-              maxLines: 3,
+
+            const SizedBox(height: 12),
+
+            // user my custom text field  for phone number
+            AppTextInputField(
+              controller: _phoneController,
+              label: 'phone_number'.tr,
+              icon: Icons.phone,
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _phoneController,
-              decoration: InputDecoration(
-                labelText: 'phone_number'.tr,
-                hintText: 'enter_contact_number'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.phone),
+            Text(
+              'select_delivery_location'.tr,
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 8),
+            LocationPicker(
+              initialLatitude: selectedLatitude,
+              initialLongitude: selectedLongitude,
+              initialAddress: selectedLocationAddress,
+              onLocationSelected: (latitude, longitude, address) {
+                setState(() {
+                  selectedLatitude = latitude;
+                  selectedLongitude = longitude;
+                  selectedLocationAddress = address;
+                  _addressController.text = address;
+                });
+              },
             ),
           ],
         ),
@@ -301,14 +322,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
+            // user my custom text field for order notes
+            AppTextInputField(
               controller: _notesController,
-              decoration: InputDecoration(
-                labelText: 'special_instructions'.tr,
-                hintText: 'any_special_instructions_for_delivery'.tr,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.note),
-              ),
+              label: 'special_instructions'.tr,
+              icon: Icons.note,
               maxLines: 3,
             ),
           ],
@@ -340,17 +358,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
             ),
-            child: isProcessingPayment
-                ? const CircularProgressIndicator(color: Colors.white)
-                : Text(
-                    'place_order_rs'.trParams({
-                      'amount': finalTotal.toStringAsFixed(2),
-                    }),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+            child:
+                isProcessingPayment
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                      'place_order_rs'.trParams({
+                        'amount': finalTotal.toStringAsFixed(2),
+                      }),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
           ),
         ),
       ),
@@ -360,12 +379,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _processOrder() async {
     // Validate inputs
     if (_addressController.text.trim().isEmpty) {
-      PopupService.warning('please_enter_delivery_address'.tr, title: 'validation_error'.tr);
+      PopupService.warning(
+        'please_enter_delivery_address'.tr,
+        title: 'validation_error'.tr,
+      );
       return;
     }
 
     if (_phoneController.text.trim().isEmpty) {
-      PopupService.warning('please_enter_phone_number'.tr, title: 'validation_error'.tr);
+      PopupService.warning(
+        'please_enter_phone_number'.tr,
+        title: 'validation_error'.tr,
+      );
       return;
     }
 
@@ -394,7 +419,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Simulate API call
     await Future.delayed(const Duration(seconds: 2));
 
-    PopupService.success('your_order_has_been_placed_successfully'.tr, title: 'order_placed'.tr);
+    PopupService.success(
+      'your_order_has_been_placed_successfully'.tr,
+      title: 'order_placed'.tr,
+    );
 
     // Clear cart if from cart
     if (widget.isFromCart) {
@@ -407,12 +435,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _processEsewaPayment() async {
     // For now, show a message that eSewa integration is coming soon
-    PopupService.warning('esewa_integration_coming_soon'.tr, title: 'coming_soon'.tr);
+    PopupService.warning(
+      'esewa_integration_coming_soon'.tr,
+      title: 'coming_soon'.tr,
+    );
   }
 
   Future<void> _processKhaltiPayment() async {
-    // For now, show a message that Khalti integration is coming soon
-    PopupService.warning('khalti_integration_coming_soon'.tr, title: 'coming_soon'.tr);
+    try {
+      final user = authController.currentUser.value;
+      if (user == null) {
+        PopupService.error('User not logged in');
+        return;
+      }
+
+      // Initiate Khalti payment
+      final pidx = await paymentService.initiatePayment(
+        items: checkoutItems,
+        amount: finalTotal,
+        customerName: user.fullName ?? 'Customer',
+        customerPhone: _phoneController.text.trim(),
+        customerEmail: user.email,
+      );
+
+      if (pidx != null) {
+        // Open Khalti payment interface
+        paymentService.openKhaltiPayment();
+      } else {
+        PopupService.error('Failed to initiate payment');
+      }
+    } catch (e) {
+      PopupService.error('Payment processing failed: $e');
+    }
   }
 
   @override

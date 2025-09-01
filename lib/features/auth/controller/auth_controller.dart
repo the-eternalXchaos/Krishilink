@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/core/components/material_ui/popup.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
@@ -11,7 +12,6 @@ import 'package:krishi_link/services/api_services/api_service.dart';
 import 'package:krishi_link/services/device_service.dart';
 import 'package:krishi_link/services/token_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
@@ -335,24 +335,30 @@ class AuthController extends GetxController {
 
   Future<void> loginWithGoogle() async {
     try {
-      isLoading(true);
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) throw AppException('Google login cancelled');
-      final googleAuth = await googleUser.authentication;
-      final accessToken = googleAuth.accessToken;
-      if (accessToken == null) {
-        throw AppException('Google authentication failed');
-      }
-      final user = await _apiService.loginWithGoogle(accessToken);
-      await saveAuthData(user.toJson() as UserModel);
+      // Must initialize once in your app (e.g. in main())
+      await GoogleSignIn.instance.initialize(
+        clientId: "<YOUR_CLIENT_ID>.apps.googleusercontent.com",
+      );
 
+      // Interactive login
+      final account = await GoogleSignIn.instance.authenticate(
+        scopeHint: ['email'],
+      );
+
+      if (account == null) {
+        throw Exception('Google login cancelled');
+      }
+
+      final auth = account.authentication;
+      final idToken = auth.idToken; // ✅ send this to your backend
+
+      if (idToken == null) throw Exception("No ID token received");
+
+      final user = await _apiService.loginWithGoogle(idToken);
+      await saveAuthData(user);
       navigateBasedOnRole();
-    } on AppException catch (e) {
-      _showError(e.message);
     } catch (e) {
-      _showError('Google login failed: $e');
-    } finally {
-      isLoading(false);
+      _showError("Google login failed: $e");
     }
   }
 

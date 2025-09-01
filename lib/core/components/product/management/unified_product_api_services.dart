@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:dio/dio.dart' as dio ;
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:krishi_link/services/api_services/api_service.dart';
@@ -288,7 +288,11 @@ class UnifiedProductApiServices extends ApiService {
       debugPrint(
         '🔄 [UnifiedProductApiServices] deleteProduct called for ID: $productId',
       );
+      debugPrint(
+        '🔄 [UnifiedProductApiServices] Delete endpoint: ${ApiConstants.deleteProductEndpoint}/$productId',
+      );
       final opts = await _getOptions();
+      debugPrint('🔄 [UnifiedProductApiServices] Headers: ${opts.headers}');
       final response = await dio.Dio().delete(
         '${ApiConstants.deleteProductEndpoint}/$productId',
         options: opts,
@@ -390,7 +394,7 @@ class UnifiedProductApiServices extends ApiService {
           '🔄 [UnifiedProductApiServices] Fetching user details by email: $input',
         );
         response = await dio.Dio().get(
-          '${ApiConstants.getUserDetailsByEmail}?email=$input',
+          '${ApiConstants.getUserDetailsByEmailEndpoint}?email=$input',
           options: opts,
         );
       } else {
@@ -398,7 +402,7 @@ class UnifiedProductApiServices extends ApiService {
           '🔄 [UnifiedProductApiServices] Fetching user details by phone: $input',
         );
         response = await dio.Dio().get(
-          '${ApiConstants.getUserDetailsByPhoneNumber}/$input',
+          '${ApiConstants.getUserDetailsByPhoneNumberEndpoint}/$input',
           options: opts,
         );
       }

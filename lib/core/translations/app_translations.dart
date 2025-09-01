@@ -346,6 +346,15 @@ class AppTranslations extends Translations {
       'site_analytics': 'Site Analytics',
       'farmer': 'Farmer',
       'admin': 'Admin',
+      'payment_history': 'Payment History',
+      'payment_details': 'Payment Details',
+      'transaction_details': 'Transaction Details',
+      'customer_information': 'Customer Information',
+      'delivery_location': 'Delivery Location',
+      'no_payment_history': 'No Payment History',
+      'your_payment_history_will_appear_here':
+          'Your payment history will appear here',
+      'select_delivery_location': 'Select Delivery Location',
 
       // Tutorials
       'no_tutorials_available': 'No tutorials available',
@@ -723,6 +732,15 @@ class AppTranslations extends Translations {
       'site_analytics': 'साइट एनालिटिक्स',
       'farmer': 'किसान',
       'admin': 'एडमिन',
+      'payment_history': 'भुक्तानी इतिहास',
+      'payment_details': 'भुक्तानी विवरण',
+      'transaction_details': 'लेनदेन विवरण',
+      'customer_information': 'ग्राहक जानकारी',
+      'delivery_location': 'डेलिभरी स्थान',
+      'no_payment_history': 'कुनै भुक्तानी इतिहास छैन',
+      'your_payment_history_will_appear_here':
+          'तपाईंको भुक्तानी इतिहास यहाँ देखा पर्नेछ',
+      'select_delivery_location': 'डेलिभरी स्थान छान्नुहोस्',
 
       // Tutorials
       'no_tutorials_available': 'कुनै ट्युटोरियलहरू उपलब्ध छैनन्',

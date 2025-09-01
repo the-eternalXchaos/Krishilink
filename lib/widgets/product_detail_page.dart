@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,7 @@ import 'package:krishi_link/widgets/related_products_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
+import 'package:krishi_link/features/chat/screens/product_chat_screen.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -139,6 +141,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
+  void openChat() {
+    if (!authController.isLoggedIn) {
+      PopupService.info('please_login_to_chat'.tr, title: 'login_required'.tr);
+      return;
+    }
+
+    Get.to(
+      () => ProductChatScreen(
+        productId: widget.product.id.toString(),
+        productName: widget.product.productName,
+        farmerName: widget.product.farmerName.toString(),
+        emailOrPhone: widget.product.farmerPhone.toString(),
+      ),
+    );
+  }
+
   Future<void> submitReview() async {
     if (!authController.isLoggedIn) {
       PopupService.info(
@@ -190,16 +208,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      // for talking to
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('button pressed  chat section coming coon '),
+          // Handle chat button press
+          // navigate to product chat screen
+          Get.to(
+            () => ProductChatScreen(
+              productId: widget.product.id.toString(),
+              productName: widget.product.productName,
+              farmerName: widget.product.farmerName.toString(),
+              emailOrPhone: widget.product.farmerPhone.toString(),
             ),
           );
+
+          debugPrint('Chat button pressed');
         },
-        backgroundColor: colorScheme.primary,
+        tooltip: "chat_with_farmer".tr,
+        child: Icon(Icons.message),
       ),
       appBar: AppBar(
         title: Text(widget.product.productName),
@@ -284,21 +309,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed:
-                        () => shareProduct(
-                          description: widget.product.description,
-                          imageUrl: getImage(),
-                          name: widget.product.productName,
-                          productId: widget.product.id.toString(),
+                  Row(
+                    children: [
+                      // Expanded(
+                      //   child: OutlinedButton.icon(
+                      //     onPressed: openChat,
+                      //     icon: const Icon(Icons.chat_bubble_outline),
+                      //     label: Text('Chat with Farmer'),
+                      //     style: OutlinedButton.styleFrom(
+                      //       foregroundColor: Colors.green,
+                      //       side: const BorderSide(color: Colors.green),
+                      // ),
+                      // ),
+                      // ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              () => shareProduct(
+                                description: widget.product.description,
+                                imageUrl: getImage(),
+                                name: widget.product.productName,
+                                productId: widget.product.id.toString(),
+                              ),
+                          icon: const Icon(Icons.share),
+                          label: Text('Share'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            side: const BorderSide(color: Colors.blue),
+                          ),
                         ),
-                    icon: const Icon(Icons.share),
-                    label: Text('share_product'.tr),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      side: const BorderSide(color: Colors.blue),
-                      minimumSize: const Size(double.infinity, 45),
-                    ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 30),
                   RelatedProductsWidget(productId: widget.product.id),

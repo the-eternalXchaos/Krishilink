@@ -55,7 +55,6 @@ class FarmerApiServices {
     );
   }
 
- 
   // Future<Product> addProduct({
   //   required String productName,
   //   required File image,
@@ -471,7 +470,7 @@ class FarmerApiServices {
     try {
       final opts = await _jsonOptions();
       final response = await _dio.get(
-        ApiConstants.getOrdersEndpoint,
+        ApiConstants.getMyOrdersEndpoint,
         options: opts,
       );
       if (response.statusCode == 200) {

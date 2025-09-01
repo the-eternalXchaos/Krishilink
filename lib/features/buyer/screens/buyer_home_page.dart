@@ -14,6 +14,7 @@ import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_menu_page.dart';
 import 'package:krishi_link/features/buyer/screens/cart_screen.dart';
+import 'package:krishi_link/features/chat/screens/chat_list_screen.dart';
 import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/widgets/custom_app_bar.dart';
 import 'package:krishi_link/widgets/product_grid.dart';
@@ -79,7 +80,8 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
   }
 
   void _onTabTapped(int index) {
-    if ((index == 1 || index == 2) && !authController.isLoggedIn) {
+    if ((index == 1 || index == 2 || index == 3) &&
+        !authController.isLoggedIn) {
       PopupService.warning(
         'please_login_to_access_menu'.tr,
         title: 'login_required'.tr,
@@ -202,7 +204,7 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
           index: _selectedIndex,
           children: [
             _buildHomePage(),
-
+            const ChatListScreen(),
             !authController.isLoggedIn
                 ? _buildLoginRequiredScreen("menu".tr)
                 : const BuyerMenuPage(),
@@ -286,6 +288,10 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
             label: 'home'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message),
+            label: 'message'.tr,
           ),
           BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'menu'.tr),
         ],

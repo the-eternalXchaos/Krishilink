@@ -532,32 +532,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _handleDeleteProduct(Product product) {
     HapticFeedback.lightImpact();
-
-    Get.dialog(
-      AlertDialog(
-        title: Text('confirm_delete'.tr),
-        content: Text(
-          'delete_product_confirmation'.tr.replaceAll(
-            '{product}',
-            product.productName,
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              widget.onDelete(product);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text(
-              'delete'.tr,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Call the delete handler directly - confirmation dialog is handled in unified_product_management.dart
+    widget.onDelete(product);
   }
 
   Future<void> _handleToggleActive(

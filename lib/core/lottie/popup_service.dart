@@ -49,6 +49,7 @@ class PopupService {
     required String message,
     bool autoDismiss = false,
     Duration? duration,
+    bool repeat = true,
   }) {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (Get.isDialogOpen != true) {

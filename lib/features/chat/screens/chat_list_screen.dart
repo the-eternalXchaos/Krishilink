@@ -11,7 +11,10 @@ class ChatListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ChatController controller = Get.find<ChatController>();
+    final ChatController controller =
+        Get.isRegistered<ChatController>()
+            ? Get.find<ChatController>()
+            : ChatController();
 
     return Scaffold(
       appBar: AppBar(

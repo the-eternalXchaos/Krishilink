@@ -5,6 +5,8 @@ import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_screen.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/features/chat/models/message.dart';
+import 'package:krishi_link/features/chat/screens/chat_list_screen.dart';
 import 'package:krishi_link/features/farmer/screens/farmer_menu.dart';
 import 'package:krishi_link/features/farmer/screens/add_crop_screen.dart';
 import 'package:krishi_link/features/farmer/screens/crop_detail_screen.dart';
@@ -16,6 +18,8 @@ import 'package:krishi_link/features/weather/weather_widget.dart';
 import 'package:krishi_link/features/farmer/widgets/tips_banner.dart';
 import 'package:krishi_link/widgets/custom_app_bar.dart';
 import 'package:krishi_link/widgets/notification/notification_controller.dart';
+
+// Placeholder for the new message screen (replace with your actual screen)
 
 class FarmerHomePage extends StatefulWidget {
   const FarmerHomePage({super.key});
@@ -35,7 +39,6 @@ class FarmerHomePageState extends State<FarmerHomePage> {
   );
   final AuthController authController = Get.find<AuthController>();
   int _currentIndex = 0;
-  // late String location = authController.user.value.location;
 
   @override
   void initState() {
@@ -49,11 +52,15 @@ class FarmerHomePageState extends State<FarmerHomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final pages = [_buildHomeTab(), _buildMyCropsTab(), const FarmerMenu()];
+    final pages = [
+      _buildHomeTab(),
+      const ChatListScreen(),
+      _buildMyCropsTab(),
+      const FarmerMenu(),
+    ];
 
     return Scaffold(
       appBar: CustomAppBar(isGuest: authController.isLoggedIn),
-
       body: Obx(
         () =>
             controller.isLoading.value
@@ -72,20 +79,22 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             heroTag: 'scan_leaf',
             onPressed: () => Get.toNamed('/disease-detection'),
             backgroundColor: theme.colorScheme.primary,
-            tooltip: 'scan_leaf_tooltip',
+            tooltip: 'scan_leaf_tooltip'.tr,
             child: Icon(Icons.camera_alt, color: theme.colorScheme.onPrimary),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
             heroTag: 'chat_ai',
-            onPressed:
-                () => Get.to(
-                  () => AiChatScreen(
-                    name: authController.currentUser.value!.fullName,
-                  ),
-                ),
+            onPressed: () {
+              final user = authController.currentUser.value;
+              if (user != null) {
+                Get.to(() => AiChatScreen(name: user.fullName));
+              } else {
+                PopupService.error('User not logged in');
+              }
+            },
             backgroundColor: Colors.deepPurple,
-            tooltip: 'Chat with AI',
+            tooltip: 'chat_ai_tooltip'.tr,
             child: const Icon(Icons.smart_toy, color: Colors.white),
           ),
         ],
@@ -98,12 +107,26 @@ class FarmerHomePageState extends State<FarmerHomePage> {
         unselectedItemColor: Colors.grey.shade600,
         backgroundColor: theme.colorScheme.surface,
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'home'.tr),
           BottomNavigationBarItem(
-            icon: Icon(Icons.agriculture),
+            icon: Icon(Icons.home, semanticLabel: 'Home'),
+            label: 'home'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message, semanticLabel: 'Messages'),
+            label: 'message'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.agriculture, semanticLabel: 'My Crops'),
             label: 'my_crops'.tr,
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'menu'.tr),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu, semanticLabel: 'Menu'),
+            label: 'menu'.tr,
+          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.chat, semanticLabel: 'New Message'),
+          //   label: 'new_message'.tr, // New item
+          // ),
         ],
       ),
     );
@@ -154,31 +177,26 @@ class FarmerHomePageState extends State<FarmerHomePage> {
                         ),
                       ),
                     )
-                    : Column(
-                      children:
-                          controller.crops
-                              .asMap()
-                              .entries
-                              .map(
-                                (entry) => FadeInUp(
-                                  delay: Duration(
-                                    milliseconds: 100 * entry.key,
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: controller.crops.length,
+                      itemBuilder: (context, index) {
+                        final crop = controller.crops[index];
+                        return FadeInUp(
+                          delay: Duration(milliseconds: 100 * index),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: CropCard(
+                              crop: crop,
+                              onTap:
+                                  () => Get.to(
+                                    () => CropDetailScreen(crop: crop),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: CropCard(
-                                      crop: entry.value,
-                                      onTap:
-                                          () => Get.to(
-                                            () => CropDetailScreen(
-                                              crop: entry.value,
-                                            ),
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                            ),
+                          ),
+                        );
+                      },
                     ),
           ),
         ],
@@ -202,7 +220,7 @@ class FarmerHomePageState extends State<FarmerHomePage> {
                 ),
                 ElevatedButton.icon(
                   onPressed: () => Get.to(() => AddCropScreen()),
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, semanticLabel: 'Add Crop'),
                   label: Text('add_crop'.tr),
                 ),
               ],
@@ -220,41 +238,29 @@ class FarmerHomePageState extends State<FarmerHomePage> {
                         ),
                       ),
                     )
-                    : Column(
-                      children:
-                          controller.crops
-                              .asMap()
-                              .entries
-                              .map(
-                                (entry) => FadeInUp(
-                                  delay: Duration(
-                                    milliseconds: 100 * entry.key,
+                    : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: controller.crops.length,
+                      itemBuilder: (context, index) {
+                        final crop = controller.crops[index];
+                        return FadeInUp(
+                          delay: Duration(milliseconds: 100 * index),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: CropCard(
+                              crop: crop,
+                              onTap:
+                                  () => Get.to(
+                                    () => CropDetailScreen(crop: crop),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: CropCard(
-                                      crop: entry.value,
-                                      onTap:
-                                          () => Get.to(
-                                            () => CropDetailScreen(
-                                              crop: entry.value,
-                                            ),
-                                          ),
-                                      onEdit:
-                                          () => Get.to(
-                                            () => AddCropScreen(
-                                              crop: entry.value,
-                                            ),
-                                          ),
-                                      onDelete:
-                                          () => controller.deleteCrop(
-                                            entry.value.id,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                              onEdit:
+                                  () => Get.to(() => AddCropScreen(crop: crop)),
+                              onDelete: () => controller.deleteCrop(crop.id),
+                            ),
+                          ),
+                        );
+                      },
                     ),
           ),
         ],

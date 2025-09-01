@@ -23,6 +23,7 @@ import 'package:krishi_link/features/auth/screens/otp_verification_screen.dart';
 import 'package:krishi_link/features/auth/screens/register_screen.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
+import 'package:krishi_link/features/buyer/screens/payment_history_screen.dart';
 import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
 import 'package:krishi_link/features/disease_detection/screens/disease_detection_screen.dart';
 import 'package:krishi_link/features/farmer/screens/farmer_home_page.dart';
@@ -271,6 +272,11 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/checkout',
           page: () => const CheckoutScreen(),
+          binding: ProductBinding(),
+        ),
+        GetPage(
+          name: '/payment-history',
+          page: () => const PaymentHistoryScreen(),
           binding: ProductBinding(),
         ),
         // GetPage(

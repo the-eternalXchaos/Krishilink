@@ -15,7 +15,8 @@ class AdminUserController extends GetxController {
   final activeUsers = 0.obs; // Changed from activeFarmers
   final newUsersToday = 0.obs;
   final RxString searchQuery = ''.obs;
-  final RxString selectedStatusFilter = 'All'.obs; // Changed to filter by isActive/isBlocked
+  final RxString selectedStatusFilter =
+      'All'.obs; // Changed to filter by isActive/isBlocked
 
   @override
   void onInit() {
@@ -34,7 +35,8 @@ class AdminUserController extends GetxController {
       }
 
       final response = await http.get(
-        Uri.parse(ApiConstants.getUserDetailsEndpoint),
+        Uri.parse(ApiConstants.getUserDetailsByIdEndpoint),
+
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -48,10 +50,13 @@ class AdminUserController extends GetxController {
         users.assignAll(data.map((json) => UserModel.fromJson(json)).toList());
         totalUsers.value = users.length;
         activeUsers.value = users.where((u) => u.isActive).length;
-        newUsersToday.value = users.where((u) {
-          return u.createdAt != null &&
-              u.createdAt!.isAfter(DateTime.now().subtract(const Duration(days: 1)));
-        }).length;
+        newUsersToday.value =
+            users.where((u) {
+              return u.createdAt != null &&
+                  u.createdAt!.isAfter(
+                    DateTime.now().subtract(const Duration(days: 1)),
+                  );
+            }).length;
         _applyFilters();
       } else {
         throw Exception('Failed to fetch users: ${response.statusCode}');
@@ -79,7 +84,9 @@ class AdminUserController extends GetxController {
       if (response.statusCode == 200) {
         users[users.indexOf(user)] = user.copyWith(isActive: !user.isActive);
         _applyFilters();
-        PopupService.info('User ${user.isActive ? 'deactivated' : 'activated'}');
+        PopupService.info(
+          'User ${user.isActive ? 'deactivated' : 'activated'}',
+        );
       } else {
         throw Exception('Failed to update user status');
       }
@@ -139,13 +146,15 @@ class AdminUserController extends GetxController {
     var result = users.toList();
     if (searchQuery.value.isNotEmpty) {
       final lowerQuery = searchQuery.value.toLowerCase();
-      result = result.where((user) {
-        return user.fullName.toLowerCase().contains(lowerQuery) ||
-            (user.email?.toLowerCase().contains(lowerQuery) ?? false) ||
-            (user.phoneNumber?.toLowerCase().contains(lowerQuery) ?? false) ||
-            (user.address?.toLowerCase().contains(lowerQuery) ?? false) ||
-            (user.city?.toLowerCase().contains(lowerQuery) ?? false);
-      }).toList();
+      result =
+          result.where((user) {
+            return user.fullName.toLowerCase().contains(lowerQuery) ||
+                (user.email?.toLowerCase().contains(lowerQuery) ?? false) ||
+                (user.phoneNumber?.toLowerCase().contains(lowerQuery) ??
+                    false) ||
+                (user.address?.toLowerCase().contains(lowerQuery) ?? false) ||
+                (user.city?.toLowerCase().contains(lowerQuery) ?? false);
+          }).toList();
     }
     if (selectedStatusFilter.value != 'All') {
       if (selectedStatusFilter.value == 'Active') {

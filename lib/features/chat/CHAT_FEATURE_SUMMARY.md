@@ -130,7 +130,8 @@ lib/features/chat/
    - Chat initiation from product pages
    - Product context in messages
    - Predefined inquiry messages
-   - Product sharing functionality
+   - Product sharing functionality 
+   
 
 ## 🔧 Technical Implementation Details
 
