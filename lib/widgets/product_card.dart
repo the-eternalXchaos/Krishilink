@@ -1,12 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/controllers/product_controller.dart';
 import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/admin/models/cart_item.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
+import 'package:krishi_link/features/chat/live_chat/live_chat_controller.dart';
 import 'package:krishi_link/widgets/product_detail_page.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 
@@ -17,8 +19,26 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController =
+        Get.isRegistered<AuthController>()
+            ? Get.find<AuthController>()
+            : Get.put(AuthController());
+
+    final liveChatController =
+        Get.isRegistered<LiveChatController>()
+            ? Get.find<LiveChatController>()
+            : Get.put(
+              LiveChatController(
+                productId: product.id,
+                productName: product.productName,
+                farmerName: product.farmerName.toString(),
+                emailOrPhone: product.farmerPhone.toString(),
+              ),
+            );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      liveChatController.fetchFarmerLiveStatus(product.id);
+    });
     final theme = Theme.of(context);
-    final authController = Get.find<AuthController>();
     final cartController =
         Get.isRegistered<CartController>()
             ? Get.find<CartController>()
@@ -29,7 +49,10 @@ class ProductCard extends StatelessWidget {
             : Get.put(WishlistController());
 
     return GestureDetector(
-      onTap: () => Get.to(() => ProductDetailPage(product: product)),
+      onTap: () {
+        Get.to(() => ProductDetailPage(product: product));
+        debugPrint('productid: ${product.id}');
+      },
       child: Card(
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -46,13 +69,13 @@ class ProductCard extends StatelessWidget {
                   width: double.infinity,
                   fit: BoxFit.cover,
                   placeholder:
-                      (_, __) => Container(
+                      (_, _) => Container(
                         height: 130,
                         color: theme.colorScheme.surfaceContainerHighest,
                         child: const Center(child: CircularProgressIndicator()),
                       ),
                   errorWidget:
-                      (_, __, ___) => Image.asset(
+                      (_, _, _) => Image.asset(
                         plantPlaceholder,
                         fit: BoxFit.cover,
                         height: 130,
@@ -78,7 +101,9 @@ class ProductCard extends StatelessWidget {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                                  color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                          color: theme.colorScheme.surface.withValues(
+                            alpha: 0.9,
+                          ),
                           shape: BoxShape.circle,
                         ),
                         padding: const EdgeInsets.all(6),
@@ -104,16 +129,37 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Product Name
-                  Text(
-                    product.distance != null
-                        ? '${product.productName} (${product.distance!.toStringAsFixed(1)}km)'
-                        : product.productName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      // showing farmer active status isFarmerLiveEndpoint  api/Chat/IsFarmerLive'
+                      Expanded(
+                        child: Text(
+                          product.distance != null
+                              ? '${product.productName} (${product.distance!.toStringAsFixed(1)}km)'
+                              : product.productName,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Obx(() {
+                        final isLive = liveChatController.isFarmerLive(
+                          product.id,
+                        );
+                        return Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: isLive ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        );
+                      }),
+                    ],
                   ),
+
                   const SizedBox(height: 4),
 
                   // Location Row

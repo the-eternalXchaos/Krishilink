@@ -54,7 +54,7 @@ class FarmerHomePageState extends State<FarmerHomePage> {
     final theme = Theme.of(context);
     final pages = [
       _buildHomeTab(),
-      const ChatListScreen(),
+      // const ChatListScreen(),
       _buildMyCropsTab(),
       const FarmerMenu(),
     ];
@@ -97,6 +97,20 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             tooltip: 'chat_ai_tooltip'.tr,
             child: const Icon(Icons.smart_toy, color: Colors.white),
           ),
+          FloatingActionButton(
+            heroTag: 'chat_ai',
+            onPressed: () {
+              final user = authController.currentUser.value;
+              if (user != null) {
+                Get.to(() => AiChatScreen(name: user.fullName));
+              } else {
+                PopupService.error('User not logged in');
+              }
+            },
+            backgroundColor: const Color.fromARGB(255, 231, 228, 236),
+            tooltip: 'chat_ai_tooltip'.tr,
+            child: const Icon(Icons.smart_toy, color: Colors.white),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -111,10 +125,10 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             icon: Icon(Icons.home, semanticLabel: 'Home'),
             label: 'home'.tr,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message, semanticLabel: 'Messages'),
-            label: 'message'.tr,
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.message, semanticLabel: 'Messages'),
+          //   label: 'message'.tr,
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.agriculture, semanticLabel: 'My Crops'),
             label: 'my_crops'.tr,

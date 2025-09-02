@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -345,10 +346,6 @@ class AuthController extends GetxController {
         scopeHint: ['email'],
       );
 
-      if (account == null) {
-        throw Exception('Google login cancelled');
-      }
-
       final auth = account.authentication;
       final idToken = auth.idToken; // ✅ send this to your backend
 
@@ -535,4 +532,26 @@ class AuthController extends GetxController {
     String? gender,
     File? profileImage,
   }) async {}
+
+  // // Farmer Live Status
+  // final RxMap<String, bool> _farmerLiveStatus = <String, bool>{}.obs;
+  // // in authController
+  // Timer? _liveStatusTimer;
+
+  // void startFarmerLivePolling(String productId) {
+  //   _liveStatusTimer?.cancel();
+  //   _liveStatusTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+  //     fetchFarmerLiveStatus(productId);
+  //   });
+  // }
+
+  // void stopPolling() {
+  //   _liveStatusTimer?.cancel();
+  // }
+
+  // bool isFarmerLive(String productId) => _farmerLiveStatus[productId] ?? false;
+  // Future<void> fetchFarmerLiveStatus(String productId) async {
+  //   final status = await _apiService.isFarmerLive(productId);
+  //   _farmerLiveStatus[productId] = status;
+  // }
 }

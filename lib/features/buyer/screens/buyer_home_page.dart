@@ -204,7 +204,7 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
           index: _selectedIndex,
           children: [
             _buildHomePage(),
-            const ChatListScreen(),
+            // const ChatListScreen(),
             !authController.isLoggedIn
                 ? _buildLoginRequiredScreen("menu".tr)
                 : const BuyerMenuPage(),
@@ -289,10 +289,10 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
             icon: Icon(Icons.home_rounded),
             label: 'home'.tr,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'message'.tr,
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.message),
+          //   label: 'message'.tr,
+          // ),
           BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'menu'.tr),
         ],
       ),

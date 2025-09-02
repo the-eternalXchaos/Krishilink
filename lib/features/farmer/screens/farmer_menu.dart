@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/components/confirm%20box/custom_confirm_dialog.dart';
 import 'package:krishi_link/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
@@ -54,10 +55,25 @@ class FarmerMenu extends StatelessWidget {
               ),
               const Divider(),
               _buildMenuItem(Icons.logout, 'logout'.tr, () {
-                authController.logout();
-                Get.offAllNamed('/login');
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return CustomConfirmDialog(
+                      title: 'Logout',
+                      content: 'Are you sure you want to logout?',
+                      confirmText: 'Yes',
+                      cancelText: 'No',
+                      onConfirm: () {
+                        authController.logout();
+                        Get.offAllNamed('/login');
+                      },
+                      onCancel: () {
+                        Get.back();
+                      },
+                    );
+                  },
+                );
               }),
-              const Spacer(),
             ],
           ),
         ),

@@ -11,6 +11,7 @@ import 'package:krishi_link/features/admin/models/cart_item.dart';
 
 class CartController extends GetxController {
   final _cartItems = <CartItem>[].obs;
+  final isLoading = false.obs;
   List<CartItem> get cartItems => _cartItems;
 
   double get totalPrice => _cartItems.fold(
@@ -26,6 +27,7 @@ class CartController extends GetxController {
 
   Future<void> fetchCartItems() async {
     try {
+      isLoading.value = true;
       final token = await TokenService.getAccessToken();
       if (token == null) throw Exception('No authentication token');
 
@@ -39,21 +41,33 @@ class CartController extends GetxController {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['data'] != null) {
-          final items =
-              (data['data'] as List)
-                  .map(
-                    (item) => CartItem(
-                      id: item['productId'] ?? item['id'] ?? '',
-                      name: item['productName'] ?? item['name'] ?? '',
-                      price: (item['price'] ?? item['rate'] ?? 0).toString(),
-                      imageUrl: item['imageUrl'] ?? item['image'] ?? '',
-                      quantity: item['quantity'] ?? 1,
-                    ),
-                  )
-                  .toList();
-          _cartItems.assignAll(items);
+        if (data['success'] == true &&
+            data['data'] != null &&
+            data['data'] is List) {
+          final cartDataList = data['data'] as List;
+          if (cartDataList.isNotEmpty && cartDataList[0]['items'] != null) {
+            final itemsList = cartDataList[0]['items'] as List;
+            final items =
+                itemsList
+                    .map(
+                      (item) => CartItem(
+                        id: item['productId'] ?? '',
+                        name: item['productName'] ?? '',
+                        price: (item['price'] ?? item['rate'] ?? 0).toString(),
+                        // The API response for cart does not contain an image URL.
+                        // This will be an empty string for now.
+                        imageUrl: item['imageUrl'] ?? item['image'] ?? '',
+                        quantity: item['quantity'] ?? 1,
+                      ),
+                    )
+                    .toList();
+            _cartItems.assignAll(items);
+          } else {
+            // Cart is empty or data format is unexpected.
+            _cartItems.clear();
+          }
         } else {
+          // API reports success: false or no data.
           _cartItems.clear();
         }
       } else {
@@ -61,11 +75,14 @@ class CartController extends GetxController {
       }
     } catch (e) {
       PopupService.error('Failed to load cart: $e', title: 'Error');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> addToCart(CartItem item) async {
     try {
+      isLoading.value = true;
       final token = await TokenService.getAccessToken();
       if (token == null) {
         PopupService.warning(
@@ -95,17 +112,9 @@ class CartController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          // Check if item already exists in cart
-          final existingIndex = _cartItems.indexWhere((i) => i.id == item.id);
-          if (existingIndex != -1) {
-            // Update quantity
-            _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
-              quantity: _cartItems[existingIndex].quantity + item.quantity,
-            );
-          } else {
-            // Add new item
-            _cartItems.add(item);
-          }
+          // To ensure consistency, refetch the entire cart from the server
+          // instead of performing an optimistic local update.
+          await fetchCartItems();
           PopupService.show(
             message: '${item.name} added to cart',
             autoDismiss: true,
@@ -120,11 +129,14 @@ class CartController extends GetxController {
       }
     } catch (e) {
       PopupService.error('Failed to add to cart: $e', title: 'Error');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> removeFromCart(String productId) async {
     try {
+      isLoading.value = true;
       final token = await TokenService.getAccessToken();
       if (token == null) throw Exception('No authentication token');
 
@@ -141,8 +153,9 @@ class CartController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          // Remove item from local cart
-          _cartItems.removeWhere((item) => item.id == productId);
+          // To ensure consistency, refetch the cart from the server
+          // instead of performing an optimistic local update.
+          await fetchCartItems();
           PopupService.success('Item removed from cart', title: 'Success');
         } else {
           throw Exception(data['message'] ?? 'Failed to remove from cart');
@@ -152,11 +165,14 @@ class CartController extends GetxController {
       }
     } catch (e) {
       PopupService.error('Failed to remove from cart: $e', title: 'Error');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> clearCart() async {
     try {
+      isLoading.value = true;
       final token = await TokenService.getAccessToken();
       if (token == null) throw Exception('No authentication token');
 
@@ -171,6 +187,7 @@ class CartController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
+          // After clearing on the server, clear the local list.
           _cartItems.clear();
           PopupService.success('Cart cleared successfully', title: 'Success');
         } else {
@@ -181,6 +198,8 @@ class CartController extends GetxController {
       }
     } catch (e) {
       PopupService.error('Failed to clear cart: $e', title: 'Error');
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -214,9 +233,17 @@ class CartController extends GetxController {
       final item = _cartItems[index];
       final updatedItem = item.copyWith(quantity: newQuantity);
 
-      // Remove the old item and add the updated one
-      await removeFromCart(productId);
-      await addToCart(updatedItem);
+      // WARNING: This performs two separate API operations (remove then add),
+      // which is inefficient and may cause a flicker in the UI as the cart
+      // is refetched twice. A dedicated backend endpoint to update an item's
+      // quantity (e.g., PUT /api/Cart/items/{productId}) is highly recommended.
+      try {
+        isLoading.value = true;
+        await removeFromCart(productId);
+        await addToCart(updatedItem);
+      } finally {
+        isLoading.value = false;
+      }
     }
   }
 }

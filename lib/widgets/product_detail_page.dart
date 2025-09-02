@@ -13,6 +13,7 @@ import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller_new.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/features/chat/live_chat/live_chat_screen.dart';
 import 'package:krishi_link/features/weather/weather_widget.dart';
 import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/widgets/buy_product_dialog.dart';
@@ -213,7 +214,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           // Handle chat button press
           // navigate to product chat screen
           Get.to(
-            () => ProductChatScreen(
+            () => LiveChatScreen(
               productId: widget.product.id.toString(),
               productName: widget.product.productName,
               farmerName: widget.product.farmerName.toString(),

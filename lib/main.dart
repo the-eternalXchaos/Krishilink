@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:krishi_link/core/bindings/admin_binding.dart';
 import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/core/controllers/settings_controller.dart';
@@ -96,6 +97,9 @@ void main() async {
   // Initialize GetStorage
   await GetStorage.init();
   // Initialize deviceId
+
+  // initialized the hive
+  await Hive.initFlutter();
 
   final deviceService = DeviceService();
   final deviceId = await deviceService.getDeviceId();

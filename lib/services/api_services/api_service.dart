@@ -561,3 +561,27 @@ class ApiService {
     _dio.close();
   }
 }
+
+//   Future<bool> isFarmerLive(String productId) async {
+//     try {
+//       final response = await _dio.get(
+//         '${ApiConstants.isFarmerLiveEndpoint}/$productId',
+//         options: Options(
+//           headers: {'accept': '*/*'},
+//           extra: {'guestAccess': true},
+//         ),
+//       );
+
+//       if (response.statusCode == 200) {
+//         final data = response.data;
+//         if (data is Map<String, dynamic>) {
+//           return data['data'] == true; // 🔑 actual field is "data"
+//         }
+//       }
+//       return false;
+//     } catch (e) {
+//       debugPrint('❌ Error checking farmer live status: $e');
+//       return false;
+//     }
+//   }
+// }
