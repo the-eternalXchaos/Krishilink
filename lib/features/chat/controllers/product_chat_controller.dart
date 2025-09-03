@@ -1,17 +1,19 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import '../models/simple_chat_room.dart';
 import '../models/simple_message.dart';
 import '../services/product_chat_api_service.dart';
-import '../services/chat_realtime_service.dart';
+import '../live_chat/chat_services.dart';
 import '../../../features/auth/controller/auth_controller.dart';
 
 class ProductChatController extends GetxController {
   final Logger _logger = Logger();
   final AuthController _authController = Get.find<AuthController>();
   final ProductChatApiService _apiService = ProductChatApiService();
-  final ChatRealtimeService _realtimeService = ChatRealtimeService();
+  final ChatRealtimeService _realtimeService = ChatRealtimeService.I;
 
   // Observables
   final RxList<SimpleMessage> messages = <SimpleMessage>[].obs;
@@ -23,6 +25,8 @@ class ProductChatController extends GetxController {
   final RxString currentFarmerName = ''.obs;
   final RxString currentProductId = ''.obs;
   final RxString currentProductName = ''.obs;
+
+  StreamSubscription<Map<String, dynamic>>? _messageSubscription;
 
   // Message input
   final RxString messageText = ''.obs;
@@ -77,35 +81,62 @@ class ProductChatController extends GetxController {
     }
   }
 
+  SimpleMessage _mapDataToMessage(Map<String, dynamic> data) {
+    final currentUser = _authController.currentUser.value;
+    final senderId =
+        data['senderId']?.toString() ?? data['userId']?.toString() ?? '';
+
+    return SimpleMessage(
+      id: data['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
+      chatRoomId: data['chatRoomId']?.toString() ?? '',
+      senderId: senderId,
+      senderName: data['senderName']?.toString() ??
+          data['userName']?.toString() ??
+          'Unknown',
+      content:
+          data['content']?.toString() ?? data['message']?.toString() ?? '',
+      type: MessageType.text,
+      status: MessageStatus.sent,
+      timestamp: data['timestamp'] != null
+          ? DateTime.parse(data['timestamp'].toString())
+          : DateTime.now(),
+      isFromMe: senderId == currentUser?.id,
+      metadata: {
+        if (data['productId'] != null) 'productId': data['productId'],
+        if (data['productName'] != null) 'productName': data['productName'],
+      },
+    );
+  }
+
   void _connectToRealtimeChat() {
     final chatRoomId = currentChatRoomId.value;
-    final token = _authController.currentUser.value?.token;
-
-    if (chatRoomId.isEmpty || token == null) {
-      _logger.w(
-        'Cannot connect to real-time chat. Missing chatRoomId or token.',
-      );
+    if (chatRoomId.isEmpty) {
+      _logger.w('Cannot connect to real-time chat. Missing chatRoomId.');
       return;
     }
 
-    _realtimeService.connect(
-      chatRoomId: chatRoomId,
-      token: token,
-      onMessageReceived: (message) {
-        _logger.i('New message received via WebSocket: ${message.content}');
-        // Add the message if it's not already in the list
+    _realtimeService
+        .connect(
+      tokenProvider: () async => _authController.currentUser.value?.token ?? '',
+    )
+        .then((_) {
+      _logger.i('Successfully connected to real-time chat service.');
+      _realtimeService.joinRoom(chatRoomId);
+      _logger.i('Joined chat room: $chatRoomId');
+
+      _messageSubscription?.cancel();
+      _messageSubscription = _realtimeService.messages.listen((data) {
+        _logger.i('New message data received via WebSocket: $data');
+        final message = _mapDataToMessage(data);
         if (!messages.any((m) => m.id == message.id)) {
           messages.add(message);
         }
-      },
-      onDone: () {
-        _logger.i('Chat WebSocket disconnected.');
-        // You could implement reconnection logic here.
-      },
-      onError: (error) {
-        _logger.e('Chat WebSocket error: $error');
-      },
-    );
+      });
+    }).catchError((error) {
+      _logger.e('Failed to connect to real-time chat service: $error');
+      Get.snackbar('Connection Error', 'Could not connect to chat service.');
+    });
   }
 
   /// Load chat history with the farmer
@@ -285,12 +316,11 @@ class ProductChatController extends GetxController {
 
   @override
   void onClose() {
-    clearChat();
-    // GetX handles service disposal, but if you want to be explicit:
-    if (Get.isRegistered<ChatRealtimeService>()) {
-      final service = Get.find<ChatRealtimeService>();
-      service.onClose();
+    _messageSubscription?.cancel();
+    if (currentChatRoomId.value.isNotEmpty) {
+      _realtimeService.leaveRoom(currentChatRoomId.value);
     }
+    clearChat();
     super.onClose();
   }
 }

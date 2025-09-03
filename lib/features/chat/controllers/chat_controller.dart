@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -16,10 +17,10 @@ class ChatController extends GetxController {
       Get.isRegistered()
           ? Get.find<AuthController>()
           : Get.put(AuthController());
-  final ChatApiService _apiService =
+  final LiveChatApiService _apiService =
       Get.isRegistered()
-          ? Get.find<ChatApiService>()
-          : Get.put(ChatApiService());
+          ? Get.find<LiveChatApiService>()
+          : Get.put(LiveChatApiService(dio: Get.find<Dio>()));
   final ChatCacheService _cacheService =
       Get.isRegistered()
           ? Get.find<ChatCacheService>()

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../controllers/chat_controller.dart';
 import '../services/chat_api_service.dart';
@@ -9,10 +10,18 @@ class ChatBinding extends Bindings {
   @override
   void dependencies() {
     // Register services as singletons
-    Get.lazyPut<ChatApiService>(() => ChatApiService(), fenix: true);
+    Get.lazyPut<LiveChatApiService>(
+      () => LiveChatApiService(
+        dio: Get.isRegistered<Dio>() ? Get.find<Dio>() : Dio(),
+      ),
+      fenix: true,
+    );
     Get.lazyPut<ChatCacheService>(() => ChatCacheService(), fenix: true);
     Get.lazyPut<SignalRService>(() => SignalRService(), fenix: true);
-    Get.lazyPut<ChatNotificationService>(() => ChatNotificationService(), fenix: true);
+    Get.lazyPut<ChatNotificationService>(
+      () => ChatNotificationService(),
+      fenix: true,
+    );
 
     // Register controller
     Get.lazyPut<ChatController>(() => ChatController(), fenix: true);
