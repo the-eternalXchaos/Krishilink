@@ -1,8 +1,9 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/disease_detection/controller/disease_controller.dart';
 import 'package:lottie/lottie.dart';
@@ -75,7 +76,11 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
       final picked = await picker.pickImage(source: source, imageQuality: 80);
       if (picked != null) {
         imagePath.value = picked.path;
-        PopupService.success('Image selected successfully');
+        PopupService.showSnackbar(
+          type: PopupType.success,
+          title: 'Success',
+          message: 'Image selected successfully',
+        );
         _animationController.forward(from: 0);
       } else {
         PopupService.info('No image selected');
@@ -87,14 +92,16 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeColor = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF1F8E9), Color(0xFFA5D6A7)],
+            colors: [Color(0xFFF1F8E9), Color(0xFFA5D6A7), Color(0xFFA5D6A7)],
           ),
         ),
         child: SafeArea(
@@ -116,7 +123,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                       style: GoogleFonts.poppins(
                         fontSize: 30,
                         fontWeight: FontWeight.w700,
-                        color: Colors.green[900],
+                        color: theme.colorScheme.onPrimaryContainer,
                         letterSpacing: 0.5,
                       ),
                       textAlign: TextAlign.center,
@@ -132,6 +139,8 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
+
+                    // Image preview / picker
                     Obx(
                       () => FadeTransition(
                         opacity: _fadeAnimation,
@@ -140,15 +149,15 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                           child: Container(
                             height: constraints.maxWidth > 600 ? 320 : 240,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: Colors.green[200]!,
+                                color: themeColor.outline,
                                 width: 2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.08),
+                                  color: Colors.black.withOpacity(0.08),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -170,7 +179,8 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                           'Tap to select an image',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
-                                            color: Colors.grey[600],
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
                                           ),
                                         ),
                                       ],
@@ -196,7 +206,10 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 24),
+
+                    // Action buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -213,7 +226,10 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 24),
+
+                    // Analyze button
                     Obx(
                       () => AnimatedScale(
                         scale:
@@ -236,23 +252,23 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                   },
                           style: ElevatedButton.styleFrom(
                             minimumSize: Size(constraints.maxWidth * 0.9, 56),
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
+                            backgroundColor: themeColor.primary,
+                            foregroundColor: themeColor.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 6,
-                            shadowColor: Colors.black.withValues(alpha: 0.2),
+                            shadowColor: Colors.black.withOpacity(0.2),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child:
                               controller.isLoading.value
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.5,
-                                      color: Colors.white,
+                                      color: themeColor.onPrimary,
                                     ),
                                   )
                                   : Text(
@@ -266,7 +282,10 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 32),
+
+                    // Result / error sections
                     Obx(
                       () => FadeTransition(
                         opacity: _fadeAnimation,
@@ -279,7 +298,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                 style: GoogleFonts.poppins(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.green[900],
+                                  color: theme.colorScheme.onPrimaryContainer,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -288,7 +307,8 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                color: Colors.green[50],
+                                // Use a widely-available surface color to avoid SDK version issues
+                                color: themeColor.surface,
                                 child: Padding(
                                   padding: const EdgeInsets.all(24.0),
                                   child: Column(
@@ -306,7 +326,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                               extractDisease(
                                                 controller.result.value,
                                               )!,
-                                          iconColor: Colors.green[800]!,
+                                          iconColor: themeColor.primary,
                                         ),
                                         const SizedBox(height: 16),
                                       ],
@@ -324,14 +344,78 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                               extractCorrection(
                                                 controller.result.value,
                                               )!,
-                                          iconColor: Colors.orange[800]!,
+                                          iconColor: themeColor.secondary,
                                         ),
                                       ],
                                     ],
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 12),
+
+                              if ((Get.arguments is Map) &&
+                                  (Get.arguments['returnResult'] == true))
+                                ElevatedButton.icon(
+                                  icon: Icon(
+                                    Icons.save,
+                                    color: themeColor.onPrimary,
+                                  ),
+                                  label: Text(
+                                    'Use This Result',
+                                    style: GoogleFonts.poppins(
+                                      color: themeColor.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: themeColor.primary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    final disease =
+                                        extractDisease(
+                                          controller.result.value,
+                                        ) ??
+                                        controller.result.value
+                                            .split('\n')
+                                            .first
+                                            .trim();
+                                    final correction =
+                                        extractCorrection(
+                                          controller.result.value,
+                                        ) ??
+                                        '';
+                                    final lower = disease.toLowerCase();
+
+                                    String status;
+                                    if (lower.contains('healthy') ||
+                                        lower.contains('no disease')) {
+                                      status = 'Healthy';
+                                    } else if (lower.contains('risk') ||
+                                        lower.contains('early') ||
+                                        lower.contains('mild')) {
+                                      status = 'At Risk';
+                                    } else {
+                                      status = 'Infected';
+                                    }
+
+                                    Get.back(
+                                      result: {
+                                        'status': status,
+                                        'disease':
+                                            (status == 'Healthy')
+                                                ? ''
+                                                : disease,
+                                        'careInstructions': correction,
+                                        'suggestions': correction,
+                                      },
+                                    );
+                                  },
+                                ),
                             ],
+
                             if (controller.error.value.isNotEmpty) ...[
                               const SizedBox(height: 16),
                               Card(
@@ -339,7 +423,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                color: Colors.red[50],
+                                color: themeColor.errorContainer,
                                 child: Padding(
                                   padding: const EdgeInsets.all(24.0),
                                   child: Row(
@@ -348,7 +432,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                     children: [
                                       Icon(
                                         Icons.error,
-                                        color: Colors.red[800],
+                                        color: themeColor.error,
                                         size: 28,
                                       ),
                                       const SizedBox(width: 12),
@@ -357,7 +441,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                           controller.error.value,
                                           style: GoogleFonts.poppins(
                                             fontSize: 16,
-                                            color: Colors.red[900],
+                                            color: themeColor.onErrorContainer,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -371,6 +455,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -382,31 +467,35 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
     );
   }
 
+  // --- Helpers ---------------------------------------------------------------
+
   Widget _buildImageButton({
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Expanded(
       child: ElevatedButton.icon(
-        icon: Icon(icon, color: Colors.white, size: 24),
+        icon: Icon(icon, color: scheme.onPrimary, size: 24),
         label: Text(
           label,
           style: GoogleFonts.poppins(
             fontSize: 16,
-            color: Colors.white,
+            color: scheme.onPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green[700],
-          foregroundColor: Colors.white,
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           elevation: 5,
-                shadowColor: Colors.black.withValues(alpha: 0.2),
+          shadowColor: Colors.black.withOpacity(0.2),
         ),
         onPressed: onPressed,
       ),
@@ -419,6 +508,8 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
     required String content,
     required Color iconColor,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,7 +522,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.green[900],
+                color: scheme.onPrimaryContainer,
               ),
             ),
           ],
@@ -441,7 +532,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
           content,
           style: GoogleFonts.poppins(
             fontSize: 16,
-            color: Colors.black87,
+            color: scheme.onSurface,
             height: 1.5,
           ),
         ),
