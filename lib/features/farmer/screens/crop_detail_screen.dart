@@ -1,4 +1,4 @@
-// lib/features/farmer/screens/crop_detail_screen.dart
+﻿// lib/features/farmer/screens/crop_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
@@ -34,7 +34,18 @@ class CropDetailScreen extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(Icons.camera_alt, color: colorScheme.onPrimary),
-            onPressed: () => Get.toNamed('/disease-detection'),
+            onPressed: () async {
+              final res = await Get.toNamed('/disease-detection', arguments: {'returnResult': true, 'cropId': crop.id});
+              if (res is Map<String, dynamic>) {
+                final status = res['status'] as String?;
+                final disease = res['disease'] as String?;
+                final care = res['careInstructions'] as String?;
+                final suggestion = res['suggestions'] as String?;
+                if (status != null && status.isNotEmpty) {
+                  await controller.updateCropHealth(crop.id, status: status, disease: disease, careInstructions: care, suggestions: suggestion);
+                }
+              }
+            },
             tooltip: 'Scan Leaf'.tr,
           ),
         ],
@@ -53,18 +64,19 @@ class CropDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDetailRow(
-                      context,
-                      icon: Icons.tag,
-                      label: 'Status'.tr,
-                      value: crop.status?.tr ?? 'Unknown'.tr,
-                      valueColor:
-                          crop.status == 'Healthy'
-                              ? Colors.green
-                              : crop.status == 'At Risk'
-                              ? Colors.orange
-                              : Colors.red,
-                    ),
+                    Obx(() {
+  final live = controller.crops.firstWhere((c) => c.id == crop.id, orElse: () => crop);
+  final status = live.status ?? 'Unknown';
+  final color = status == 'Healthy' ? colorScheme.primary : status == 'At Risk' ? colorScheme.secondary : colorScheme.error;
+  return _buildDetailRow(
+    context,
+    icon: Icons.tag,
+    label: 'Status'.tr,
+    value: status.tr,
+    valueColor: color,
+  );
+                    }),
+
                     _buildDetailRow(
                       context,
                       icon: Icons.calendar_today,
@@ -134,7 +146,18 @@ class CropDetailScreen extends StatelessWidget {
                     AppWidgets.button(
                       text: 'Scan Leaf Again'.tr,
                       icon: Icons.camera_alt,
-                      onPressed: () => Get.toNamed('/disease-detection'),
+                      onPressed: () async {
+              final res = await Get.toNamed('/disease-detection', arguments: {'returnResult': true, 'cropId': crop.id});
+              if (res is Map<String, dynamic>) {
+                final status = res['status'] as String?;
+                final disease = res['disease'] as String?;
+                final care = res['careInstructions'] as String?;
+                final suggestion = res['suggestions'] as String?;
+                if (status != null && status.isNotEmpty) {
+                  await controller.updateCropHealth(crop.id, status: status, disease: disease, careInstructions: care, suggestions: suggestion);
+                }
+              }
+            },
                       colorScheme: colorScheme,
                     ),
                   ],
