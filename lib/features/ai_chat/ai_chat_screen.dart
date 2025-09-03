@@ -1,16 +1,19 @@
+// lib/features/ai_chat/ai_chat_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-// IMPORTANT: Namespace to avoid hitting an old duplicate class at runtime.
-import 'package:krishi_link/core/components/app_text_input_field.dart'
-    as custom;
-import 'package:krishi_link/core/components/send_button/app_send_button.dart';
+// Alias to avoid clashes with other AppTextInputField defs
+import 'package:krishi_link/core/components/app_text_input_field.dart' as kl;
+import 'package:krishi_link/core/components/confirm%20box/custom_confirm_dialog.dart';
 
 import 'package:krishi_link/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_controller.dart';
+import 'package:krishi_link/features/chat/widgets/typing_indicator.dart';
 
 class AiChatScreen extends StatefulWidget {
   final String name;
@@ -22,6 +25,8 @@ class AiChatScreen extends StatefulWidget {
 
 class _AiChatScreenState extends State<AiChatScreen>
     with SingleTickerProviderStateMixin {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
   late final FocusNode _textFieldFocusNode;
@@ -47,6 +52,7 @@ class _AiChatScreenState extends State<AiChatScreen>
     _textFieldFocusNode = FocusNode()..addListener(_onFocusChange);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadAiChats(); // ensure history loads once on mount
       controller.scrollToBottom();
       _animationController.forward();
     });
@@ -69,43 +75,179 @@ class _AiChatScreenState extends State<AiChatScreen>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+  // Build the Drawer (left sidebar) content
+  Widget _buildChatHistoryDrawer() {
+    final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Column(
-        children: [
-          _AppBar(
-            userName: widget.name,
-            onClearChat: () => _showClearChatDialog(theme),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: _ChatArea(
-                controller: controller,
-                fadeAnimation: _fadeAnimation,
-                userName: widget.name,
-                keyboardHeight: keyboardHeight,
+    return SafeArea(
+      child: Container(
+        color: cs.surface,
+        child: Column(
+          children: [
+            ListTile(
+              title: Text(
+                'Chat History',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface,
+                ),
+              ),
+              trailing: IconButton(
+                icon: Icon(Icons.close, color: cs.onSurface),
+                onPressed: () => Navigator.of(context).maybePop(),
+                tooltip: 'Close',
               ),
             ),
-          ),
-          _InputArea(
-            controller: controller,
-            focusNode: _textFieldFocusNode,
-            onSend: _sendMessage,
-          ),
-        ],
+            Divider(color: cs.outline.withOpacity(.3), height: 1),
+
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => controller.loadAiChats(),
+                child: Obx(() {
+                  final items = controller.aiChats;
+                  if (items.isEmpty) {
+                    return ListView(
+                      physics:
+                          const AlwaysScrollableScrollPhysics(), // allow pull-to-refresh on empty
+                      children: [
+                        const SizedBox(height: 160),
+                        Center(
+                          child: Text(
+                            'No history yet',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: cs.onSurface.withOpacity(.6)),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: items.length,
+                    separatorBuilder:
+                        (_, __) => Divider(
+                          color: cs.outline.withOpacity(.15),
+                          height: 1,
+                        ),
+                    itemBuilder: (context, index) {
+                      final m = items[index];
+
+                      final id = (m['id'] ?? '').toString(); // normalized
+                      final title = (m['title'] ?? 'Conversation').toString();
+                      final subtitle = (m['preview'] ?? '').toString();
+                      final ts = m['timestamp'] as DateTime?;
+
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        leading: CircleAvatar(
+                          backgroundColor: cs.primaryContainer,
+                          child: Text(
+                            title.isNotEmpty ? title[0].toUpperCase() : '?',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: cs.onSurface.withOpacity(0.7)),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (ts != null)
+                              Text(
+                                '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelSmall?.copyWith(
+                                  color: cs.onSurface.withOpacity(.6),
+                                ),
+                              ),
+                            const SizedBox(width: 6),
+                            IconButton(
+                              tooltip: 'Delete chat',
+                              icon: Icon(Icons.delete_outline, color: cs.error),
+                              onPressed: () async {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) {
+                                    return CustomConfirmDialog(
+                                      title: 'Delete Chat',
+                                      content:
+                                          'Are you sure you want to delete “$title”?',
+                                      confirmText: 'Yes',
+                                      cancelText: 'No',
+                                      onConfirm: () async {
+                                        Get.back(); // close dialog safely
+                                        final ok = await controller.deleteChat(
+                                          id,
+                                        );
+                                        if (ok) {
+                                          PopupService.showSnackbar(
+                                            type: PopupType.success,
+                                            title: 'Deleted',
+                                            message: 'Conversation removed',
+                                          );
+                                        } else {
+                                          PopupService.showSnackbar(
+                                            type: PopupType.error,
+                                            title: 'Failed',
+                                            message:
+                                                'Could not delete the conversation',
+                                          );
+                                        }
+                                      },
+                                      onCancel: () => Get.back(),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        // Tap to open old chat (like ChatGPT)
+                        onTap: () async {
+                          await controller.openChat(id);
+                          Navigator.of(context).pop(); // close drawer
+                          controller.scrollToBottom();
+                        },
+                      );
+                    },
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _sendMessage() {
-    if (controller.isLoading.value) return; // prevent double-submit
+    if (controller.isLoading.value) return; // prevent double submit
     if (controller.inputController.text.trim().isNotEmpty) {
       controller.sendMessage();
       HapticFeedback.lightImpact();
@@ -169,13 +311,51 @@ class _AiChatScreenState extends State<AiChatScreen>
       _animationController.forward(from: 0);
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    return Scaffold(
+      key: _scaffoldKey,
+      resizeToAvoidBottomInset: true,
+      // Real left drawer (sidebar)
+      drawer: Drawer(child: _buildChatHistoryDrawer()),
+      body: Column(
+        children: [
+          _AppBar(
+            userName: widget.name,
+            showSideBar: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: _ChatArea(
+                controller: controller,
+                fadeAnimation: _fadeAnimation,
+                userName: widget.name,
+                keyboardHeight: keyboardHeight,
+              ),
+            ),
+          ),
+          _InputArea(
+            controller: controller,
+            focusNode: _textFieldFocusNode,
+            onSend: _sendMessage,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AppBar extends StatelessWidget {
   final String userName;
-  final VoidCallback onClearChat;
+  final VoidCallback showSideBar;
 
-  const _AppBar({required this.userName, required this.onClearChat});
+  const _AppBar({required this.userName, required this.showSideBar});
 
   @override
   Widget build(BuildContext context) {
@@ -256,12 +436,12 @@ class _AppBar extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(
-                  Icons.delete_outline,
+                  Icons.menu,
                   color: theme.appBarTheme.foregroundColor ?? cs.onPrimary,
                   size: 24,
                 ),
-                tooltip: 'clear_chat'.tr,
-                onPressed: onClearChat,
+                tooltip: 'side_bar'.tr,
+                onPressed: showSideBar,
               ),
             ],
           ),
@@ -286,8 +466,7 @@ class _ChatArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
@@ -463,13 +642,7 @@ class _TypingIndicator extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                // keep tiny logo + dots
-                // (use your LottieWidget if desired)
-                // LottieWidget(path: LottieAssets.aiLogo, height: 20),
-                SizedBox(width: 8),
-                TypingIndicator(),
-              ],
+              children: const [SizedBox(width: 8), TypingIndicator()],
             ),
           ),
         ],
@@ -658,7 +831,6 @@ class _InputArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final keyboardBottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
       decoration: BoxDecoration(
@@ -680,58 +852,32 @@ class _InputArea extends StatelessWidget {
               const _ImagePickerButton(),
               const SizedBox(width: 12),
               Expanded(
-                child: custom.AppTextInputField(
-                  controller: controller.inputController,
-                  focusNode: focusNode,
-                  hint: 'type_your_message'.tr,
-                  minLines: 1,
-                  maxLines: null,
-                  textInputAction: TextInputAction.newline,
-                  keyboardType: TextInputType.multiline,
+                // Rebuild when isLoading changes so send button enables/disables
+                child: Obx(
+                  () => kl.AppTextInputField(
+                    controller: controller.inputController,
+                    focusNode: focusNode,
+                    hint: 'type_your_message'.tr,
+                    minLines: 1,
+                    maxLines: null, // auto-grow
+                    textInputAction: TextInputAction.newline,
+                    keyboardType: TextInputType.multiline,
 
-                  borderRadius: 22,
-                  fillColor: cs.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    // Theme-aware pill
+                    borderRadius: 22,
+                    fillColor: cs.surfaceContainerHighest,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+
+                    // Send button only (no clear)
+                    showSendButton: !controller.isLoading.value,
+                    onSend: controller.isLoading.value ? null : onSend,
+
+                    // sync reactive state
+                    onChanged: (v) => controller.inputText.value = v,
                   ),
-
-                  // keep text visible above keyboard
-                  scrollPadding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 80,
-                  ),
-
-                  // disable built-ins
-                  showClearButton: false,
-                  showSendButton: false,
-
-                  // 👇 inject the reusable, GetX-free send button
-                  suffixIcon: Obx(() {
-                    final isLoading =
-                        controller
-                            .isLoading
-                            .value; // reactive via GetX (optional)
-                    return ValueListenableBuilder<TextEditingValue>(
-                      valueListenable:
-                          controller
-                              .inputController, // pure Flutter text updates
-                      builder: (_, value, __) {
-                        final hasText = value.text.trim().isNotEmpty;
-                        return AppSendButton(
-                          isLoading: isLoading,
-                          hasText: hasText,
-                          onSend: onSend,
-                          inline: false, // fit nicely inside the field
-                          iconSize: 20,
-                        );
-                      },
-                    );
-                  }),
-
-                  onChanged:
-                      (v) =>
-                          controller.inputText.value =
-                              v, // keep your GetX state too
                 ),
               ),
             ],
@@ -762,89 +908,20 @@ class _ImagePickerButton extends StatelessWidget {
           size: 24,
         ),
         tooltip: 'send_image'.tr,
-        onPressed: () => _showImageUploadSnackbar(context),
+        onPressed: () {
+          final cs2 = Theme.of(context).colorScheme;
+          Get.snackbar(
+            'Coming Soon',
+            'Image upload is an upcoming feature. For now, please send text only.',
+            backgroundColor: cs2.tertiaryContainer,
+            colorText: cs2.onTertiaryContainer,
+            snackPosition: SnackPosition.TOP,
+            margin: const EdgeInsets.all(16),
+            borderRadius: 12,
+            icon: Icon(Icons.info_outline, color: cs2.tertiary),
+          );
+        },
       ),
-    );
-  }
-
-  void _showImageUploadSnackbar(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    Get.snackbar(
-      'Coming Soon',
-      'Image upload is an upcoming feature. For now, please send text only.',
-      backgroundColor: cs.tertiaryContainer,
-      colorText: cs.onTertiaryContainer,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      icon: Icon(Icons.info_outline, color: cs.tertiary),
-    );
-  }
-}
-
-class TypingIndicator extends StatefulWidget {
-  const TypingIndicator({super.key});
-
-  @override
-  State<TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<TypingIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    )..repeat();
-    _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (index) {
-            final delay = index * 0.2;
-            final v = (_animation.value - delay).clamp(0.0, 1.0);
-            final scale = (1 - (v * 2 - 1).abs()).clamp(0.5, 1.0);
-            final opacity = (1 - (v * 2 - 1).abs()).clamp(0.3, 1.0);
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Transform.scale(
-                scale: scale,
-                child: Opacity(
-                  opacity: opacity,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: cs.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        );
-      },
     );
   }
 }
