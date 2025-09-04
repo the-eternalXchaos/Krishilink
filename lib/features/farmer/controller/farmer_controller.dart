@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/admin/models/notification_model.dart';
 import 'package:krishi_link/features/admin/models/order_model.dart';
@@ -26,7 +27,6 @@ class FarmerController extends GetxController {
   final RxList<OrderModel> orders = <OrderModel>[].obs;
   final RxList<OrderModel> filteredOrders = <OrderModel>[].obs;
   // final RxList<NotificationModel> notifications = <NotificationModel>[].obs;
-
 
   get selectedFarmer => null;
   get farmersList => null;
@@ -218,6 +218,51 @@ class FarmerController extends GetxController {
       });
       PopupService.error(errorMessage.value);
       rethrow;
+    } finally {
+      await _updateLoading(false);
+    }
+  }
+
+  Future<void> updateCropHealth(
+    String cropId, {
+    required String status,
+    String? disease,
+    String? careInstructions,
+    String? suggestions,
+  }) async {
+    try {
+      await _updateLoading(true);
+      final index = crops.indexWhere((c) => c.id == cropId);
+      if (index == -1) throw Exception('Crop not found');
+      final existing = crops[index];
+      final updated = CropModel(
+        id: existing.id,
+        name: existing.name,
+        description: existing.description,
+        imageUrl: existing.imageUrl,
+        plantedAt: existing.plantedAt,
+        createdAt: existing.createdAt,
+        updatedAt: DateTime.now(),
+        note: existing.note,
+        status: status,
+        disease: disease ?? existing.disease,
+        careInstructions: careInstructions ?? existing.careInstructions,
+        suggestions: suggestions ?? existing.suggestions,
+      );
+      crops[index] = updated;
+      crops.refresh();
+      await _cacheCrops(crops);
+      PopupService.showSnackbar(
+        type: PopupType.success,
+        title: 'Crop health updated',
+        message: 'The health status of the crop has been successfully updated.',
+      );
+    } catch (e) {
+      PopupService.showSnackbar(
+        type: PopupType.error,
+        title: 'Error',
+        message: 'Failed to update crop health: $e',
+      );
     } finally {
       await _updateLoading(false);
     }

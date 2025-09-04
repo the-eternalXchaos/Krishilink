@@ -7,7 +7,7 @@ import '../../../features/auth/controller/auth_controller.dart';
 import '../../../core/utils/api_constants.dart';
 
 class SignalRService extends GetxService {
-  static const String _hubUrl = '/chatHub';
+  static const String _hubUrl = '/ChatHub';
 
   late HubConnection _hubConnection;
   final Logger _logger = Logger();
@@ -41,10 +41,23 @@ class SignalRService extends GetxService {
         return;
       }
 
-      final serverUrl =
-          '${ApiConstants.baseUrl.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://')}$_hubUrl';
+      // Use HTTPS base; the client selects transport and handles negotiate.
+      final serverUrl = '${ApiConstants.baseUrl}$_hubUrl';
 
-      _hubConnection = HubConnectionBuilder().withUrl(serverUrl).build();
+      _hubConnection = HubConnectionBuilder()
+          .withUrl(
+            serverUrl,
+            options: HttpConnectionOptions(
+              accessTokenFactory: () async => _authController.currentUser.value?.token ?? '',
+              // Prefer SSE/LongPolling if proxies block WebSockets
+              transport: HttpTransportType.ServerSentEvents,
+            ),
+          )
+          .withAutomaticReconnect()
+          .build();
+      // Reasonable timeouts for mobile networks
+      _hubConnection.serverTimeoutInMilliseconds = 60000; // 60s
+      _hubConnection.keepAliveIntervalInMilliseconds = 15000; // 15s
 
       _setupEventHandlers();
       await _startConnection();

@@ -67,7 +67,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required String productId,
   }) async {
     try {
-      final productUrl = 'https://krishilink.com.np/product/$productId';
+      final productUrl = 'https://krishilink.shamir.com.np/product/$productId';
 
       final text = '''
 🛒 $name

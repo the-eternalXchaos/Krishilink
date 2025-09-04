@@ -24,7 +24,8 @@ class ApiService {
   Future<Options> getJsonOptions() => _jsonOptions();
 
   // Protected getter for _dio to allow access in subclasses
-  @protected
+
+  // Public client getter for external consumers
   Dio get dio => _dio;
 
   bool _isRefreshing = false;
@@ -34,8 +35,8 @@ class ApiService {
     : _dio = Dio(
         BaseOptions(
           baseUrl: ApiConstants.baseUrl,
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 30),
+          connectTimeout: const Duration(seconds: 40),
+          receiveTimeout: const Duration(seconds: 40),
           headers: {'Content-Type': 'application/json'},
         ),
       ) {
@@ -66,6 +67,12 @@ class ApiService {
 
             final headers = await TokenService.getAuthHeaders();
             options.headers.addAll(headers);
+            // Ensure multipart requests are not forced to JSON content type
+            if (options.data is FormData) {
+              options.headers.remove('Content-Type');
+              options.contentType = 'multipart/form-data';
+              debugPrint('[Interceptor] Adjusted Content-Type for multipart');
+            }
             debugPrint('[Interceptor] Request Headers: ${options.headers}');
             return handler.next(options);
           } catch (e) {
@@ -406,19 +413,6 @@ class ApiService {
     }
   }
 
-  // --- AI CHAT LOGIC ---
-  Future<String> chatWithAI(String message) async {
-    try {
-      final response = await _dio.post(
-        ApiConstants.chatWithAiEndpoint,
-        data: jsonEncode(message),
-        options: Options(headers: {'Content-Type': 'application/json'}),
-      );
-      return response.data.toString();
-    } on DioException catch (e) {
-      throw _parseDioError(e);
-    }
-  }
 
   // --- HEALTH CHECK LOGIC ---
   Future<bool> checkHealth() async {

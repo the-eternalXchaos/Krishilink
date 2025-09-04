@@ -61,6 +61,7 @@ class AppTheme {
       onPrimary: Colors.white,
       onSurface: Colors.black87,
       outline: Colors.green.shade300,
+      outlineVariant: Colors.black38,
     ),
     scaffoldBackgroundColor: Colors.green.shade100,
     textTheme: _baseTextTheme.copyWith(
@@ -108,6 +109,7 @@ class AppTheme {
       onPrimary: Colors.white,
       onSurface: Colors.grey.shade100,
       outline: Colors.green.shade800,
+      outlineVariant: Colors.white38,
     ),
     scaffoldBackgroundColor: Colors.grey.shade900,
     appBarTheme: AppBarTheme(

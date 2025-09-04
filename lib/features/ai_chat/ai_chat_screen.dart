@@ -1,18 +1,20 @@
-// lib/features/ai_chat/ai_chat_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-// Alias to avoid clashes with other AppTextInputField defs
 import 'package:krishi_link/core/components/app_text_input_field.dart' as kl;
-import 'package:krishi_link/core/components/confirm%20box/custom_confirm_dialog.dart';
 
+import 'package:krishi_link/core/components/confirm box/custom_confirm_dialog.dart';
+import 'package:krishi_link/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
 import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/components/custom_drawer/custom_drawer.dart';
+
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_controller.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/chat/widgets/typing_indicator.dart';
 
 class AiChatScreen extends StatefulWidget {
@@ -32,6 +34,10 @@ class _AiChatScreenState extends State<AiChatScreen>
   late final FocusNode _textFieldFocusNode;
   Timer? _debounceTimer;
   late final AiChatController controller;
+  final _authController =
+      Get.isRegistered()
+          ? Get.find<AuthController>()
+          : Get.put(AuthController());
 
   @override
   void initState() {
@@ -52,7 +58,7 @@ class _AiChatScreenState extends State<AiChatScreen>
     _textFieldFocusNode = FocusNode()..addListener(_onFocusChange);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.loadAiChats(); // ensure history loads once on mount
+      controller.loadAiChats();
       controller.scrollToBottom();
       _animationController.forward();
     });
@@ -75,240 +81,220 @@ class _AiChatScreenState extends State<AiChatScreen>
     super.dispose();
   }
 
-  // Build the Drawer (left sidebar) content
-  Widget _buildChatHistoryDrawer() {
+  // -------- Drawer items builder (reactive) --------
+  List<DrawerItem> _chatHistoryItems(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final items = <DrawerItem>[];
 
-    return SafeArea(
-      child: Container(
-        color: cs.surface,
-        child: Column(
+    // Header + quick actions
+    items.add(DrawerItem.section('Chat History'));
+    items.add(
+      DrawerItem.item(
+        title: 'New Chat',
+        icon: Icons.add_circle_outline,
+        onTap: () {
+          controller.clearChat();
+          controller.selectedChatId.value = '';
+          Navigator.of(context).maybePop();
+          controller.scrollToBottom();
+          PopupService.showSnackbar(
+            type: PopupType.info,
+            title: 'New Chat',
+            message: 'Start typing to begin.',
+          );
+        },
+      ),
+    );
+    items.add(
+      DrawerItem.item(
+        title: 'Refresh',
+        icon: Icons.refresh,
+        onTap: () async => controller.loadAiChats(),
+        isDense: true,
+      ),
+    );
+    items.add(DrawerItem.divider());
+
+    // --- Build the groups AFTER we inspect aiChats ---
+    final now = DateTime.now();
+    final todayChats = <DrawerItem>[];
+    final yesterdayChats = <DrawerItem>[];
+    final olderChats = <DrawerItem>[];
+
+    for (final m in controller.aiChats) {
+      final id = (m['id'] ?? '').toString();
+      final title = (m['title'] ?? 'Conversation').toString();
+      final preview = (m['preview'] ?? '').toString();
+      final ts = m['timestamp'] as DateTime?;
+      final timeStr =
+          ts == null
+              ? ''
+              : '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+
+      final chatItem = DrawerItem.item(
+        title: title,
+        subtitle: preview.isEmpty ? null : preview,
+        icon: Icons.forum_outlined,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              title: Text(
-                'Chat History',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
+            if (timeStr.isNotEmpty)
+              Text(
+                timeStr,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: cs.onSurface.withOpacity(.6),
                 ),
               ),
-              trailing: IconButton(
-                icon: Icon(Icons.close, color: cs.onSurface),
-                onPressed: () => Navigator.of(context).maybePop(),
-                tooltip: 'Close',
-              ),
-            ),
-            Divider(color: cs.outline.withOpacity(.3), height: 1),
-
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () => controller.loadAiChats(),
-                child: Obx(() {
-                  final items = controller.aiChats;
-                  if (items.isEmpty) {
-                    return ListView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(), // allow pull-to-refresh on empty
-                      children: [
-                        const SizedBox(height: 160),
-                        Center(
-                          child: Text(
-                            'No history yet',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: cs.onSurface.withOpacity(.6)),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    itemCount: items.length,
-                    separatorBuilder:
-                        (_, __) => Divider(
-                          color: cs.outline.withOpacity(.15),
-                          height: 1,
-                        ),
-                    itemBuilder: (context, index) {
-                      final m = items[index];
-
-                      final id = (m['id'] ?? '').toString(); // normalized
-                      final title = (m['title'] ?? 'Conversation').toString();
-                      final subtitle = (m['preview'] ?? '').toString();
-                      final ts = m['timestamp'] as DateTime?;
-
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        leading: CircleAvatar(
-                          backgroundColor: cs.primaryContainer,
-                          child: Text(
-                            title.isNotEmpty ? title[0].toUpperCase() : '?',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelLarge?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.copyWith(
-                            color: cs.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: cs.onSurface.withOpacity(0.7)),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (ts != null)
-                              Text(
-                                '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall?.copyWith(
-                                  color: cs.onSurface.withOpacity(.6),
-                                ),
-                              ),
-                            const SizedBox(width: 6),
-                            IconButton(
-                              tooltip: 'Delete chat',
-                              icon: Icon(Icons.delete_outline, color: cs.error),
-                              onPressed: () async {
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) {
-                                    return CustomConfirmDialog(
-                                      title: 'Delete Chat',
-                                      content:
-                                          'Are you sure you want to delete “$title”?',
-                                      confirmText: 'Yes',
-                                      cancelText: 'No',
-                                      onConfirm: () async {
-                                        Get.back(); // close dialog safely
-                                        final ok = await controller.deleteChat(
-                                          id,
-                                        );
-                                        if (ok) {
-                                          PopupService.showSnackbar(
-                                            type: PopupType.success,
-                                            title: 'Deleted',
-                                            message: 'Conversation removed',
-                                          );
-                                        } else {
-                                          PopupService.showSnackbar(
-                                            type: PopupType.error,
-                                            title: 'Failed',
-                                            message:
-                                                'Could not delete the conversation',
-                                          );
-                                        }
-                                      },
-                                      onCancel: () => Get.back(),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        // Tap to open old chat (like ChatGPT)
-                        onTap: () async {
-                          await controller.openChat(id);
-                          Navigator.of(context).pop(); // close drawer
-                          controller.scrollToBottom();
+            const SizedBox(width: 6),
+            IconButton(
+              tooltip: 'Delete chat',
+              splashRadius: 18,
+              icon: Icon(Icons.delete_outline, color: cs.error),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (ctx) => CustomConfirmDialog(
+                        title: 'Delete Chat',
+                        content: 'Are you sure you want to delete “$title”?',
+                        confirmText: 'Yes',
+                        cancelText: 'No',
+                        onConfirm: () async {
+                          Get.back();
+                          final ok = await controller.deleteChat(id);
+                          if (ok) {
+                            PopupService.showSnackbar(
+                              type: PopupType.success,
+                              title: 'Deleted',
+                              message: 'Conversation removed',
+                            );
+                          } else {
+                            PopupService.showSnackbar(
+                              type: PopupType.error,
+                              title: 'Failed',
+                              message: 'Could not delete the conversation',
+                            );
+                          }
                         },
-                      );
-                    },
-                  );
-                }),
-              ),
+                        onCancel: () => Get.back(),
+                      ),
+                );
+              },
             ),
           ],
+        ),
+        onTap: () async {
+          await controller.openChat(id);
+          Navigator.of(context).maybePop();
+          controller.scrollToBottom();
+        },
+      );
+
+      if (ts == null) {
+        olderChats.add(chatItem);
+      } else if (ts.year == now.year &&
+          ts.month == now.month &&
+          ts.day == now.day) {
+        todayChats.add(chatItem);
+      } else {
+        final y = now.subtract(const Duration(days: 1));
+        if (ts.year == y.year && ts.month == y.month && ts.day == y.day) {
+          yesterdayChats.add(chatItem);
+        } else {
+          olderChats.add(chatItem);
+        }
+      }
+    }
+
+    // --- FLAT SECTIONS (no subItems) ---
+    if (todayChats.isNotEmpty) {
+      items.add(DrawerItem.section('Today'));
+      items.addAll(todayChats);
+    }
+    if (yesterdayChats.isNotEmpty) {
+      items.add(DrawerItem.divider());
+      items.add(DrawerItem.section('Yesterday'));
+      items.addAll(yesterdayChats);
+    }
+    if (olderChats.isNotEmpty) {
+      items.add(DrawerItem.divider());
+      items.add(DrawerItem.section('Older'));
+      items.addAll(olderChats);
+    }
+
+    if (items.length <= 4) {
+      items.add(
+        DrawerItem.item(
+          title: 'No history yet',
+          icon: Icons.inbox_outlined,
+          enabled: false,
+          isDense: true,
+        ),
+      );
+    }
+
+    return items;
+  }
+
+  // Custom header for the drawer
+  Widget _buildCustomHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [cs.primary, cs.primary.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: cs.onPrimary.withOpacity(0.2),
+                    child: LottieWidget(path: LottieAssets.aiLogo, height: 32),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'KrishiLink AI',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: cs.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    semanticsLabel: 'KrishiLink AI',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap to open, swipe to delete',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onPrimary.withOpacity(0.7),
+                ),
+                semanticsLabel: 'Tap to open, swipe to delete',
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _sendMessage() {
-    if (controller.isLoading.value) return; // prevent double submit
+    if (controller.isLoading.value) return;
     if (controller.inputController.text.trim().isNotEmpty) {
       controller.sendMessage();
       HapticFeedback.lightImpact();
       Future.microtask(controller.scrollToBottom);
-    }
-  }
-
-  void _showClearChatDialog(ThemeData theme) async {
-    final cs = theme.colorScheme;
-    HapticFeedback.lightImpact();
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: cs.surface,
-        title: Row(
-          children: [
-            Icon(Icons.delete_outline, color: cs.error),
-            const SizedBox(width: 8),
-            Text(
-              'clear_chat'.tr,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'clear_chat_confirmation'.tr,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: cs.onSurface.withOpacity(0.8),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: Text(
-              'cancel'.tr,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurface.withOpacity(0.7),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: cs.error,
-              foregroundColor: cs.onError,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text('clear'.tr),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      controller.clearChat();
-      _animationController.forward(from: 0);
     }
   }
 
@@ -321,30 +307,84 @@ class _AiChatScreenState extends State<AiChatScreen>
     return Scaffold(
       key: _scaffoldKey,
       resizeToAvoidBottomInset: true,
-      // Real left drawer (sidebar)
-      drawer: Drawer(child: _buildChatHistoryDrawer()),
-      body: Column(
+
+      // floatingActionButton: Obx(() {
+      //   if (controller.isAtBottom.value) return const SizedBox.shrink();
+      //   return FloatingActionButton(
+      //     heroTag: "scroll_down",
+      //     mini: true,
+      //     shape: const CircleBorder(),
+      //     backgroundColor: Theme.of(context).colorScheme.primary,
+      //     foregroundColor: Colors.white,
+      //     onPressed: controller.scrollToBottom,
+      //     child: const Icon(Icons.arrow_downward),
+      //   );
+      // }),
+
+      // Updated CustomDrawer usage
+      drawer: Obx(() {
+        final items = _chatHistoryItems(context);
+        return CustomDrawer(
+          width: 340,
+          customHeader: _buildCustomHeader(context),
+          menuItems: items,
+          showDividers: true,
+          footer: _DrawerFooter(controller: controller),
+          footerPadding: const EdgeInsets.all(16),
+          animationDuration: const Duration(milliseconds: 250),
+          itemTextStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: cs.onSurface,
+          ),
+          itemIconColor: cs.onSurfaceVariant,
+          dividerColor: cs.outlineVariant,
+        );
+      }),
+
+      body: Stack(
         children: [
-          _AppBar(
-            userName: widget.name,
-            showSideBar: () => _scaffoldKey.currentState?.openDrawer(),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: _ChatArea(
-                controller: controller,
-                fadeAnimation: _fadeAnimation,
+          Column(
+            children: [
+              _AppBar(
                 userName: widget.name,
-                keyboardHeight: keyboardHeight,
+                showSideBar: () => _scaffoldKey.currentState?.openDrawer(),
               ),
-            ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => FocusScope.of(context).unfocus(),
+                  child: _ChatArea(
+                    controller: controller,
+                    fadeAnimation: _fadeAnimation,
+                    userName: widget.name,
+                    keyboardHeight: keyboardHeight,
+                  ),
+                ),
+              ),
+              _InputArea(
+                controller: controller,
+                focusNode: _textFieldFocusNode,
+                onSend: _sendMessage,
+              ),
+            ],
           ),
-          _InputArea(
-            controller: controller,
-            focusNode: _textFieldFocusNode,
-            onSend: _sendMessage,
-          ),
+
+          //   CROLLD WON BUTTON FRO IT , ADN PUR LIST IN REVERSE ORDER ,
+          Obx(() {
+            if (controller.isAtBottom.value) return const SizedBox.shrink();
+            return Positioned(
+              bottom: 80,
+              left: (Get.width) / 2, // 170
+
+              child: FloatingActionButton(
+                heroTag: "scroll_down",
+                mini: true,
+                shape: const CircleBorder(),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                onPressed: controller.scrollToBottom,
+                child: const Icon(Icons.arrow_downward),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -365,7 +405,7 @@ class _AppBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.primary, cs.primary.withOpacity(0.90)],
+          colors: [cs.primary, cs.primary.withOpacity(.90)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -423,10 +463,10 @@ class _AppBar extends StatelessWidget {
                           ),
                           Text(
                             'Chatting with $userName',
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onPrimary.withOpacity(0.8),
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -440,7 +480,7 @@ class _AppBar extends StatelessWidget {
                   color: theme.appBarTheme.foregroundColor ?? cs.onPrimary,
                   size: 24,
                 ),
-                tooltip: 'side_bar'.tr,
+                tooltip: 'Side bar',
                 onPressed: showSideBar,
               ),
             ],
@@ -586,10 +626,10 @@ class _SuggestedQuestions extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children:
-          questions.map((question) {
+          questions.map((q) {
             return InkWell(
               onTap: () {
-                controller.inputController.text = question;
+                controller.inputController.text = q;
                 controller.sendMessage();
               },
               borderRadius: BorderRadius.circular(20),
@@ -604,7 +644,7 @@ class _SuggestedQuestions extends StatelessWidget {
                   border: Border.all(color: cs.outline),
                 ),
                 child: Text(
-                  question,
+                  q,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: cs.onSurface,
                   ),
@@ -622,7 +662,6 @@ class _TypingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -780,7 +819,7 @@ class _MessageBubble extends StatelessWidget {
                           child: TextButton.icon(
                             onPressed: onRetry,
                             icon: const Icon(Icons.refresh, size: 16),
-                            label: Text('retry'.tr),
+                            label: const Text('Retry'),
                             style: TextButton.styleFrom(
                               foregroundColor: cs.error,
                               minimumSize: Size.zero,
@@ -852,30 +891,23 @@ class _InputArea extends StatelessWidget {
               const _ImagePickerButton(),
               const SizedBox(width: 12),
               Expanded(
-                // Rebuild when isLoading changes so send button enables/disables
                 child: Obx(
                   () => kl.AppTextInputField(
                     controller: controller.inputController,
                     focusNode: focusNode,
                     hint: 'type_your_message'.tr,
                     minLines: 1,
-                    maxLines: null, // auto-grow
+                    maxLines: null,
                     textInputAction: TextInputAction.newline,
                     keyboardType: TextInputType.multiline,
-
-                    // Theme-aware pill
                     borderRadius: 22,
                     fillColor: cs.surfaceContainerHighest,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
-
-                    // Send button only (no clear)
                     showSendButton: !controller.isLoading.value,
                     onSend: controller.isLoading.value ? null : onSend,
-
-                    // sync reactive state
                     onChanged: (v) => controller.inputText.value = v,
                   ),
                 ),
@@ -921,6 +953,70 @@ class _ImagePickerButton extends StatelessWidget {
             icon: Icon(Icons.info_outline, color: cs2.tertiary),
           );
         },
+      ),
+    );
+  }
+}
+
+class _DrawerFooter extends StatelessWidget {
+  final AiChatController controller;
+  const _DrawerFooter({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: cs.outlineVariant, width: .5)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: cs.primaryContainer,
+                    child: Text(
+                      controller.userName!.isNotEmpty
+                          ? controller.userName![0].toUpperCase()
+                          : 'U',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: cs.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          controller.userName.toString(),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'User',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: cs.onSurface.withOpacity(0.7)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -17,9 +17,7 @@ class AppTextInputField extends StatefulWidget {
   final bool enableSuggestions;
   final bool autocorrect;
   final int? minLines;
-
-  /// Set null for expanding multiline
-  final int? maxLines;
+  final int? maxLines; // set null for expanding multiline
   final int? maxLength;
   final List<TextInputFormatter>? inputFormatters;
 
@@ -47,9 +45,6 @@ class AppTextInputField extends StatefulWidget {
   final bool showSendButton;
   final VoidCallback? onSend;
   final bool showObscureToggle;
-
-  // Keyboard overlap handling
-  final EdgeInsets scrollPadding;
 
   const AppTextInputField({
     super.key,
@@ -87,7 +82,6 @@ class AppTextInputField extends StatefulWidget {
     this.showSendButton = false,
     this.onSend,
     this.showObscureToggle = false,
-    this.scrollPadding = const EdgeInsets.all(20),
   });
 
   @override
@@ -105,20 +99,15 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
     _obscure = widget.obscureText;
     _ownsController = widget.controller == null;
     _internalController = widget.controller ?? TextEditingController();
+
+    // Rebuild to show/hide clear/send when text changes
     _internalController.addListener(_onTextChange);
   }
 
-  // void _onTextChange() {
-  //   if (widget.showClearButton || widget.showSendButton) {
-  //     setState(() {}); // lightweight rebuild for trailing buttons
-  //   }
-  //   widget.onChanged?.call(_internalController.text);
-  // }
   void _onTextChange() {
-    if (widget.showClearButton ||
-        widget.showSendButton ||
-        widget.suffixIcon != null) {
-      setState(() {}); // ensures suffixIcon can react to text changes
+    if (widget.showClearButton || widget.showSendButton) {
+      // Cheap rebuild; lightweight for a single field
+      setState(() {});
     }
     widget.onChanged?.call(_internalController.text);
   }
@@ -147,7 +136,7 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
     final List<Widget> trailing = [
       if (widget.showObscureToggle && widget.obscureText)
         IconButton(
-          tooltip: _obscure ? 'Hide' : 'Show',
+          tooltip: _obscure ? 'Show' : 'Hide',
           icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
           onPressed: () => setState(() => _obscure = !_obscure),
         ),
@@ -157,6 +146,7 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
           icon: const Icon(Icons.close),
           onPressed: () {
             _internalController.clear();
+            // onChanged gets triggered by listener
           },
         ),
       if (canSend)
@@ -168,15 +158,15 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
       if (widget.suffixIcon != null) widget.suffixIcon!,
     ];
 
-    // Widen constraints to host multiple trailing icons nicely
+    // NOTE: suffixIcon has tight constraints by default; widen it a bit for multiple buttons
     final suffixIconConstraints =
         trailing.isEmpty
             ? const BoxConstraints()
-            : const BoxConstraints(minHeight: 48, minWidth: 48, maxWidth: 160);
+            : const BoxConstraints(minHeight: 48, minWidth: 48, maxWidth: 132);
 
     final baseBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(widget.borderRadius),
-      borderSide: BorderSide(color: cs.outline.withOpacity(0.6)),
+      borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.6)),
     );
 
     final focusedBorder = OutlineInputBorder(
@@ -189,8 +179,6 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
       borderSide: BorderSide(color: cs.error),
     );
 
-    final isMultiline = widget.maxLines == null || (widget.maxLines ?? 1) > 1;
-
     return TextFormField(
       controller: _internalController,
       focusNode: widget.focusNode,
@@ -200,10 +188,14 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
       textCapitalization: widget.textCapitalization,
       keyboardType:
           widget.keyboardType ??
-          (isMultiline ? TextInputType.multiline : TextInputType.text),
+          (widget.maxLines == null || (widget.maxLines ?? 1) > 1
+              ? TextInputType.multiline
+              : TextInputType.text),
       textInputAction:
           widget.textInputAction ??
-          (isMultiline ? TextInputAction.newline : TextInputAction.send),
+          ((widget.maxLines == null || (widget.maxLines ?? 1) > 1)
+              ? TextInputAction.newline
+              : TextInputAction.send),
       minLines: widget.minLines,
       maxLines: widget.maxLines,
       maxLength: widget.maxLength,
@@ -214,16 +206,20 @@ class _AppTextInputFieldState extends State<AppTextInputField> {
       readOnly: widget.readOnly,
       enabled: widget.enabled,
       autofocus: widget.autofocus,
-      scrollPadding: widget.scrollPadding,
       decoration: InputDecoration(
         isDense: widget.dense,
         labelText: widget.label,
         hintText: widget.hint,
         helperText: widget.helperText,
-        counterText: widget.maxLength != null ? null : '',
+        counterText:
+            widget.maxLength != null
+                ? null
+                : '', // hide default counter if not using maxLength
         prefixIcon: widget.icon != null ? Icon(widget.icon) : null,
         prefix: widget.prefix,
-        suffix: widget.suffix,
+        suffix:
+            widget
+                .suffix, // placed inside the field but after input; ok for small labels
         suffixIcon:
             trailing.isNotEmpty
                 ? Row(mainAxisSize: MainAxisSize.min, children: trailing)
