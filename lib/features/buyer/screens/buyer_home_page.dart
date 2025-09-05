@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/controllers/filter_controller.dart';
 import 'package:krishi_link/controllers/product_controller.dart';
-import 'package:krishi_link/core/components/material_ui/popUp.dart';
 import 'package:krishi_link/core/components/material_ui/popup.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/constants.dart';
@@ -33,41 +32,53 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
   final _searchController = TextEditingController();
   int _selectedIndex = 0;
   Timer? _debounce;
-  final authController = Get.find<AuthController>();
-  // final isGuest = authController.isLoggedIn;
 
-  final CartController cartController =
-      Get.isRegistered<CartController>()
-          ? Get.find<CartController>()
-          : Get.put(CartController());
-  final WishlistController wishlistController =
-      Get.isRegistered<WishlistController>()
-          ? Get.find<WishlistController>()
-          : Get.put(WishlistController());
-  final ProductController productController =
-      Get.isRegistered<ProductController>()
-          ? Get.find<ProductController>()
-          : Get.put(ProductController());
-  final FilterController filterController =
-      Get.isRegistered<FilterController>()
-          ? Get.find<FilterController>()
-          : Get.put(FilterController());
+  // Controllers
+  late final AuthController authController;
+  late final CartController cartController;
+  late final WishlistController wishlistController;
+  late final ProductController productController;
+  late final FilterController filterController;
 
   @override
   void initState() {
     super.initState();
-    // Fetch all products at once for in-app filtering
-    productController.fetchProducts();
+
+    // init controllers safely
+    authController = Get.find<AuthController>();
+    cartController =
+        Get.isRegistered<CartController>()
+            ? Get.find<CartController>()
+            : Get.put(CartController());
+    wishlistController =
+        Get.isRegistered<WishlistController>()
+            ? Get.find<WishlistController>()
+            : Get.put(WishlistController());
+    productController =
+        Get.isRegistered<ProductController>()
+            ? Get.find<ProductController>()
+            : Get.put(ProductController());
+    filterController =
+        Get.isRegistered<FilterController>()
+            ? Get.find<FilterController>()
+            : Get.put(FilterController());
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _initializeData());
-    if (_searchController.text.trim().isEmpty) {
-      filterController.clearFilters();
-      return;
-    }
   }
 
   Future<void> _initializeData() async {
-    await productController.fetchProducts();
-    await filterController.loadInitialData();
+    try {
+      if (productController.products.isEmpty) {
+        await productController.fetchProducts();
+      }
+      await filterController.loadInitialData();
+
+      if (_searchController.text.trim().isEmpty) {
+        filterController.clearFilters();
+      }
+    } catch (e) {
+      debugPrint('Error initializing data: $e');
+    }
   }
 
   void _onSearchChanged() {
@@ -75,7 +86,6 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
     _debounce = Timer(const Duration(milliseconds: 500), () {
       final query = _searchController.text.trim();
       filterController.searchProducts(query);
-      // In-app filtering will update filteredProducts
     });
   }
 
@@ -204,13 +214,9 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
           index: _selectedIndex,
           children: [
             _buildHomePage(),
-            // const ChatListScreen(),
             !authController.isLoggedIn
                 ? _buildLoginRequiredScreen("menu".tr)
                 : const BuyerMenuPage(),
-            // widget.isGuest
-            //     ? _buildLoginRequiredScreen("Cart")
-            //     : const CartScreen(),
           ],
         ),
       ),
@@ -289,10 +295,6 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
             icon: Icon(Icons.home_rounded),
             label: 'home'.tr,
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.message),
-          //   label: 'message'.tr,
-          // ),
           BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'menu'.tr),
         ],
       ),

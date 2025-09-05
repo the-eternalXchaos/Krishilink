@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:krishi_link/models/payment_history.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:krishi_link/features/buyer/screens/payment_details_screen.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
@@ -22,66 +24,39 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
   }
 
   Future<void> _loadPaymentHistory() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
-      // TODO: Load payment history from local storage or database
-      // For now, we'll create some mock data
-      await Future.delayed(const Duration(seconds: 1));
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('payment_history');
+      if (jsonString == null || jsonString.isEmpty) {
+        setState(() {
+          paymentHistory.clear();
+          isLoading = false;
+        });
+        return;
+      }
 
-      final mockHistory = [
-        PaymentHistory(
-          id: '1',
-          transactionId: 'TXN123456',
-          pidx: 'pidx_123456_1234567890',
-          totalAmount: 1250.0,
-          status: 'Completed',
-          timestamp: DateTime.now().subtract(const Duration(days: 1)),
-          fee: 10.0,
-          refunded: false,
-          purchaseOrderId: 'PO123456',
-          purchaseOrderName: 'Krishi Link Order',
-          items: [],
-          customerName: 'John Doe',
-          customerPhone: '9800000000',
-          customerEmail: 'john@example.com',
-          deliveryAddress: 'Kathmandu, Nepal',
-          latitude: 27.7172,
-          longitude: 85.3240,
-        ),
-        PaymentHistory(
-          id: '2',
-          transactionId: 'TXN789012',
-          pidx: 'pidx_789012_1234567890',
-          totalAmount: 850.0,
-          status: 'Completed',
-          timestamp: DateTime.now().subtract(const Duration(days: 3)),
-          fee: 10.0,
-          refunded: false,
-          purchaseOrderId: 'PO789012',
-          purchaseOrderName: 'Krishi Link Order',
-          items: [],
-          customerName: 'John Doe',
-          customerPhone: '9800000000',
-          customerEmail: 'john@example.com',
-          deliveryAddress: 'Lalitpur, Nepal',
-          latitude: 27.6667,
-          longitude: 85.3333,
-        ),
-      ];
+      final List<dynamic> data = List<dynamic>.from(
+        (await Future.value(() => json.decode(jsonString))) as List<dynamic>,
+      );
+
+      final list =
+          data
+              .whereType<Map<String, dynamic>>()
+              .map((e) => PaymentHistory.fromJson(e))
+              .toList();
+
+      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       setState(() {
-        paymentHistory.clear();
-        paymentHistory.addAll(mockHistory);
+        paymentHistory
+          ..clear()
+          ..addAll(list);
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      // Show error message
+      setState(() => isLoading = false);
     }
   }
 

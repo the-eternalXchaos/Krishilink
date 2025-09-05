@@ -256,23 +256,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 12),
             _buildPaymentOption(
               'cash_on_delivery',
-              'Cash on Delivery',
+              'cash_on_delivery'.tr,
               Icons.money,
               colorScheme,
             ),
             _buildPaymentOption(
               'esewa',
-              'eSewa',
+              'esewa'.tr,
               Icons.account_balance_wallet,
               colorScheme,
-              subtitle: 'Digital wallet payment',
+              subtitle: 'digital_wallet_payment'.tr,
             ),
             _buildPaymentOption(
               'khalti',
-              'Khalti',
+              'khalti'.tr,
               Icons.payment,
               colorScheme,
-              subtitle: 'Digital wallet payment',
+              subtitle: 'digital_wallet_payment'.tr,
             ),
           ],
         ),
@@ -377,6 +377,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _processOrder() async {
+    // Debug: log order context
+    debugPrint('[Checkout] _processOrder start | method=$selectedPaymentMethod, '
+        'items=${checkoutItems.length}, subtotal=${totalAmount.toStringAsFixed(2)}, '
+        'deliveryFee=${deliveryFee.toStringAsFixed(2)}, total=${finalTotal.toStringAsFixed(2)}');
+    debugPrint('[Checkout] Address="${_addressController.text.trim()}" '
+        'lat=$selectedLatitude, lng=$selectedLongitude, phone=${_phoneController.text.trim()}');
     // Validate inputs
     if (_addressController.text.trim().isEmpty) {
       PopupService.warning(
@@ -394,9 +400,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    setState(() {
-      isProcessingPayment = true;
-    });
+    if (mounted) {
+      setState(() {
+        isProcessingPayment = true;
+      });
+    }
 
     try {
       if (selectedPaymentMethod == 'cash_on_delivery') {
@@ -404,14 +412,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       } else if (selectedPaymentMethod == 'esewa') {
         await _processEsewaPayment();
       } else if (selectedPaymentMethod == 'khalti') {
+        debugPrint('[Checkout] Proceeding with Khalti payment flow');
         await _processKhaltiPayment();
       }
     } catch (e) {
+      // Provide more context in logs and user feedback
+      debugPrint('[Checkout] Order processing failed: $e');
       PopupService.error('order_processing_failed'.tr, title: 'error'.tr);
     } finally {
-      setState(() {
-        isProcessingPayment = false;
-      });
+      if (mounted) {
+        setState(() {
+          isProcessingPayment = false;
+        });
+      }
     }
   }
 
@@ -449,22 +462,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
-      // Initiate Khalti payment
-      final pidx = await paymentService.initiatePayment(
+      // Using Khalti SDK (sandbox) directly since backend is not ready
+      debugPrint('[Khalti] Using SDK sandbox; user=${user.fullName}, amount=${finalTotal.toStringAsFixed(2)}');
+      PopupService.info('Backend not ready. Using Khalti SDK (sandbox).');
+
+      final started = await paymentService.startKhaltiSdkPaymentDirect(
         items: checkoutItems,
         amount: finalTotal,
         customerName: user.fullName ?? 'Customer',
         customerPhone: _phoneController.text.trim(),
         customerEmail: user.email,
+        deliveryAddress: _addressController.text.trim(),
+        latitude: selectedLatitude,
+        longitude: selectedLongitude,
       );
 
-      if (pidx != null) {
-        // Open Khalti payment interface
-        paymentService.openKhaltiPayment();
-      } else {
-        PopupService.error('Failed to initiate payment');
+      if (!started) {
+        debugPrint('[Khalti] SDK launch failed; falling back to mock flow');
+        // Fallback to local mock flow if SDK fails
+        final pidx = await paymentService.initiatePayment(
+          items: checkoutItems,
+          amount: finalTotal,
+          customerName: user.fullName ?? 'Customer',
+          customerPhone: _phoneController.text.trim(),
+          customerEmail: user.email,
+          deliveryAddress: _addressController.text.trim(),
+          latitude: selectedLatitude,
+          longitude: selectedLongitude,
+        );
+        if (pidx != null) {
+          debugPrint('[Khalti] Mock payment initiated with pidx=$pidx, opening local Khalti');
+          paymentService.openKhaltiPayment();
+        } else {
+          PopupService.error('Failed to initiate payment');
+        }
       }
     } catch (e) {
+      debugPrint('[Khalti] Payment processing failed: $e');
       PopupService.error('Payment processing failed: $e');
     }
   }
@@ -477,3 +511,4 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 }
+
