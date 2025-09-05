@@ -87,10 +87,10 @@ class _AiChatScreenState extends State<AiChatScreen>
     final items = <DrawerItem>[];
 
     // Header + quick actions
-    items.add(DrawerItem.section('Chat History'));
+    items.add(DrawerItem.section('chat_history'.tr));
     items.add(
       DrawerItem.item(
-        title: 'New Chat',
+        title: 'new_chat'.tr,
         icon: Icons.add_circle_outline,
         onTap: () {
           controller.clearChat();
@@ -99,15 +99,15 @@ class _AiChatScreenState extends State<AiChatScreen>
           controller.scrollToBottom();
           PopupService.showSnackbar(
             type: PopupType.info,
-            title: 'New Chat',
-            message: 'Start typing to begin.',
+            title: 'new_chat'.tr,
+            message: 'start_typing_to_begin'.tr,
           );
         },
       ),
     );
     items.add(
       DrawerItem.item(
-        title: 'Refresh',
+        title: 'refresh'.tr,
         icon: Icons.refresh,
         onTap: () async => controller.loadAiChats(),
         isDense: true,
@@ -147,7 +147,7 @@ class _AiChatScreenState extends State<AiChatScreen>
               ),
             const SizedBox(width: 6),
             IconButton(
-              tooltip: 'Delete chat',
+              tooltip: 'delete_chat'.tr,
               splashRadius: 18,
               icon: Icon(Icons.delete_outline, color: cs.error),
               onPressed: () {
@@ -155,24 +155,24 @@ class _AiChatScreenState extends State<AiChatScreen>
                   context: context,
                   builder:
                       (ctx) => CustomConfirmDialog(
-                        title: 'Delete Chat',
+                        title: 'delete_chat'.tr,
                         content: 'Are you sure you want to delete “$title”?',
-                        confirmText: 'Yes',
-                        cancelText: 'No',
+                        confirmText: 'yes'.tr,
+                        cancelText: 'no'.tr,
                         onConfirm: () async {
                           Get.back();
                           final ok = await controller.deleteChat(id);
                           if (ok) {
                             PopupService.showSnackbar(
                               type: PopupType.success,
-                              title: 'Deleted',
-                              message: 'Conversation removed',
+                              title: 'success'.tr,
+                              message: 'conversation_removed'.tr,
                             );
                           } else {
                             PopupService.showSnackbar(
                               type: PopupType.error,
-                              title: 'Failed',
-                              message: 'Could not delete the conversation',
+                              title: 'failed'.tr,
+                              message: 'could_not_delete_conversation'.tr,
                             );
                           }
                         },

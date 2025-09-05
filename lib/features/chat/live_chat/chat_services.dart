@@ -20,14 +20,15 @@ class ChatRealtimeService {
   int _attemptCounter = 0; // total start attempts across connections
   int? _lastStartDurationMs; // duration of last successful start
   int? get lastStartDurationMs => _lastStartDurationMs;
-  Future<String> Function()? _tokenProvider; // stored for later quick reconnect / send
+  Future<String> Function()?
+  _tokenProvider; // stored for later quick reconnect / send
 
   String? get lastUsedUrl => _lastUsedUrl;
 
   List<String> get logs => List.unmodifiable(_logs);
   void _log(String msg) {
-    final line = '[${DateTime.now().toIso8601String().substring(11,19)}] $msg';
-    debugPrint(line);
+    final line = '[${DateTime.now().toIso8601String().substring(11, 19)}] $msg';
+    // debugPrint(line); // Commented out to reduce background noise
     _logs.add(line);
     if (_logs.length > 200) _logs.removeAt(0);
   }
@@ -43,7 +44,8 @@ class ChatRealtimeService {
   final _errorCtrl = StreamController<Object>.broadcast();
   Stream<Object> get errors => _errorCtrl.stream;
 
-  HubConnectionState get connectionState => _conn?.state ?? HubConnectionState.Disconnected;
+  HubConnectionState get connectionState =>
+      _conn?.state ?? HubConnectionState.Disconnected;
   bool get isConnected => _conn?.state == HubConnectionState.Connected;
   Object? get lastError => _lastError;
   String? get lastErrorStack => _lastErrorStack;
@@ -57,41 +59,51 @@ class ChatRealtimeService {
     bool logFinalEnvOnFail = true,
     bool preflightDiagnostics = true,
   }) async {
-    debugPrint('🚀 ChatRealtimeService.connect() called with enhanced diagnostics');
+    // debugPrint(
+    //   '🚀 ChatRealtimeService.connect() called with enhanced diagnostics',
+    // );
     if (isConnected) return true;
     if (_isConnecting) return false;
     _isConnecting = true;
     _tokenProvider = tokenProvider; // cache for later reconnect / token fetch
-    
+
     // Preflight diagnostics - run comprehensive probe before attempting connection
     if (preflightDiagnostics) {
       try {
-        debugPrint('🔍 === PREFLIGHT DIAGNOSTICS START ===');
+        // debugPrint('🔍 === PREFLIGHT DIAGNOSTICS START ===');
         final env = envSummary();
-        debugPrint('🔍 PreflightEnv: $env');
-        
-        final probeResults = await fullProbe(hubUrl: hubUrl, tokenProvider: tokenProvider);
+        // debugPrint('🔍 PreflightEnv: $env');
+
+        final probeResults = await fullProbe(
+          hubUrl: hubUrl,
+          tokenProvider: tokenProvider,
+        );
         for (int i = 0; i < probeResults.length; i++) {
-          debugPrint('🔍 Probe[$i]: ${probeResults[i]}');
+          // debugPrint('🔍 Probe[$i]: ${probeResults[i]}');
         }
-        debugPrint('🔍 === PREFLIGHT DIAGNOSTICS END ===');
+        // debugPrint('🔍 === PREFLIGHT DIAGNOSTICS END ===');
       } catch (e) {
-        debugPrint('🔍 Preflight diagnostics failed: $e');
+        // debugPrint('🔍 Preflight diagnostics failed: $e');
       }
     }
-    
+
     // Hub URL candidates (case + trailing slash variations)
     final base = hubUrl ?? '${ApiConstants.baseUrl}/chatHub';
-    final capital = base.endsWith('/chatHub') ? base.replaceFirst('/chatHub', '/ChatHub') : base.replaceFirst('/chatHub/', '/ChatHub/');
+    final capital =
+        base.endsWith('/chatHub')
+            ? base.replaceFirst('/chatHub', '/ChatHub')
+            : base.replaceFirst('/chatHub/', '/ChatHub/');
     final candidates = <String>{
       base,
       if (!base.endsWith('/')) '$base/',
       base.replaceFirst('chatHub', 'chathub'),
-      if (!base.toLowerCase().endsWith('/')) base.replaceFirst('chatHub', 'chathub') + '/',
+      if (!base.toLowerCase().endsWith('/'))
+        base.replaceFirst('chatHub', 'chathub') + '/',
       capital,
       if (!capital.endsWith('/')) '$capital/',
     };
-    if (verbose) _log('Hub candidates: ${candidates.join(', ')}');    try {
+    if (verbose) _log('Hub candidates: ${candidates.join(', ')}');
+    try {
       bool loggedToken = false;
       for (final url in candidates) {
         final token = await tokenProvider();
@@ -106,9 +118,13 @@ class ChatRealtimeService {
         }
         // 1. Standard negotiate path with enhanced options
         if (verbose) _log('Attempt negotiate url=$url');
-        debugPrint('🔗 Starting negotiate attempt for: $url');
+        // debugPrint('🔗 Starting negotiate attempt for: $url');
         try {
-          if (_conn != null) { try { await _conn!.stop(); } catch (_) {} }
+          if (_conn != null) {
+            try {
+              await _conn!.stop();
+            } catch (_) {}
+          }
           final opt = HttpConnectionOptions(
             accessTokenFactory: () async => token,
             // Prefer non-WS transport first due to proxy/CDN restrictions
@@ -116,81 +132,93 @@ class ChatRealtimeService {
             // Set reasonable timeout
             requestTimeout: 30000, // 30s instead of default 100s
           );
-          _conn = HubConnectionBuilder()
-              .withUrl(url, options: opt)
-              .withAutomaticReconnect()
-              .build();
+          _conn =
+              HubConnectionBuilder()
+                  .withUrl(url, options: opt)
+                  .withAutomaticReconnect()
+                  .build();
           _conn!.serverTimeoutInMilliseconds = serverTimeoutMs; // honor caller
           _conn!.keepAliveIntervalInMilliseconds = keepAliveIntervalMs;
           _setupCoreHandlers();
-          debugPrint('🔗 Starting hub connection with timeout=${_conn!.serverTimeoutInMilliseconds}ms...');
+          // debugPrint(
+          //   '🔗 Starting hub connection with timeout=${_conn!.serverTimeoutInMilliseconds}ms...',
+          // );
           await _startWithRetry();
           if (isConnected) {
             _lastUsedUrl = url;
             _log('✅ Connected (negotiate) $url');
-            debugPrint('🎉 Successfully connected via negotiate: $url');
+            // debugPrint('🎉 Successfully connected via negotiate: $url');
             return true;
           }
         } catch (e, st) {
           _lastError = e;
           _lastErrorStack ??= st.toString();
           _log('❌ Negotiate failed $url -> $e\n${_shortStack(st)}');
-          debugPrint('💥 Negotiate failed for $url: $e');
+          // debugPrint('💥 Negotiate failed for $url: $e');
         }
 
         // 2. Direct websocket fallback (fresh token again in case refresh happened)
         if (verbose) _log('Attempt direct websocket url=$url');
-        debugPrint('🔗 Trying direct WebSocket for: $url');
+        // debugPrint('🔗 Trying direct WebSocket for: $url');
         try {
-          if (_conn != null) { try { await _conn!.stop(); } catch (_) {} }
+          if (_conn != null) {
+            try {
+              await _conn!.stop();
+            } catch (_) {}
+          }
           final token2 = await tokenProvider();
-          debugPrint('🔑 Got fresh token for WebSocket (length=${token2.length})');
+          // debugPrint(
+          //   '🔑 Got fresh token for WebSocket (length=${token2.length})',
+          // );
           final optWs = HttpConnectionOptions(
             accessTokenFactory: () async => token2,
             skipNegotiation: true,
             transport: HttpTransportType.WebSockets,
             requestTimeout: 30000, // 30s timeout for WebSocket too
           );
-          _conn = HubConnectionBuilder()
-              .withUrl(url, options: optWs)
-              .withAutomaticReconnect()
-              .build();
+          _conn =
+              HubConnectionBuilder()
+                  .withUrl(url, options: optWs)
+                  .withAutomaticReconnect()
+                  .build();
           _conn!.serverTimeoutInMilliseconds = serverTimeoutMs; // honor caller
           _conn!.keepAliveIntervalInMilliseconds = keepAliveIntervalMs;
           _setupCoreHandlers();
-          debugPrint('🔗 Starting direct WebSocket connection with timeout=${_conn!.serverTimeoutInMilliseconds}ms...');
+          // debugPrint(
+          //   '🔗 Starting direct WebSocket connection with timeout=${_conn!.serverTimeoutInMilliseconds}ms...',
+          // );
           await _startWithRetry();
           if (isConnected) {
             _lastUsedUrl = url;
             _log('✅ Connected (ws fallback) $url');
-            debugPrint('🎉 Successfully connected via direct WebSocket: $url');
+            // debugPrint('🎉 Successfully connected via direct WebSocket: $url');
             return true;
           }
         } catch (e, st) {
           _lastError = e;
           _lastErrorStack ??= st.toString();
           _log('❌ WebSocket direct failed $url -> $e\n${_shortStack(st)}');
-          debugPrint('💥 Direct WebSocket failed for $url: $e');
+          // debugPrint('💥 Direct WebSocket failed for $url: $e');
         }
       }
-      debugPrint('🔴 All connection attempts failed for all candidate URLs');
+      // debugPrint('🔴 All connection attempts failed for all candidate URLs');
       return false;
     } finally {
       _isConnecting = false;
       if (!isConnected && logFinalEnvOnFail) {
         try {
-          debugPrint('📊 === FINAL DIAGNOSTICS (Connection Failed) ===');
+          // debugPrint('📊 === FINAL DIAGNOSTICS (Connection Failed) ===');
           final env = envSummary();
-          debugPrint('📊 FinalEnv: $env');
+          // debugPrint('📊 FinalEnv: $env');
           _log('FinalEnv: ' + env.toString());
           if (_lastErrorStack != null) {
             final firstLines = _lastErrorStack!.split('\n').take(20).join('\n');
-            debugPrint('📊 LastErrorStack:\n$firstLines');
+            // debugPrint('📊 LastErrorStack:\n$firstLines');
             _log('LastErrorStack:\n$firstLines');
           }
-          debugPrint('📊 === END FINAL DIAGNOSTICS ===');
+          // debugPrint('📊 === END FINAL DIAGNOSTICS ===');
         } catch (e) {
-          debugPrint('📊 Failed to generate final diagnostics: $e');
+          // debugPrint('📊 Failed to generate final diagnostics: $e');
         }
       }
     }
@@ -199,47 +227,53 @@ class ChatRealtimeService {
   /// Comprehensive token debugging to identify authentication issues
   Future<Map<String, dynamic>> tokenDebugCheck() async {
     final results = <String, dynamic>{};
-    
+
     try {
       // Method 1: TokenService static method
       final token1 = await TokenService.getAccessToken();
-      results['TokenService.getAccessToken'] = token1?.isNotEmpty == true ? 'Has token (${token1!.length} chars)' : 'NULL/Empty';
-      
+      results['TokenService.getAccessToken'] =
+          token1?.isNotEmpty == true
+              ? 'Has token (${token1!.length} chars)'
+              : 'NULL/Empty';
+
       // Method 2: Via stored tokenProvider
       if (_tokenProvider != null) {
         final token2 = await _tokenProvider!();
-        results['_tokenProvider'] = token2.isNotEmpty ? 'Has token (${token2.length} chars)' : 'Empty';
+        results['_tokenProvider'] =
+            token2.isNotEmpty ? 'Has token (${token2.length} chars)' : 'Empty';
         results['tokensMatch'] = token1 == token2 ? 'YES' : 'NO - MISMATCH!';
       } else {
         results['_tokenProvider'] = 'NULL - not set';
       }
-      
+
       // Method 3: Check token expiration
       if (token1?.isNotEmpty == true) {
         final isExpired = await TokenService.isTokenExpired();
         results['tokenExpired'] = isExpired ? 'YES - EXPIRED!' : 'Valid';
-        
+
         // Decode token details
         final summary = _summarizeToken(token1!);
         results['tokenSummary'] = summary;
-        
+
         // Check auth headers
         final headers = await TokenService.getAuthHeaders();
         final authHeader = headers['Authorization'] ?? 'MISSING';
-        results['authHeader'] = authHeader.length > 50 ? '${authHeader.substring(0, 50)}...' : authHeader;
+        results['authHeader'] =
+            authHeader.length > 50
+                ? '${authHeader.substring(0, 50)}...'
+                : authHeader;
       }
-      
     } catch (e) {
       results['tokenDebugError'] = 'Failed: $e';
     }
-    
+
     return results;
   }
 
   /// Quick server health check before attempting SignalR connection
   Future<Map<String, dynamic>> serverHealthCheck() async {
     final results = <String, dynamic>{};
-    
+
     try {
       // Get token using the same method as SignalR connection
       final token = await _tokenProvider?.call() ?? '';
@@ -247,13 +281,13 @@ class ChatRealtimeService {
         results['tokenAvailable'] = 'NO TOKEN - Authentication will fail';
         return results;
       }
-      
+
       results['tokenAvailable'] = 'YES (${token.length} chars)';
-      
+
       // Test basic connectivity to base URL
       final client = HttpClient();
       client.connectionTimeout = Duration(seconds: 10);
-      
+
       // Test 1: Basic HTTP connectivity to base URL
       try {
         final uri = Uri.parse('${ApiConstants.baseUrl}/');
@@ -264,10 +298,12 @@ class ChatRealtimeService {
       } catch (e) {
         results['baseUrl'] = 'Failed: $e';
       }
-      
+
       // Test 2: Chat API endpoint with proper auth header (like React code)
       try {
-        final uri = Uri.parse('${ApiConstants.baseUrl}/api/Chat/getMyCustomersForChat');
+        final uri = Uri.parse(
+          '${ApiConstants.baseUrl}/api/Chat/getMyCustomersForChat',
+        );
         final req = await client.getUrl(uri);
         req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
         req.headers.set(HttpHeaders.acceptHeader, '*/*');
@@ -276,14 +312,15 @@ class ChatRealtimeService {
         final body = await resp.transform(const Utf8Decoder()).join();
         results['chatAPI'] = 'HTTP ${resp.statusCode}';
         if (resp.statusCode != 200) {
-          final snippet = body.length > 100 ? body.substring(0, 100) + '...' : body;
+          final snippet =
+              body.length > 100 ? body.substring(0, 100) + '...' : body;
           results['chatAPIError'] = snippet;
         }
         await resp.drain();
       } catch (e) {
         results['chatAPI'] = 'Failed: $e';
       }
-      
+
       // Test 3: Hub base URL
       try {
         final uri = Uri.parse('${ApiConstants.baseUrl}/ChatHub');
@@ -295,25 +332,29 @@ class ChatRealtimeService {
       } catch (e) {
         results['chatHub'] = 'Failed: $e';
       }
-      
+
       client.close();
     } catch (e) {
       results['healthCheck'] = 'Failed: $e';
     }
-    
+
     return results;
   }
+
   /// Returns (statusCode, bodyLength) or null on network failure.
   Future<String?> negotiateProbe(String? hubUrl) async {
     final baseHub = hubUrl ?? '${ApiConstants.baseUrl}/chatHub';
-    final negotiateUrl = baseHub.endsWith('/') ? '${baseHub}negotiate?negotiateVersion=1' : '$baseHub/negotiate?negotiateVersion=1';
+    final negotiateUrl =
+        baseHub.endsWith('/')
+            ? '${baseHub}negotiate?negotiateVersion=1'
+            : '$baseHub/negotiate?negotiateVersion=1';
     try {
       _log('Probing negotiate: $negotiateUrl');
       final uri = Uri.parse(negotiateUrl);
       final client = HttpClient();
       final req = await client.getUrl(uri);
-  // Add basic headers for potential 401 insight (no auth token here to intentionally test public reachability)
-  req.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      // Add basic headers for potential 401 insight (no auth token here to intentionally test public reachability)
+      req.headers.set(HttpHeaders.acceptHeader, 'application/json');
       final resp = await req.close();
       final bytes = await resp.fold<int>(0, (p, e) => p + e.length);
       final info = 'negotiate status=${resp.statusCode} bytes=$bytes';
@@ -326,9 +367,15 @@ class ChatRealtimeService {
   }
 
   /// Authenticated negotiate probe (POST like real SignalR) including Authorization header.
-  Future<String?> negotiateAuthProbe({String? hubUrl, required Future<String> Function() tokenProvider}) async {
+  Future<String?> negotiateAuthProbe({
+    String? hubUrl,
+    required Future<String> Function() tokenProvider,
+  }) async {
     final baseHub = hubUrl ?? '${ApiConstants.baseUrl}/chatHub';
-    final negotiateUrl = baseHub.endsWith('/') ? '${baseHub}negotiate?negotiateVersion=1' : '$baseHub/negotiate?negotiateVersion=1';
+    final negotiateUrl =
+        baseHub.endsWith('/')
+            ? '${baseHub}negotiate?negotiateVersion=1'
+            : '$baseHub/negotiate?negotiateVersion=1';
     try {
       final token = await tokenProvider();
       _log('Probing negotiate AUTH: $negotiateUrl');
@@ -336,14 +383,16 @@ class ChatRealtimeService {
       final client = HttpClient();
       final req = await client.postUrl(uri);
       req.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      if (token.isNotEmpty) req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      if (token.isNotEmpty)
+        req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       req.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
       // Empty JSON body (SignalR negotiates without required payload but POST allowed)
       req.add(const Utf8Encoder().convert('{}'));
       final resp = await req.close();
       final body = await resp.transform(const Utf8Decoder()).join();
       final snippet = body.length > 120 ? body.substring(0, 120) + '...' : body;
-      final info = 'authNegotiate status=${resp.statusCode} len=${body.length} bodySnippet=$snippet';
+      final info =
+          'authNegotiate status=${resp.statusCode} len=${body.length} bodySnippet=$snippet';
       _log(info);
       return info;
     } catch (e) {
@@ -370,15 +419,15 @@ class ChatRealtimeService {
           message = (args[2] as String?) ?? '';
         } else if (args.length == 2) {
           // Try treat first as senderId, second as message
-            senderId = args[0] as String?;
+          senderId = args[0] as String?;
+          message = (args[1] as String?) ?? '';
+          // If message seems empty and second arg looks like name, fallback
+          if (message.isEmpty && (args[1] is String)) {
+            senderName = (args[0] as String?) ?? 'Unknown';
             message = (args[1] as String?) ?? '';
-            // If message seems empty and second arg looks like name, fallback
-            if (message.isEmpty && (args[1] is String)) {
-              senderName = (args[0] as String?) ?? 'Unknown';
-              message = (args[1] as String?) ?? '';
-            } else {
-              senderName = senderId ?? 'Unknown';
-            }
+          } else {
+            senderName = senderId ?? 'Unknown';
+          }
         } else if (args.length == 1) {
           message = (args[0] as String?) ?? '';
         }
@@ -431,41 +480,51 @@ class ChatRealtimeService {
       try {
         final startTs = DateTime.now();
         _attemptCounter++;
-        debugPrint('🔗 SignalR start attempt $attempt (global $_attemptCounter)');
-        debugPrint('🚀 Hub connection state before start: ${_conn?.state}');
-        debugPrint('🔧 Connection details: url=${_conn?.baseUrl}, serverTimeout=${_conn?.serverTimeoutInMilliseconds}ms, keepAlive=${_conn?.keepAliveIntervalInMilliseconds}ms');
-        
+        // debugPrint(
+        //   '🔗 SignalR start attempt $attempt (global $_attemptCounter)',
+        // );
+        // debugPrint('🚀 Hub connection state before start: ${_conn?.state}');
+        // debugPrint(
+        //   '🔧 Connection details: url=${_conn?.baseUrl}, serverTimeout=${_conn?.serverTimeoutInMilliseconds}ms, keepAlive=${_conn?.keepAliveIntervalInMilliseconds}ms',
+        // );
+
         // Add progress tracking with timeout
         bool startCompleted = false;
         late Timer progressTimer;
         int progressSeconds = 0;
-        
+
         progressTimer = Timer.periodic(Duration(seconds: 5), (timer) {
           if (!startCompleted) {
             progressSeconds += 5;
-            debugPrint('⏰ SignalR start progress: ${progressSeconds}s elapsed, state=${_conn?.state}');
+            // debugPrint(
+            //   '⏰ SignalR start progress: ${progressSeconds}s elapsed, state=${_conn?.state}',
+            // );
             if (progressSeconds >= 30) {
-              debugPrint('⚠️  SignalR start taking longer than 30s - potential connection issue');
+              // debugPrint(
+              //   '⚠️  SignalR start taking longer than 30s - potential connection issue',
+              // );
             }
           }
         });
-        
+
         try {
-          debugPrint('🔄 Calling _conn.start()...');
-          
+          // debugPrint('🔄 Calling _conn.start()...');
+
           // Simple timeout approach - let the built-in timeout handle it
           // but add our own progress monitoring
           await _conn!.start();
-          
+
           startCompleted = true;
           progressTimer.cancel();
-          
+
           _stateCtrl.add(HubConnectionState.Connected);
           final dur = DateTime.now().difference(startTs).inMilliseconds;
           _lastStartDurationMs = dur;
-          debugPrint('✅ SignalR connected in ${dur}ms (attempt $attempt)');
-          debugPrint('🎯 Connection successful! ConnectionId: ${_conn?.connectionId}');
-          debugPrint('🔗 Final state: ${_conn?.state}');
+          // debugPrint('✅ SignalR connected in ${dur}ms (attempt $attempt)');
+          // debugPrint(
+          //   '🎯 Connection successful! ConnectionId: ${_conn?.connectionId}',
+          // );
+          // debugPrint('🔗 Final state: ${_conn?.state}');
           return;
         } finally {
           startCompleted = true;
@@ -474,14 +533,21 @@ class ChatRealtimeService {
       } catch (e, st) {
         _errorCtrl.add(e);
         final delay = Duration(milliseconds: 500 * attempt * attempt);
-        final dur = DateTime.now().difference(DateTime.now().subtract(Duration(milliseconds: 1))).inMilliseconds;
-        debugPrint('💥 SignalR start failed (attempt $attempt) after ${dur}ms: $e');
-        debugPrint('⚠️  Error type: ${e.runtimeType}, Details: $e');
-        debugPrint('🔍 Connection state at failure: ${_conn?.state}');
-        _log('Start error attempt=$attempt type=${e.runtimeType} after=${dur}ms\n${_shortStack(st)}');
-        
+        final dur =
+            DateTime.now()
+                .difference(DateTime.now().subtract(Duration(milliseconds: 1)))
+                .inMilliseconds;
+        debugPrint(
+          '💥 SignalR start failed (attempt $attempt) after ${dur}ms: $e',
+        );
+        // debugPrint('⚠️  Error type: ${e.runtimeType}, Details: $e');
+        // debugPrint('🔍 Connection state at failure: ${_conn?.state}');
+        _log(
+          'Start error attempt=$attempt type=${e.runtimeType} after=${dur}ms\n${_shortStack(st)}',
+        );
+
         if (attempt >= maxAttempts) {
-          debugPrint('❌ All $maxAttempts attempts failed, giving up');
+          // debugPrint('❌ All $maxAttempts attempts failed, giving up');
           rethrow;
         }
         debugPrint('⏳ Retrying in ${delay.inMilliseconds}ms...');
@@ -504,10 +570,13 @@ class ChatRealtimeService {
       try {
         // If we have a stored token provider, try a fresh full connect (single attempt per candidate)
         if (_tokenProvider != null) {
-          final ok = await connect(tokenProvider: _tokenProvider!, verbose: false);
+          final ok = await connect(
+            tokenProvider: _tokenProvider!,
+            verbose: false,
+          );
           if (!ok) {
             debugPrint('Quick reconnect connect() path failed, abort send');
-            return;
+            throw Exception('Hub not connected');
           }
         } else {
           await _startWithRetry(maxAttempts: 1);
@@ -515,11 +584,27 @@ class ChatRealtimeService {
       } catch (e) {
         _errorCtrl.add(e);
         debugPrint('Reconnect before send failed: $e');
-        return;
+        throw Exception('Reconnect before send failed');
       }
     }
     try {
-      await _conn?.invoke('SendMessage', args: <Object>[receiverUserId, text]);
+      // Try common method names used by different server implementations
+      final methods = <String>[
+        'SendMessage',
+        'SendMessageToUser',
+        'SendPrivateMessage',
+        'SendDirectMessage',
+      ];
+      Object? lastErr;
+      for (final m in methods) {
+        try {
+          await _conn!.invoke(m, args: <Object>[receiverUserId, text]);
+          return;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      if (lastErr != null) throw lastErr!;
     } catch (e) {
       _errorCtrl.add(e);
       debugPrint('SendMessage error: $e');
@@ -532,7 +617,9 @@ class ChatRealtimeService {
 
   /// Graceful disconnect that stops the underlying hub.
   Future<void> disconnect() async {
-    try { await _conn?.stop(); } catch (_) {}
+    try {
+      await _conn?.stop();
+    } catch (_) {}
   }
 
   // No-op shims for legacy room-based calls in older controllers
@@ -586,7 +673,10 @@ class ChatRealtimeService {
       'attemptCounter': _attemptCounter,
       'lastStartDurationMs': _lastStartDurationMs,
       'lastError': _lastError?.toString(),
-      'lastErrorStackShort': _lastErrorStack == null ? null : _lastErrorStack!.split('\n').take(6).join('\n'),
+      'lastErrorStackShort':
+          _lastErrorStack == null
+              ? null
+              : _lastErrorStack!.split('\n').take(6).join('\n'),
       'logCount': _logs.length,
       'now': DateTime.now().toIso8601String(),
       'platform': _platformSummary(),
@@ -619,24 +709,35 @@ class ChatRealtimeService {
   }
 
   /// Simple GET/HEAD probe to arbitrary path (optionally with bearer token) to see raw status.
-  Future<String> probeHttp({required String url, String? bearer, String method = 'GET'}) async {
+  Future<String> probeHttp({
+    required String url,
+    String? bearer,
+    String method = 'GET',
+  }) async {
     try {
       final client = HttpClient();
       final uri = Uri.parse(url);
-      final req = await (method == 'HEAD' ? client.openUrl('HEAD', uri) : client.openUrl(method, uri));
+      final req =
+          await (method == 'HEAD'
+              ? client.openUrl('HEAD', uri)
+              : client.openUrl(method, uri));
       if (bearer != null && bearer.isNotEmpty) {
         req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $bearer');
       }
-      req.headers.set(HttpHeaders.acceptHeader, 'application/json, text/plain, */*');
+      req.headers.set(
+        HttpHeaders.acceptHeader,
+        'application/json, text/plain, */*',
+      );
       final resp = await req.close().timeout(const Duration(seconds: 20));
       final firstKb = <int>[];
       await for (final chunk in resp) {
         if (firstKb.length < 1024) {
-            firstKb.addAll(chunk.take(1024 - firstKb.length));
+          firstKb.addAll(chunk.take(1024 - firstKb.length));
         }
       }
       final bodySnippet = utf8.decode(firstKb, allowMalformed: true);
-      final info = 'probe $method ${uri.path} status=${resp.statusCode} bytes=${firstKb.length} snippet="${bodySnippet.replaceAll('\n', ' ').substring(0, bodySnippet.length.clamp(0, 160))}"';
+      final info =
+          'probe $method ${uri.path} status=${resp.statusCode} bytes=${firstKb.length} snippet="${bodySnippet.replaceAll('\n', ' ').substring(0, bodySnippet.length.clamp(0, 160))}"';
       _log(info);
       return info;
     } catch (e) {
@@ -647,26 +748,40 @@ class ChatRealtimeService {
   }
 
   /// Performs a comprehensive set of probes for a hub base URL.
-  Future<List<String>> fullProbe({String? hubUrl, required Future<String> Function() tokenProvider}) async {
+  Future<List<String>> fullProbe({
+    String? hubUrl,
+    required Future<String> Function() tokenProvider,
+  }) async {
     final baseHub = hubUrl ?? '${ApiConstants.baseUrl}/chatHub';
     final out = <String>[];
     _log('--- FULL PROBE START base=$baseHub ---');
     out.add('base=$baseHub');
     out.add(await dnsLookup(baseHub));
     final token = await tokenProvider();
-    out.add('tokenLen=${token.length} tokenSummary=${token.isEmpty ? 'none' : _summarizeToken(token)}');
+    out.add(
+      'tokenLen=${token.length} tokenSummary=${token.isEmpty ? 'none' : _summarizeToken(token)}',
+    );
     // Unauth negotiate GET
-  final negPlain = await negotiateProbe(baseHub);
-  out.add(negPlain ?? 'negotiateProbe null');
-  // Auth negotiate POST
-  final negAuth = await negotiateAuthProbe(hubUrl: baseHub, tokenProvider: () async => token);
-  out.add(negAuth ?? 'authNegotiate null');
+    final negPlain = await negotiateProbe(baseHub);
+    out.add(negPlain ?? 'negotiateProbe null');
+    // Auth negotiate POST
+    final negAuth = await negotiateAuthProbe(
+      hubUrl: baseHub,
+      tokenProvider: () async => token,
+    );
+    out.add(negAuth ?? 'authNegotiate null');
     // Root GET (unauth & auth)
-    final root = baseHub.endsWith('/chatHub') || baseHub.endsWith('/ChatHub') ? baseHub : baseHub; // already full
+    final root =
+        baseHub.endsWith('/chatHub') || baseHub.endsWith('/ChatHub')
+            ? baseHub
+            : baseHub; // already full
     out.add(await probeHttp(url: root, method: 'GET'));
     out.add(await probeHttp(url: root, method: 'GET', bearer: token));
     // /negotiate direct GET/POST manual
-    final negUrl = root.endsWith('/') ? '${root}negotiate?negotiateVersion=1' : '$root/negotiate?negotiateVersion=1';
+    final negUrl =
+        root.endsWith('/')
+            ? '${root}negotiate?negotiateVersion=1'
+            : '$root/negotiate?negotiateVersion=1';
     out.add(await probeHttp(url: negUrl, method: 'GET'));
     out.add(await probeHttp(url: negUrl, method: 'GET', bearer: token));
     out.add(await probeHttp(url: negUrl, method: 'POST', bearer: token));
@@ -681,8 +796,13 @@ class ChatRealtimeService {
       final payload = _decodeBase64(parts[1]);
       final map = _tryDecodeJson(payload);
       if (map == null) return 'unparsable-jwt';
-      final sub = map['sub'] ?? map['nameid'] ?? map['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-      final role = map['role'] ?? map['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      final sub =
+          map['sub'] ??
+          map['nameid'] ??
+          map['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+      final role =
+          map['role'] ??
+          map['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
       final exp = map['exp'];
       final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final ttl = exp is int ? (exp - nowSec) : null;
@@ -692,7 +812,7 @@ class ChatRealtimeService {
     }
   }
 
-  /// Alternative connection method that specifically tries Server-Sent Events 
+  /// Alternative connection method that specifically tries Server-Sent Events
   /// (not WebSocket) as a fallback when WebSocket fails/times out
   Future<bool> connectWithServerSentEvents({
     required Future<String> Function() tokenProvider,
@@ -700,44 +820,49 @@ class ChatRealtimeService {
     int serverTimeoutMs = 30000, // Shorter default for testing
     int keepAliveIntervalMs = 15000,
   }) async {
-    debugPrint('📺 Attempting Server-Sent Events connection as WebSocket alternative');
+    debugPrint(
+      '📺 Attempting Server-Sent Events connection as WebSocket alternative',
+    );
     if (isConnected) return true;
     if (_isConnecting) return false;
     _isConnecting = true;
     _tokenProvider = tokenProvider;
-    
+
     try {
       final url = hubUrl ?? '${ApiConstants.baseUrl}/chatHub';
       final token = await tokenProvider();
       debugPrint('📺 SSE URL: $url, token length: ${token.length}');
-      
-      if (_conn != null) { 
-        try { await _conn!.stop(); } catch (_) {} 
+
+      if (_conn != null) {
+        try {
+          await _conn!.stop();
+        } catch (_) {}
       }
-      
+
       final opt = HttpConnectionOptions(
         accessTokenFactory: () async => token,
         transport: HttpTransportType.ServerSentEvents, // Force SSE
         requestTimeout: 30000,
       );
-      
-      _conn = HubConnectionBuilder()
-          .withUrl(url, options: opt)
-          .withAutomaticReconnect()
-          .build();
+
+      _conn =
+          HubConnectionBuilder()
+              .withUrl(url, options: opt)
+              .withAutomaticReconnect()
+              .build();
       _conn!.serverTimeoutInMilliseconds = serverTimeoutMs;
       _conn!.keepAliveIntervalInMilliseconds = keepAliveIntervalMs;
       _setupCoreHandlers();
-      
+
       debugPrint('📺 Starting Server-Sent Events connection...');
       await _startWithRetry(maxAttempts: 2); // Only 2 attempts for testing
-      
+
       if (isConnected) {
         _lastUsedUrl = url;
         debugPrint('📺 SUCCESS: Connected via Server-Sent Events!');
         return true;
       }
-      
+
       return false;
     } catch (e, st) {
       _lastError = e;
@@ -751,7 +876,9 @@ class ChatRealtimeService {
 
   String _decodeBase64(String str) {
     String out = str.replaceAll('-', '+').replaceAll('_', '/');
-    while (out.length % 4 != 0) { out += '='; }
+    while (out.length % 4 != 0) {
+      out += '=';
+    }
     return String.fromCharCodes(base64Url.decode(out));
   }
 

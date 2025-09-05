@@ -6,6 +6,7 @@ import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/core/constants/app_spacing.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
 
 class UnifiedSettingsPage extends StatelessWidget {
   const UnifiedSettingsPage({super.key});
@@ -351,6 +352,12 @@ class UnifiedSettingsPage extends StatelessWidget {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => Get.toNamed('/farmer/stats'),
             ),
+            _buildSettingTile(
+              leading: const Icon(Icons.payment),
+              title: Text('payment_history'.tr),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => Get.toNamed('/payment-history'),
+            ),
           ] else if (role == 'buyer') ...[
             _buildSettingTile(
               leading: const Icon(Icons.shopping_bag),
@@ -362,7 +369,10 @@ class UnifiedSettingsPage extends StatelessWidget {
               leading: const Icon(Icons.favorite),
               title: Text('saved_products'.tr),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Get.toNamed('/buyer/saved'),
+              onTap:
+                  () =>
+                      Get.toNamed('/buyer/wishlist') ??
+                      Get.to(() => WishlistScreen()),
             ),
             _buildSettingTile(
               leading: const Icon(Icons.payment),

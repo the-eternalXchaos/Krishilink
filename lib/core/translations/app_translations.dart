@@ -5,7 +5,7 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
     'en_US': {
       // Product Related
-      'price_per_kg': 'Rs. %s/kg',
+      'price_per_kg': 'Rs. %{price}/kg',
       'unknown': 'Unknown',
       'quantity_available': 'Available: %s kg',
       'quantity_sold': 'Sold: %s kg',
@@ -49,6 +49,8 @@ class AppTranslations extends Translations {
       'add_to_cart': 'Add to Cart',
       'buy_now': 'Buy Now',
       'share_product': 'Share Product',
+      'share': 'Share',
+      'product_shared_successfully': 'Product shared successfully',
       'customer_reviews': 'Customer Reviews',
       'no_reviews_yet': 'No reviews yet. Be the first to review!',
       'contact_farmer': 'Contact Farmer',
@@ -381,11 +383,178 @@ class AppTranslations extends Translations {
 
       // farmer menue
       'product_management': 'Product Management',
+
+      // Weather (details page)
+      'weather_details': 'Weather Details',
+      'loading_weather': 'Loading weather...',
+      'no_weather_data': 'No weather data available',
+      'select_location': 'Select Location',
+      'temperature': 'Temperature',
+      'feels_like': 'Feels Like',
+      'condition': 'Condition',
+      'observation_time': 'Observation Time',
+      'daytime': 'Daytime',
+      'just_now': 'Just now',
+      'minutes_ago': '%{m}m ago',
+      'hours_ago': '%{h}h ago',
+      'fetching_weather_for': 'Fetching weather for %{place}',
+      'failed_to_fetch_weather': 'Failed to fetch weather: %{error}',
+
+      // Settings
+      'change_language': 'Change Language',
+      'order_updates': 'Order Updates',
+      'confirm_logout': 'Are you sure you want to logout?',
+      'login_failed': 'Login failed',
+      'user_not_found': 'Please enter correct username or password',
+      'incorrect_password': 'Incorrect password. Please try again',
+      'network_error': 'Network error. Please check your connection',
+      'server_error': 'Server error. Please try again later',
+      'user_not_registered': 'User not registered with provided information',
+      'invalid_credentials': 'Invalid username or password',
+      'delivery_information': 'Delivery Information',
+      'phone_number': 'Phone Number',
+
+      // Location Picker
+      'location_services_disabled': 'Location services are disabled',
+      'location_permission_denied': 'Location permission denied',
+      'location_permission_denied_forever':
+          'Location permission permanently denied',
+      'current_location_fetched': 'Current location fetched',
+      'failed_to_get_location': 'Failed to get location: %{error}',
+      'enter_location_to_search': 'Enter a location to search',
+      'location_found': 'Location found',
+      'no_location_found': 'No location found',
+      'failed_to_search_location': 'Failed to search location: %{error}',
+      'location_address': 'Location/Address',
+      'coordinates': 'Coordinates',
+      'latitude': 'Latitude',
+      'longitude': 'Longitude',
+      'hide_map': 'Hide Map',
+      'show_map': 'Show Map',
+      'selected_location': 'Selected Location',
+      'tap_map_to_select_location': 'Tap on the map to select a location',
+
+      // Notifications
+      'failed_to_fetch_notifications': 'Failed to fetch notifications',
+      'failed_to_mark_notification': 'Failed to mark notification as read',
+
+      // Wishlist
+      'your_wishlist_is_empty': 'Your wishlist is empty',
+      'add_products_to_wishlist': 'Add products to your wishlist',
+      'explore_products': 'Explore Products',
+      'farmer_name': 'Farmer: %{name}',
+
+      // Checkout
+      'payment_method': 'Payment Method',
+      'cash_on_delivery': 'Cash on Delivery',
+      'esewa': 'eSewa',
+      'khalti': 'Khalti',
+      'digital_wallet_payment': 'Digital wallet payment',
+      'order_summary': 'Order Summary',
+      'order_notes': 'Order Notes',
+      'special_instructions': 'Special Instructions',
+      'place_order_rs': 'Place Order (Rs. %{amount})',
+      'please_enter_delivery_address': 'Please enter delivery address',
+      'please_enter_phone_number': 'Please enter phone number',
+      'order_processing_failed': 'Order processing failed',
+      'your_order_has_been_placed_successfully':
+          'Your order has been placed successfully',
+      'order_placed': 'Order Placed',
+      'esewa_integration_coming_soon': 'eSewa integration coming soon',
+
+      // Tagline / registration
+      'connecting_farmers_to_success': 'Connecting Farmers to Success',
+      'registration_success_check_email':
+          'Registration successful! Please check your email to verify your account.',
     },
 
     'ne_NP': {
+      // Weather (details page)
+      'weather_details': 'मौसम विवरण',
+      'loading_weather': 'मौसम लोड हुँदैछ...',
+      'no_weather_data': 'मौसमको डाटा उपलब्ध छैन',
+      'select_location': 'स्थान चयन गर्नुहोस्',
+      'temperature': 'तापक्रम',
+      'feels_like': 'महसुस हुने',
+      'condition': 'स्थिति',
+      'observation_time': 'अवलोकन समय',
+      'daytime': 'दिनको समय',
+      'just_now': 'अहिल्यै',
+      'minutes_ago': '%{m} मिनेट अघि',
+      'hours_ago': '%{h} घण्टा अघि',
+      'fetching_weather_for': '%{place} को मौसम ल्याइँदै',
+      'failed_to_fetch_weather': 'मौसम ल्याउन असफल: %{error}',
+
+      // Settings
+      'change_language': 'भाषा परिवर्तन गर्नुहोस्',
+      'order_updates': 'अर्डर अपडेटहरू',
+      'confirm_logout': 'लगआउट गर्न चाहनुहुन्छ?',
+      'login_failed': 'लगइन असफल भयो',
+      'user_not_found':
+          'कृपया सही प्रयोगकर्ता नाम वा पासवर्ड प्रविष्ट गर्नुहोस्',
+      'incorrect_password': 'गलत पासवर्ड। कृपया फेरि प्रयास गर्नुहोस्',
+      'network_error': 'नेटवर्क त्रुटि। कृपया आफ्नो जडान जाँच गर्नुहोस्',
+      'server_error': 'सर्भर त्रुटि। कृपया पछि फेरि प्रयास गर्नुहोस्',
+      'user_not_registered':
+          'प्रदान गरिएको जानकारीसँग प्रयोगकर्ता दर्ता गरिएको छैन',
+      'invalid_credentials': 'अमान्य प्रयोगकर्ता नाम वा पासवर्ड',
+      'delivery_information': 'डेलिभरी जानकारी',
+      'phone_number': 'फोन नम्बर',
+
+      // Location Picker
+      'location_services_disabled': 'लोकेशन सेवा बन्द छ',
+      'location_permission_denied': 'लोकेशन अनुमति अस्वीकृत',
+      'location_permission_denied_forever':
+          'लोकेशन अनुमति स्थायी रूपमा अस्वीकृत',
+      'current_location_fetched': 'हालको स्थान प्राप्त भयो',
+      'failed_to_get_location': 'स्थान प्राप्त गर्न असफल भयो: %{error}',
+      'enter_location_to_search': 'खोज्न स्थान प्रविष्ट गर्नुहोस्',
+      'location_found': 'स्थान फेला पर्यो',
+      'no_location_found': 'कुनै स्थान फेला परेन',
+      'failed_to_search_location': 'स्थान खोज्दा त्रुटि: %{error}',
+      'location_address': 'स्थान/ठेगाना',
+      'coordinates': 'अक्षांश/देशान्तर',
+      'latitude': 'अक्षांश',
+      'longitude': 'देशान्तर',
+      'hide_map': 'नक्सा लुकाउनुहोस्',
+      'show_map': 'नक्सा देखाउनुहोस्',
+      'selected_location': 'छानिएको स्थान',
+      'tap_map_to_select_location': 'स्थान छान्न नक्सामा ट्याप गर्नुहोस्',
+
+      // Notifications
+      'failed_to_fetch_notifications': 'सूचनाहरू ल्याउन असफल भयो',
+      'failed_to_mark_notification': 'सूचनालाई पढिएको चिन्ह लगाउन असफल भयो',
+
+      // Wishlist
+      'your_wishlist_is_empty': 'तपाईंको विशलिस्ट खाली छ',
+      'add_products_to_wishlist': 'विशलिस्टमा उत्पादनहरू थप्नुहोस्',
+      'explore_products': 'उत्पादन अन्वेषण गर्नुहोस्',
+      'farmer_name': 'किसान: %{name}',
+
+      // Checkout
+      'payment_method': 'भुक्तानी विधि',
+      'cash_on_delivery': 'क्यास अन डेलिभरी',
+      'esewa': 'इसेवा',
+      'khalti': 'खल्ती',
+      'digital_wallet_payment': 'डिजिटल वालेट भुक्तानी',
+      'order_summary': 'अर्डर सारांश',
+      'order_notes': 'अर्डर नोट',
+      'special_instructions': 'विशेष निर्देशन',
+      'place_order_rs': 'अर्डर गरौं (रु %{amount})',
+      'please_enter_delivery_address': 'डेलिभरी ठेगाना प्रविष्ट गर्नुहोस्',
+      'please_enter_phone_number': 'फोन नम्बर प्रविष्ट गर्नुहोस्',
+      'order_processing_failed': 'अर्डर प्रशोधन असफल भयो',
+      'your_order_has_been_placed_successfully':
+          'तपाईंको अर्डर सफलतापूर्वक गरिएको छ',
+      'order_placed': 'अर्डर गरियो',
+      'esewa_integration_coming_soon': 'इसेवा एकिकरण चाँडै आउँदैछ',
+
+      // Tagline / registration
+      'connecting_farmers_to_success': 'किसानहरूलाई सफलतामा जोड्दै',
+      'registration_success_check_email':
+          'दर्ता सफल! कृपया आफ्नो इमेल जाँचेर खाताको प्रमाणीकरण गर्नुहोस्।',
       // Product Related
-      'price_per_kg': 'रु%s/ केजी',
+      'price_per_kg': 'रु %{price}/केजी',
       // 'price_per_kg': 'रु %s/के',
       'unknown': 'अज्ञात',
       'quantity_available': 'उपलब्ध: %s केजी',
@@ -430,6 +599,8 @@ class AppTranslations extends Translations {
       'add_to_cart': 'कार्टमा थप्नुहोस्',
       'buy_now': 'अहिले किन्नुहोस्',
       'share_product': 'उत्पादन साझा गर्नुहोस्',
+      'share': 'साझा गर्नुहोस्',
+      'product_shared_successfully': 'उत्पादन सफलतापूर्वक साझा गरियो',
       'customer_reviews': 'ग्राहक समीक्षाहरू',
       'no_reviews_yet': 'अहिलेसम्म कुनै समीक्षा छैन। पहिलो समीक्षा गर्नुहोस्!',
       'contact_farmer': 'किसानलाई सम्पर्क गर्नुहोस्',
@@ -758,63 +929,3 @@ class AppTranslations extends Translations {
     },
   };
 }
-
-
-/*- `add_to_cart`
-- `your_cart`
-- `your_cart_is_empty`
-- `start_adding_products`
-- `shop_now`
-- `checkout`
-- `total`
-- `login_required`
-- `please_login_to_access`
-- `cart`
-- `app_bar`
-- `search_products`
-- `oops_server_unavailable`
-- `no_products_found`
-- `retry`
-- `swipe_down_to_refresh`
-
-
- 'add_to_cart': 'Add to Cart',
-          'your_cart': 'Your Cart',
-          'your_cart_is_empty': 'Your Cart is Empty!',
-          'start_adding_products': 'Start adding some amazing products.',
-          'shop_now': 'Shop Now',
-          'checkout': 'Checkout',
-          'total': 'Total',
-          'cart': 'Cart',
-          
-          // Authentication-related translations
-          'login_required': 'Login Required',
-          'please_login_to_access': 'Please login to access %{title}.',
-          
-          // UI-related translations
-          'app_bar': 'App Bar',
-          'search_products': 'Search Products',
-          'oops_server_unavailable': 'Oops! Server Unavailable',
-          'no_products_found': 'No Products Found',
-          'retry': 'Retry',
-          'swipe_down_to_refresh': 'Swipe down to refresh',
-        },
-        // Add other languages here, e.g., 'np_NP' for Nepali
-        'np_NP': {
-          'add_to_cart': 'कार्टमा थप्नुहोस्',
-          'your_cart': 'तपाईंको कार्ट',
-          'your_cart_is_empty': 'तपाईंको कार्ट खाली छ!',
-          'start_adding_products': 'केही उत्कृष्ट उत्पादनहरू थप्न सुरु गर्नुहोस्।',
-          'shop_now': 'अहिले किनमेल गर्नुहोस्',
-          'checkout': 'चेकआउट',
-          'total': 'जम्मा',
-          'cart': 'कार्ट',
-          'login_required': 'लगइन आवश्यक छ',
-          'please_login_to_access': '%{title} पहुँच गर्न कृपया लगइन गर्नुहोस्।',
-          'app_bar': 'एप बार',
-          'search_products': 'उत्पादनहरू खोज्नुहोस्',
-          'oops_server_unavailable': 'ओहो! सर्भर उपलब्ध छैन',
-          'no_products_found': 'कुनै उत्पादनहरू फेला परेन',
-          'retry': 'पुन: प्रयास गर्नुहोस्',
-          'swipe_down_to_refresh': 'रिफ्रेश गर्न तल स्वाइप गर्नुहोस्',
-        }, */

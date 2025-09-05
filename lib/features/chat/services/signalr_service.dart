@@ -44,17 +44,20 @@ class SignalRService extends GetxService {
       // Use HTTPS base; the client selects transport and handles negotiate.
       final serverUrl = '${ApiConstants.baseUrl}$_hubUrl';
 
-      _hubConnection = HubConnectionBuilder()
-          .withUrl(
-            serverUrl,
-            options: HttpConnectionOptions(
-              accessTokenFactory: () async => _authController.currentUser.value?.token ?? '',
-              // Prefer SSE/LongPolling if proxies block WebSockets
-              transport: HttpTransportType.ServerSentEvents,
-            ),
-          )
-          .withAutomaticReconnect()
-          .build();
+      _hubConnection =
+          HubConnectionBuilder()
+              .withUrl(
+                serverUrl,
+                options: HttpConnectionOptions(
+                  accessTokenFactory:
+                      () async =>
+                          _authController.currentUser.value?.token ?? '',
+                  // Prefer SSE/LongPolling if proxies block WebSockets
+                  transport: HttpTransportType.ServerSentEvents,
+                ),
+              )
+              .withAutomaticReconnect()
+              .build();
       // Reasonable timeouts for mobile networks
       _hubConnection.serverTimeoutInMilliseconds = 60000; // 60s
       _hubConnection.keepAliveIntervalInMilliseconds = 15000; // 15s

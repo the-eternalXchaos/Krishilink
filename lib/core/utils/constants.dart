@@ -46,5 +46,6 @@ const List<String> guestAllowedEndpoints = [
   '/api/KrishilinkAuth/verifyotp',
   '/api/Weather/getWeatherDetails',
   '/api/Notification/GetNotifications',
+  '/api/Notification/GetNotifications',
   // Add more if needed, but only those that exist in ApiConstants
 ];

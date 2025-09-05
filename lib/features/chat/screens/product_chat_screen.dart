@@ -99,7 +99,9 @@ class _ProductChatScreenState extends State<ProductChatScreen> {
                   ),
                   Obx(
                     () => Text(
-                      controller.isFarmerLive.value ? 'Online' : 'Offline',
+                      controller.isFarmerLive.value
+                          ? 'online'.tr
+                          : 'offline'.tr,
                       style: TextStyle(
                         fontSize: 12,
                         color: colorScheme.onPrimary.withOpacity(0.8),
@@ -384,7 +386,7 @@ class _ProductChatScreenState extends State<ProductChatScreen> {
               child: TextField(
                 controller: messageController,
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: 'type_a_message_dots'.tr,
                   filled: true,
                   fillColor: colorScheme.surfaceVariant,
                   border: OutlineInputBorder(
@@ -455,21 +457,21 @@ class _ProductChatScreenState extends State<ProductChatScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Message Failed'),
+            title: Text('message_failed'.tr),
             content: const Text(
               'This message failed to send. Would you like to retry?',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: Text('cancel'.tr),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   controller.retryMessage(message);
                 },
-                child: const Text('Retry'),
+                child: Text('retry'.tr),
               ),
             ],
           ),
@@ -501,7 +503,7 @@ class _ProductChatScreenState extends State<ProductChatScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
+                    child: Text('close'.tr),
                   ),
                 ),
               ],

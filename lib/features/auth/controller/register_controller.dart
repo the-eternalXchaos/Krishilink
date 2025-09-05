@@ -102,8 +102,8 @@ class RegisterController extends GetxController {
 
       if (response['success'] == true || response['status'] == 201) {
         PopupService.success(
-          'Registration successful! Please check your email to verify your account.',
-          title: 'Success',
+          'registration_success_check_email'.tr,
+          title: 'success'.tr,
         );
         Get.offNamed('/login');
       } else {
@@ -152,13 +152,13 @@ class RegisterController extends GetxController {
   /// Validate form inputs
   bool _validateInputs() {
     if (fullNameController.text.trim().isEmpty) {
-      errorMessage.value = 'Full name is required';
+      errorMessage.value = 'full_name_required'.tr;
       return false;
     }
 
     final input = emailOrPhoneController.text.trim();
     if (input.isEmpty) {
-      errorMessage.value = 'Email or phone number is required';
+      errorMessage.value = 'email_or_phone_required'.tr;
       return false;
     }
 
@@ -166,23 +166,23 @@ class RegisterController extends GetxController {
     final phoneRegex = RegExp(r'^[9876]\d{9}$');
 
     if (!emailRegex.hasMatch(input) && !phoneRegex.hasMatch(input)) {
-      errorMessage.value = 'Enter a valid email or phone number';
+      errorMessage.value = 'enter_valid_email_or_nepali_phone'.tr;
       return false;
     }
 
     if (passwordController.text.trim().isEmpty) {
-      errorMessage.value = 'Password is required';
+      errorMessage.value = 'password_required'.tr;
       return false;
     }
 
     if (passwordController.text.trim() !=
         confirmPasswordController.text.trim()) {
-      errorMessage.value = 'Passwords do not match';
+      errorMessage.value = 'passwords_do_not_match'.tr;
       return false;
     }
 
     if (role.value.isEmpty) {
-      errorMessage.value = 'User role is required';
+      errorMessage.value = 'please_select_a_role'.tr;
       return false;
     }
 

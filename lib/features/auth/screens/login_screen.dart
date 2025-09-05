@@ -31,7 +31,6 @@ class _LoginScreenState extends State<LoginScreen>
   late final SharedPreferences prefs;
 
   String get deviceId => prefs.getString('deviceId') as String;
-  // final _tabAnimDuration = const Duration(milliseconds: 300);
 
   @override
   void initState() {
@@ -42,7 +41,12 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
-      setState(() {}); // Force rebuild when tab changes
+      // Clear form when switching tabs
+      _identifierController.clear();
+      if (_tabController.index == 0) {
+        _passwordController.clear();
+      }
+      setState(() {});
     }
   }
 
@@ -56,8 +60,8 @@ class _LoginScreenState extends State<LoginScreen>
     if (!isEmail && !isPhone) {
       PopupService.show(
         type: PopupType.error,
-        title: 'Invalid Input',
-        message: 'Please enter a valid email or Nepali phone number',
+        title: 'validation_error'.tr,
+        message: 'enter_valid_email_or_nepali_phone'.tr,
       );
       return;
     }
@@ -68,8 +72,8 @@ class _LoginScreenState extends State<LoginScreen>
     } catch (e) {
       final errorMessage =
           e.toString().toLowerCase().contains('format')
-              ? 'User not found with provided credentials'
-              : 'Failed to send OTP. Please try again.';
+              ? 'user_not_found_with_credentials'.tr
+              : 'failed_to_send_otp'.tr;
 
       PopupService.show(
         type: PopupType.error,
@@ -87,129 +91,126 @@ class _LoginScreenState extends State<LoginScreen>
     final prefs = await SharedPreferences.getInstance();
     final deviceId =
         prefs.getString('deviceId') ?? (await DeviceService().getDeviceId());
-    // final isEmail = _isValidEmail(identifier);
 
     try {
-      await authController.passwordLogin(
-        identifier,
-        password,
-        deviceId,
-        // isEmail: isEmail,
-      );
+      await authController.passwordLogin(identifier, password, deviceId);
       if (authController.currentUser.value != null) {
         _navigateBasedOnRole(authController.currentUser.value!.role);
       }
     } catch (e) {
-      debugPrint(' error  : $e ');
+      debugPrint('Login error: $e');
       PopupService.show(
         type: PopupType.error,
-        message: "Some error occurred try again ".tr,
+        message: 'some_error_occurred_try_again'.tr,
         title: 'Error'.tr,
       );
     }
   }
 
-  // bool _isValidEmail(String input) {
-  //   return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(input);
-
-  // }
   bool _isValidEmail(String input) {
     return GetUtils.isEmail(input);
   }
 
   bool _isValidNepaliPhone(String input) {
-    return RegExp(r'^(?:\+977|977)?\d{10}$').hasMatch(input);
+    return RegExp(r'^(?:\+977|977)?9[678]\d{8}$').hasMatch(input);
   }
 
-  // scaffold
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.shortestSide >= 600;
+    final maxWidth = isTablet ? 500.0 : size.width * 0.9;
+
     return Scaffold(
-      // backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      // backgroundColor: Colors.amber,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.primaryContainer,
-              Theme.of(context).colorScheme.secondaryContainer,
-              Theme.of(context).colorScheme.tertiaryContainer,
+              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+              Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.2),
+              Theme.of(context).colorScheme.surface,
             ],
+            stops: const [0.0, 0.4, 1.0],
           ),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 40 : 20,
+                vertical: 20,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildHeaderSection(),
-                    const SizedBox(height: 30),
-                    _buildLoginCard(),
-                    const SizedBox(height: 30),
+                    _buildHeaderSection(isTablet),
+                    SizedBox(height: isTablet ? 40 : 30),
+                    _buildLoginCard(isTablet),
+                    SizedBox(height: isTablet ? 35 : 25),
                     _buildSocialLoginSection(),
-                    const SizedBox(height: 30),
+                    SizedBox(height: isTablet ? 30 : 20),
                     _buildRegistrationLink(),
                   ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeaderSection() {
+  Widget _buildHeaderSection(bool isTablet) {
     return Column(
       children: [
-        LottieWidget(height: 200, path: LottieAssets.farmer, repeat: true),
-
+        LottieWidget(
+          height: isTablet ? 250 : 180,
+          path: LottieAssets.farmer,
+          repeat: true,
+        ),
+        SizedBox(height: isTablet ? 20 : 16),
         Text(
-          "Welcome to KrishiLink",
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+          'welcome_to_krishilink'.tr,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
+            fontSize: isTablet ? 32 : 28,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
-          "Nepal's Agricultural Network",
+          'nepals_agricultural_network'.tr,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: isTablet ? 18 : 16,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _buildLoginCard() {
-    // device height and width
-    final deviceHeight = MediaQuery.of(context).size.height;
-    final deviceWidth = MediaQuery.of(context).size.width;
+  Widget _buildLoginCard(bool isTablet) {
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 12,
+      shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isTablet ? 32 : 24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _buildAuthTypeSelector(),
-            const SizedBox(height: 16),
-            SizedBox(
-              // login box height 20% of screen height
-              height: deviceHeight * 0.25,
-              width: deviceWidth * 0.9,
-              child: TabBarView(
-                controller: _tabController,
-                children: [_buildOtpForm(), _buildCredentialForm()],
-              ),
-            ),
-            const SizedBox(height: 16),
+            _buildAuthTypeSelector(isTablet),
+            SizedBox(height: isTablet ? 24 : 20),
+            _buildFormContent(isTablet),
+            SizedBox(height: isTablet ? 28 : 24),
             _buildLoginButton(),
           ],
         ),
@@ -217,67 +218,54 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildAuthTypeSelector() {
-    // device height and width
-    final deviceHeight = MediaQuery.of(context).size.height;
-    final deviceWidth = MediaQuery.of(context).size.width;
+  Widget _buildAuthTypeSelector(bool isTablet) {
     return Container(
-      height: deviceHeight * 0.08,
-      width: deviceWidth * 0.9,
       decoration: BoxDecoration(
         color: Theme.of(
           context,
-        ).colorScheme.surfaceContainerHighest.withAlpha(30),
-        borderRadius: BorderRadius.circular(12),
+        ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: TabBar(
         controller: _tabController,
         labelColor: Theme.of(context).colorScheme.primary,
         unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        unselectedLabelStyle: const TextStyle(
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: isTablet ? 16 : 14,
+        ),
+        unselectedLabelStyle: TextStyle(
           fontWeight: FontWeight.normal,
-          fontSize: 14,
+          fontSize: isTablet ? 16 : 14,
         ),
-        indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(
-            width: 3.0,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          insets: const EdgeInsets.only(bottom: 12),
+        indicator: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: MaterialStateProperty.all(Colors.transparent),
         tabs: [
           Tab(
+            height: isTablet ? 70 : 60,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.sms_outlined,
-                  size: 24,
-                  color:
-                      _tabController.index == 0
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 6),
-                const Text('OTP Login'),
+                Icon(Icons.sms_outlined, size: isTablet ? 28 : 24),
+                SizedBox(height: isTablet ? 8 : 6),
+                Text('otp_login'.tr),
               ],
             ),
           ),
           Tab(
+            height: isTablet ? 70 : 60,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.lock_outline,
-                  size: 24,
-                  color:
-                      _tabController.index == 1
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 6),
-                const Text('Password Login'),
+                Icon(Icons.lock_outline, size: isTablet ? 28 : 24),
+                SizedBox(height: isTablet ? 8 : 6),
+                Text('password_login'.tr),
               ],
             ),
           ),
@@ -286,42 +274,87 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildOtpForm() {
+  Widget _buildFormContent(bool isTablet) {
+    return SizedBox(
+      height:
+          _tabController.index == 0
+              ? (isTablet ? 140 : 120)
+              : (isTablet ? 200 : 180),
+      child: TabBarView(
+        controller: _tabController,
+        children: [_buildOtpForm(isTablet), _buildCredentialForm(isTablet)],
+      ),
+    );
+  }
+
+  Widget _buildOtpForm(bool isTablet) {
     return Form(
       key: _otpFormKey,
       child: Column(
         children: [
-          const SizedBox(height: 8),
           TextFormField(
             controller: _identifierController,
+            style: TextStyle(fontSize: isTablet ? 16 : 14),
             decoration: InputDecoration(
-              labelText: "Email or Phone Number",
+              labelText: 'email_or_phone_number'.tr,
+              labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
               prefixIcon: Icon(
-                Icons.phone_android,
+                Icons.alternate_email,
                 color: Theme.of(context).colorScheme.primary,
+                size: isTablet ? 24 : 20,
               ),
-              hintText: "example@domain.com / 9XXXXXXXXX",
+              hintText: 'example_email_or_phone'.tr,
+              hintStyle: TextStyle(fontSize: isTablet ? 14 : 12),
               border: _inputBorder(),
+              enabledBorder: _inputBorder(),
+              focusedBorder: _inputBorder(focused: true),
+              errorBorder: _inputBorder(error: true),
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 20 : 16,
+                vertical: isTablet ? 20 : 16,
+              ),
             ),
             keyboardType: TextInputType.emailAddress,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter email or phone number';
+                return 'email_or_phone_required'.tr;
               }
               if (!_isValidEmail(value) && !_isValidNepaliPhone(value)) {
-                return 'Enter valid email or Nepali phone number';
+                return 'enter_valid_email_or_nepali_phone'.tr;
               }
               return null;
             },
           ),
-          const SizedBox(height: 20),
-          Text(
-            "We'll send an OTP to your email/phone",
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          SizedBox(height: isTablet ? 24 : 20),
+          Container(
+            padding: EdgeInsets.all(isTablet ? 16 : 12),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: isTablet ? 20 : 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                SizedBox(width: isTablet ? 12 : 8),
+                Expanded(
+                  child: Text(
+                    'otp_send_hint'.tr,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      fontSize: isTablet ? 14 : 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -329,80 +362,96 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  //TODO move the widget to their folder after completion
-  Widget _buildCredentialForm() {
+  Widget _buildCredentialForm(bool isTablet) {
     return Form(
       key: _credentialFormKey,
       child: Column(
         children: [
-          const SizedBox(height: 8),
           TextFormField(
             controller: _identifierController,
+            style: TextStyle(fontSize: isTablet ? 16 : 14),
             decoration: InputDecoration(
-              labelText: "Email/Phone",
+              labelText: 'email_phone'.tr,
+              labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
               prefixIcon: Icon(
                 Icons.person_outline,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Theme.of(context).colorScheme.primary,
+                size: isTablet ? 24 : 20,
               ),
-              hintText: "Enter email or phone",
+              hintText: 'enter_email_or_phone'.tr,
+              hintStyle: TextStyle(fontSize: isTablet ? 14 : 12),
               border: _inputBorder(),
-
+              enabledBorder: _inputBorder(),
+              focusedBorder: _inputBorder(focused: true),
+              errorBorder: _inputBorder(error: true),
               filled: true,
-
               fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 20 : 16,
+                vertical: isTablet ? 20 : 16,
+              ),
             ),
             autovalidateMode: AutovalidateMode.onUserInteraction,
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter email or phone';
+                return 'email_or_phone_required'.tr;
               }
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isTablet ? 20 : 16),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscureText,
+            style: TextStyle(fontSize: isTablet ? 16 : 14),
             decoration: InputDecoration(
-              labelText: "Password",
+              labelText: 'password'.tr,
+              labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
               prefixIcon: Icon(
                 Icons.lock_outline,
                 color: Theme.of(context).colorScheme.primary,
+                size: isTablet ? 24 : 20,
               ),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
                   color: Theme.of(context).colorScheme.primary,
+                  size: isTablet ? 24 : 20,
                 ),
                 onPressed: () => setState(() => _obscureText = !_obscureText),
               ),
               border: _inputBorder(),
+              enabledBorder: _inputBorder(),
+              focusedBorder: _inputBorder(focused: true),
+              errorBorder: _inputBorder(error: true),
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 20 : 16,
+                vertical: isTablet ? 20 : 16,
+              ),
             ),
-
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter password';
+                return 'password_required'.tr;
               }
-
               if (value.length < 8) {
-                return ' must be at least 8 characters';
+                return 'password_min_8'.tr;
               }
               if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                return 'must contain at least one uppercase letter';
+                return 'password_one_upper'.tr;
               }
               if (!RegExp(r'[a-z]').hasMatch(value)) {
-                return 'must contain at least one lowercase letter';
+                return 'password_one_lower'.tr;
               }
               if (!RegExp(r'[0-9]').hasMatch(value)) {
-                return 'must contain at least one number';
+                return 'password_one_number'.tr;
               }
               if (!RegExp(
                 r'[!@#\$&*~%^()_+\-=\[\]{};:"\\|,.<>\/?]',
               ).hasMatch(value)) {
-                return 'must contain at least one special character';
+                return 'password_one_special'.tr;
               }
               return null;
             },
@@ -412,154 +461,175 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  InputBorder _inputBorder() {
+  InputBorder _inputBorder({bool focused = false, bool error = false}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(
+        color:
+            error
+                ? Theme.of(context).colorScheme.error
+                : focused
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+        width: focused ? 2 : 1,
+      ),
     );
   }
 
   Widget _buildLoginButton() {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.shortestSide >= 600;
+
     return Obx(() {
-      return ElevatedButton.icon(
-        icon:
-            authController.isLoading.value
-                ? const SizedBox.shrink()
-                : Icon(
-                  _tabController.index == 0 ? Icons.sms : Icons.login,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-        label:
-            authController.isLoading.value
-                ? CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                )
-                : Text(
-                  _tabController.index == 0 ? 'Send OTP' : 'Sign In',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        height: isTablet ? 58 : 52,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            elevation: authController.isLoading.value ? 0 : 4,
+            shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: TextStyle(
+              fontSize: isTablet ? 18 : 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
+          onPressed:
+              authController.isLoading.value
+                  ? null
+                  : _tabController.index == 0
+                  ? _sendOtpLogin
+                  : _passwordLogin,
+          child:
+              authController.isLoading.value
+                  ? SizedBox(
+                    width: isTablet ? 24 : 20,
+                    height: isTablet ? 24 : 20,
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      strokeWidth: 2,
+                    ),
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _tabController.index == 0 ? Icons.sms : Icons.login,
+                        size: isTablet ? 22 : 18,
+                      ),
+                      SizedBox(width: isTablet ? 12 : 8),
+                      Text(
+                        _tabController.index == 0
+                            ? 'send_otp'.tr
+                            : 'sign_in'.tr,
+                      ),
+                    ],
+                  ),
         ),
-        onPressed:
-            authController.isLoading.value
-                ? null
-                : _tabController.index == 0
-                ? _sendOtpLogin
-                : _passwordLogin,
       );
     });
   }
 
-  // Widget _buildSocialLoginSection() {
-  //   return Column(
-  //     children: [
-  //       Text(
-  //         'Or continue with',
-  //         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-  //           color: Theme.of(context).colorScheme.onSurfaceVariant,
-  //         ),
-  //       ),
-  //       const SizedBox(height: 20),
-  //       Row(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           buildSocialButton(googleLogoPath, 'Google'),
-  //           const SizedBox(width: 20),
-  //           buildSocialButton(facebookLogoPath, 'Facebook'),
-  //           const SizedBox(width: 20),
-  //           buildSocialButton(appleLogoPath, 'Apple'),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
   Widget _buildSocialLoginSection() {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.shortestSide >= 600;
+
     return Column(
       children: [
-        Text(
-          'Or continue with',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 20),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SocialIconButton(
-              iconPath: googleLogoPath,
-              onTap: () => _handleSocialLogin('Google'),
+            Expanded(
+              child: Divider(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              ),
             ),
-            const SizedBox(width: 30),
-            SocialIconButton(
-              iconPath: facebookLogoPath,
-              onTap: () => _handleSocialLogin('Facebook'),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 16),
+              child: Text(
+                'or_continue_with'.tr,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: isTablet ? 16 : 14,
+                ),
+              ),
             ),
-            const SizedBox(width: 30),
-            SocialIconButton(
-              iconPath: appleLogoPath,
-              onTap: () => _handleSocialLogin('Apple'),
+            Expanded(
+              child: Divider(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              ),
             ),
+          ],
+        ),
+        SizedBox(height: isTablet ? 24 : 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildSocialButton(googleLogoPath, 'Google', isTablet),
+            _buildSocialButton(facebookLogoPath, 'Facebook', isTablet),
+            _buildSocialButton(appleLogoPath, 'Apple', isTablet),
           ],
         ),
       ],
     );
   }
 
-  Widget buildSocialButton(String iconPath, String label) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 120, // Fixed maximum width
-        minWidth: 80, // Minimum width
-      ),
-      child: OutlinedButton.icon(
-        icon: Image.asset(
-          iconPath,
-          width: 20, // Reduced icon size
-          height: 20,
-          fit: BoxFit.contain, // Ensures proper fitting
-        ),
-        label: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12, // Smaller font size
+  Widget _buildSocialButton(String iconPath, String provider, bool isTablet) {
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 4),
+        child: OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: isTablet ? 16 : 12,
+              horizontal: isTablet ? 16 : 8,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () => _handleSocialLogin(provider),
+          child: Image.asset(
+            iconPath,
+            width: isTablet ? 28 : 24,
+            height: isTablet ? 28 : 24,
+            fit: BoxFit.contain,
           ),
         ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          side: BorderSide(color: Theme.of(context).colorScheme.outline),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10), // Slightly smaller radius
-          ),
-        ),
-        onPressed: () => _handleSocialLogin(label),
       ),
     );
   }
 
   Widget _buildRegistrationLink() {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.shortestSide >= 600;
+
     return GestureDetector(
       onTap: () => Get.offAllNamed('/register'),
       child: RichText(
+        textAlign: TextAlign.center,
         text: TextSpan(
-          text: "New to KrishiLink? ".tr,
+          text: 'new_to_krishilink'.tr,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: isTablet ? 16 : 14,
           ),
           children: [
             TextSpan(
-              text: "Create Account".tr,
+              text: 'create_account'.tr,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+                decorationColor: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
@@ -595,10 +665,9 @@ class _LoginScreenState extends State<LoginScreen>
       'admin' => '/admin-dashboard',
       'farmer' => '/farmer-dashboard',
       'buyer' => '/buyer-dashboard',
-      _ => '/home', // Default fallback
+      _ => '/welcome',
     };
 
-    // Clear navigation stack and redirect
     Get.offAllNamed(route);
   }
 }

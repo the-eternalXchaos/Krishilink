@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'live_chat_controller.dart';
+import 'package:krishi_link/core/components/app_text_input_field.dart';
 
 class LiveChatScreen extends StatelessWidget {
   final String productId;
@@ -74,7 +75,7 @@ class LiveChatScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          live ? 'Online' : 'Offline',
+                          live ? 'online'.tr : 'offline'.tr,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color:
                                 live
@@ -122,7 +123,7 @@ class LiveChatScreen extends StatelessWidget {
               }
               final messages = _controller.messages;
               if (messages.isEmpty) {
-                return const Center(child: Text('Say hi 👋'));
+                return Center(child: Text('say_hi'.tr));
               }
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -183,12 +184,18 @@ class LiveChatScreen extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: _controller.inputCtrl,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted:
+                          (_) =>
+                              _controller.isSending.value
+                                  ? null
+                                  : _controller.send(),
                       onChanged: (v) {
                         // optional: typing indicator to hub
                         // ChatRealtimeService.I.typing(ctrl.conversationId, v.isNotEmpty);
                       },
                       decoration: InputDecoration(
-                        hintText: 'Type a message…',
+                        hintText: 'type_a_message'.tr,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

@@ -51,7 +51,7 @@ class FilterSheet extends StatelessWidget {
                     if (role == 'admin' || role == 'farmer') ...[
                       const SizedBox(height: 16),
                       Text(
-                        'Product Status',
+                        'product_status'.tr,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Obx(
@@ -71,7 +71,7 @@ class FilterSheet extends StatelessWidget {
                                 }
                               },
                             ),
-                            const Text('All'),
+                            Text('all'.tr),
                             Radio<String>(
                               value: 'active',
                               groupValue: filterController.selectedStatus.value,
@@ -86,7 +86,7 @@ class FilterSheet extends StatelessWidget {
                                 }
                               },
                             ),
-                            const Text('Active'),
+                            Text('active'.tr),
                             Radio<String>(
                               value: 'inactive',
                               groupValue: filterController.selectedStatus.value,
@@ -101,7 +101,7 @@ class FilterSheet extends StatelessWidget {
                                 }
                               },
                             ),
-                            const Text('Inactive'),
+                            Text('inactive'.tr),
                           ],
                         ),
                       ),
@@ -120,7 +120,7 @@ class FilterSheet extends StatelessWidget {
                         label: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('Show Nearby Products'),
+                            Text('show_nearby_products'.tr),
                             if (productController.isLoading.value) ...[
                               const SizedBox(width: 8),
                               SizedBox(
@@ -297,7 +297,10 @@ class FilterSheet extends StatelessWidget {
       () => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Product Status', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            'product_status'.tr,
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           Row(
             children: [
               Radio<String>(
@@ -305,19 +308,19 @@ class FilterSheet extends StatelessWidget {
                 groupValue: controller.selectedStatus.value,
                 onChanged: (v) => controller.selectedStatus.value = v!,
               ),
-              const Text('Active'),
+              Text('active'.tr),
               Radio<String>(
                 value: 'inactive',
                 groupValue: controller.selectedStatus.value,
                 onChanged: (v) => controller.selectedStatus.value = v!,
               ),
-              const Text('Inactive'),
+              Text('inactive'.tr),
               Radio<String>(
                 value: 'all',
                 groupValue: controller.selectedStatus.value,
                 onChanged: (v) => controller.selectedStatus.value = v!,
               ),
-              const Text('All'),
+              Text('all'.tr),
             ],
           ),
           const SizedBox(height: 16),
@@ -353,7 +356,7 @@ class FilterSheet extends StatelessWidget {
                   filterController.clearFilters();
                   productController.fetchProducts();
                   Get.back();
-                  PopupService.info('Filter reset', title: 'Filter');
+                  PopupService.info('filter_reset'.tr, title: 'filter'.tr);
                 },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -378,8 +381,8 @@ class FilterSheet extends StatelessWidget {
                           );
                           Get.back();
                           PopupService.success(
-                            'Filter applied successfully',
-                            title: 'Filter',
+                            'filter_applied_success'.tr,
+                            title: 'filter'.tr,
                           );
                         }
                         : null,
@@ -413,14 +416,14 @@ Future<void> _showNearbyProducts(BuildContext context) async {
       return;
     }
     Position position = await Geolocator.getCurrentPosition(
-       desiredAccuracy: LocationAccuracy.high,
+      desiredAccuracy: LocationAccuracy.high,
     );
     await Get.find<ProductController>().fetchNearbyProducts(
       position.latitude,
       position.longitude,
     );
-    Navigator.of(context).pop(); // Close the filter sheet
+    Navigator.of(context).pop();
   } catch (e) {
-    Get.snackbar('Error', 'Failed to get location: $e');
+    Get.snackbar('er', 'Failed to get location: $e');
   }
 }

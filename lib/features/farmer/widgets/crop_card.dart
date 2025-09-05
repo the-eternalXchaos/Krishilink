@@ -1,5 +1,6 @@
 // lib/features/farmer/screens/crop_card.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:krishi_link/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
@@ -46,7 +47,7 @@ class CropCard extends StatelessWidget {
                   children: [
                     Text(crop.name, style: theme.textTheme.titleLarge),
                     Text(
-                      crop.status ?? 'Unknown',
+                      (crop.status ?? 'unknown').tr,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color:
                             crop.status == 'Healthy'
@@ -74,14 +75,11 @@ class CropCard extends StatelessWidget {
                   itemBuilder:
                       (context) => [
                         if (onEdit != null)
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit'),
-                          ),
+                          PopupMenuItem(value: 'edit', child: Text('edit'.tr)),
                         if (onDelete != null)
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'delete',
-                            child: Text('Delete'),
+                            child: Text('delete'.tr),
                           ),
                       ],
                 ),

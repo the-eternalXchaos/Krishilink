@@ -1,0 +1,273 @@
+Activity Resolver Table:
+  Schemes:
+      fbconnect:
+        ca09dec com.example.krishi_link/com.facebook.CustomTabActivity filter 10955b5
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "fbconnect"
+          Authority: "cct.com.example.krishi_link": -1
+      genericidp:
+        814d44a com.example.krishi_link/com.google.firebase.auth.internal.GenericIdpActivity filter 4c91fbb
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "genericidp"
+          Authority: "firebase.auth": -1
+          Path: "PatternMatcher{LITERAL: /}"
+      recaptcha:
+        6efacd8 com.example.krishi_link/com.google.firebase.auth.internal.RecaptchaActivity filter 1c69831
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "recaptcha"
+          Authority: "firebase.auth": -1
+          Path: "PatternMatcher{LITERAL: /}"
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        bd1d23e com.example.krishi_link/.MainActivity filter 59989f
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      androidx.profileinstaller.action.SAVE_PROFILE:
+        cfd5a1c com.example.krishi_link/androidx.profileinstaller.ProfileInstallReceiver filter 3fd6dab
+          Action: "androidx.profileinstaller.action.SAVE_PROFILE"
+      com.facebook.sdk.ACTION_CURRENT_AUTHENTICATION_TOKEN_CHANGED:
+        83546ee com.example.krishi_link/com.facebook.AuthenticationTokenManager$CurrentAuthenticationTokenChangedBroadcastReceiver filter 45fe78f
+          Action: "com.facebook.sdk.ACTION_CURRENT_AUTHENTICATION_TOKEN_CHANGED"
+      com.facebook.sdk.ACTION_CURRENT_ACCESS_TOKEN_CHANGED:
+        80b3ef0 com.example.krishi_link/com.facebook.CurrentAccessTokenExpirationBroadcastReceiver filter 7971c69
+          Action: "com.facebook.sdk.ACTION_CURRENT_ACCESS_TOKEN_CHANGED"
+      EXTRA_CHOSEN_COMPONENT:
+        1ebe84 com.example.krishi_link/dev.fluttercommunity.plus.share.SharePlusPendingIntent filter 93b866d
+          Action: "EXTRA_CHOSEN_COMPONENT"
+      androidx.profileinstaller.action.INSTALL_PROFILE:
+        cfd5a1c com.example.krishi_link/androidx.profileinstaller.ProfileInstallReceiver filter 6fc1625
+          Action: "androidx.profileinstaller.action.INSTALL_PROFILE"
+      com.google.android.c2dm.intent.RECEIVE:
+        ad3eb16 com.example.krishi_link/io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingReceiver filter 6dffc97
+          Action: "com.google.android.c2dm.intent.RECEIVE"
+        69ba2a2 com.example.krishi_link/com.google.firebase.iid.FirebaseInstanceIdReceiver filter 71dcb33
+          Action: "com.google.android.c2dm.intent.RECEIVE"
+      androidx.profileinstaller.action.SKIP_FILE:
+        cfd5a1c com.example.krishi_link/androidx.profileinstaller.ProfileInstallReceiver filter db2e3fa
+          Action: "androidx.profileinstaller.action.SKIP_FILE"
+      androidx.profileinstaller.action.BENCHMARK_OPERATION:
+        cfd5a1c com.example.krishi_link/androidx.profileinstaller.ProfileInstallReceiver filter 793fc08
+          Action: "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+
+Service Resolver Table:
+  Non-Data Actions:
+      com.google.firebase.MESSAGING_EVENT:
+        6fcefa1 com.example.krishi_link/io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingService filter 23b45c6
+          Action: "com.google.firebase.MESSAGING_EVENT"
+        3d7e4dd com.example.krishi_link/com.google.firebase.messaging.FirebaseMessagingService filter a95f852
+          Action: "com.google.firebase.MESSAGING_EVENT"
+          mPriority=-500, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      com.google.android.gms.metadata.MODULE_DEPENDENCIES:
+        fa33987 com.example.krishi_link/com.google.android.gms.metadata.ModuleDependencies filter 970d0b4
+          Action: "com.google.android.gms.metadata.MODULE_DEPENDENCIES"
+
+Domain verification status:
+
+Permissions:
+  Permission [com.example.krishi_link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (477083):
+    sourcePackage=com.example.krishi_link
+    uid=10209 gids=[] type=0 prot=signature
+    perm=PermissionInfo{7bd3666 com.example.krishi_link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    flags=0x0
+
+Registered ContentProviders:
+  com.example.krishi_link/io.flutter.plugins.imagepicker.ImagePickerFileProvider:
+    Provider{b076da7 com.example.krishi_link/io.flutter.plugins.imagepicker.ImagePickerFileProvider}
+  com.example.krishi_link/io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingInitProvider:
+    Provider{bbcc254 com.example.krishi_link/io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingInitProvider}
+  com.example.krishi_link/com.google.firebase.provider.FirebaseInitProvider:
+    Provider{38c85fd com.example.krishi_link/com.google.firebase.provider.FirebaseInitProvider}
+  com.example.krishi_link/com.facebook.internal.FacebookInitProvider:
+    Provider{25652f2 com.example.krishi_link/com.facebook.internal.FacebookInitProvider}
+  com.example.krishi_link/androidx.startup.InitializationProvider:
+    Provider{5333d43 com.example.krishi_link/androidx.startup.InitializationProvider}
+  com.example.krishi_link/dev.fluttercommunity.plus.share.ShareFileProvider:
+    Provider{84dafc0 com.example.krishi_link/dev.fluttercommunity.plus.share.ShareFileProvider}
+
+ContentProvider Authorities:
+  [com.example.krishi_link.flutter.share_provider]:
+    Provider{84dafc0 com.example.krishi_link/dev.fluttercommunity.plus.share.ShareFileProvider}
+      applicationInfo=ApplicationInfo{b050200 com.example.krishi_link}
+  [com.example.krishi_link.androidx-startup]:
+    Provider{5333d43 com.example.krishi_link/androidx.startup.InitializationProvider}
+      applicationInfo=ApplicationInfo{3be0a39 com.example.krishi_link}
+  [com.example.krishi_link.firebaseinitprovider]:
+    Provider{38c85fd com.example.krishi_link/com.google.firebase.provider.FirebaseInitProvider}
+      applicationInfo=ApplicationInfo{1de87e com.example.krishi_link}
+  [com.example.krishi_link.FacebookInitProvider]:
+    Provider{25652f2 com.example.krishi_link/com.facebook.internal.FacebookInitProvider}
+      applicationInfo=ApplicationInfo{90691df com.example.krishi_link}
+  [com.example.krishi_link.flutter.image_provider]:
+    Provider{b076da7 com.example.krishi_link/io.flutter.plugins.imagepicker.ImagePickerFileProvider}
+      applicationInfo=ApplicationInfo{9b83e2c com.example.krishi_link}
+  [com.example.krishi_link.flutterfirebasemessaginginitprovider]:
+    Provider{bbcc254 com.example.krishi_link/io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingInitProvider}
+      applicationInfo=ApplicationInfo{86c10f5 com.example.krishi_link}
+
+Key Set Manager:
+  [com.example.krishi_link]
+      Signing KeySets: 69
+
+Packages:
+  Package [com.example.krishi_link] (dee555b):
+    appId=10209
+    pkg=Package{aed11bb com.example.krishi_link}
+    codePath=/data/app/~~99W5kNICVxIhlpdTXefelw==/com.example.krishi_link-d6a9WawJpGBqX9oUOH7klA==
+    resourcePath=/data/app/~~99W5kNICVxIhlpdTXefelw==/com.example.krishi_link-d6a9WawJpGBqX9oUOH7klA==
+    legacyNativeLibraryDir=/data/app/~~99W5kNICVxIhlpdTXefelw==/com.example.krishi_link-d6a9WawJpGBqX9oUOH7klA==/lib
+    extractNativeLibs=false
+    primaryCpuAbi=x86_64
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=1 minSdk=23 targetSdk=34
+    minExtensionVersions=[]
+    versionName=1.0.0
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=2
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.facebook.katana, com.google.android.apps.maps]
+    queriesIntents=[Intent { act=android.intent.action.PROCESS_TEXT dat=content://*/... typ=text/plain }, Intent { act=android.intent.action.GET_CONTENT dat=content://*/... typ=*/* }]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      androidx.window.extensions
+      androidx.window.sidecar
+      org.apache.http.legacy
+      android.ext.adservices
+    usesLibraryFiles:
+      /system_ext/framework/androidx.window.extensions.jar
+      /system_ext/framework/androidx.window.sidecar.jar
+      /system/framework/org.apache.http.legacy.jar
+    timeStamp=2025-09-04 19:07:03
+    lastUpdateTime=2025-09-04 19:07:21
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{3f9b6d8 version:2, signatures:[580a57eb], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.example.krishi_link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+      android.permission.ACCESS_ADSERVICES_TOPICS
+      android.permission.POST_NOTIFICATIONS
+      com.google.android.c2dm.permission.RECEIVE
+      android.permission.ACCESS_FINE_LOCATION
+      android.permission.MANAGE_EXTERNAL_STORAGE
+      com.google.android.providers.gsf.permission.READ_GSERVICES
+      android.permission.ACCESS_ADSERVICES_AD_ID
+      android.permission.INTERNET
+      android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCE
+      android.permission.READ_EXTERNAL_STORAGE
+      android.permission.ACCESS_COARSE_LOCATION
+      com.example.krishi_link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.CAMERA
+      android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+      android.permission.USE_FINGERPRINT
+      android.permission.WRITE_EXTERNAL_STORAGE
+      android.permission.VIBRATE
+      android.permission.ACCESS_WIFI_STATE
+      android.permission.USE_BIOMETRIC
+      com.google.android.gms.permission.AD_ID
+      android.permission.WAKE_LOCK
+    install permissions:
+      com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE: granted=true
+      android.permission.ACCESS_ADSERVICES_TOPICS: granted=true
+      com.google.android.c2dm.permission.RECEIVE: granted=true
+      com.google.android.providers.gsf.permission.READ_GSERVICES: granted=true
+      android.permission.ACCESS_ADSERVICES_AD_ID: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCE: granted=true
+      com.example.krishi_link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.ACCESS_ADSERVICES_ATTRIBUTION: granted=true
+      android.permission.USE_FINGERPRINT: granted=true
+      android.permission.VIBRATE: granted=true
+      android.permission.ACCESS_WIFI_STATE: granted=true
+      android.permission.USE_BIOMETRIC: granted=true
+      com.google.android.gms.permission.AD_ID: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0: ceDataInode=385043 deDataInode=40968 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.example.krishi_link
+      firstInstallTime=2025-09-04 19:03:48
+      uninstallReason=0
+      overlay paths:
+        /product/overlay/EmulationPixel9/EmulationPixel9Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+        /data/resource-cache/com.android.systemui-neutral-VrM1.frro
+        /data/resource-cache/com.android.systemui-accent-IWyS.frro
+        /data/resource-cache/com.android.systemui-dynamic-R6HU.frro
+      legacy overlay paths:
+        /product/overlay/EmulationPixel9/EmulationPixel9Overlay.apk
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      gids=[3003]
+      runtime permissions:
+        android.permission.POST_NOTIFICATIONS: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.ACCESS_FINE_LOCATION: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.READ_EXTERNAL_STORAGE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_INSTALLER_EXEMPT]
+        android.permission.ACCESS_COARSE_LOCATION: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.CAMERA: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.WRITE_EXTERNAL_STORAGE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_INSTALLER_EXEMPT]
+
+Queries:
+  system apps queryable: false
+  queries via forceQueryable:
+  queries via package name:
+    com.example.krishi_link:
+      com.google.android.apps.maps
+  queries via component:
+    com.google.android.as.oss:
+      com.example.krishi_link
+    com.google.android.as:
+      com.example.krishi_link
+    com.google.android.settings.intelligence:
+      com.example.krishi_link
+    com.google.android.apps.messaging:
+      com.example.krishi_link
+    com.example.krishi_link:
+      com.google.android.documentsui
+      com.google.android.googlequicksearchbox
+      com.google.android.contacts
+      com.google.android.apps.docs
+      com.google.android.apps.photos
+  queryable via interaction:
+    User 0:
+      [com.android.emulator.multidisplay,com.android.keychain,com.android.settings,com.android.dynsystem,com.android.server.telecom,com.android.location.fused,com.android.inputdevices,android,com.android.DeviceAsWebcam,com.android.providers.settings,com.android.localtransport]:
+        com.example.krishi_link
+      [com.google.android.gms,com.google.android.gsf]:
+        com.example.krishi_link
+  queryable via uses-library:
+
+Dexopt state:
+  [com.example.krishi_link]
+    path: /data/app/~~99W5kNICVxIhlpdTXefelw==/com.example.krishi_link-d6a9WawJpGBqX9oUOH7klA==/base.apk
+      x86_64: [status=run-from-apk] [reason=unknown] [primary-abi]
+        [location is error]
+
+Compiler stats:
+  [com.example.krishi_link]
+    (No recorded stats)
+

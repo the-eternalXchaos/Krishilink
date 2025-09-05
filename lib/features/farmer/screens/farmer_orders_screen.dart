@@ -64,14 +64,14 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen>
                 opacity: _fadeAnimation,
                 child: AppWidgets.card(
                   colorScheme: colorScheme,
-                  title: 'Filter Orders',
+                  title: 'filter_orders'.tr,
                   icon: Icons.filter_list,
                   iconColor: colorScheme.primary,
                   child: Column(
                     children: [
                       AppWidgets.textField(
                         controller: searchController,
-                        label: 'Search by Product or Order ID',
+                        label: 'search_by_product_or_order_id'.tr,
                         icon: Icons.search,
                         colorScheme: colorScheme,
                         onChanged: (value) => controller.searchOrders(value),
@@ -91,7 +91,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen>
                           setState(() => selectedStatusFilter = value);
                           controller.filterOrdersByStatus(value);
                         },
-                        label: 'Filter by Status',
+                        label: 'filter_by_status'.tr,
                         icon: Icons.filter_alt,
                         colorScheme: colorScheme,
                       ),

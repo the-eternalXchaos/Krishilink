@@ -107,7 +107,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                       false;
 
                   return Text(
-                    isOnline ? 'Online' : 'Offline',
+                    isOnline ? 'online'.tr : 'offline'.tr,
                     style: TextStyle(
                       fontSize: 12,
                       color: isOnline ? Colors.green : Colors.grey[600],
@@ -148,33 +148,33 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
           },
           itemBuilder:
               (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'profile',
                   child: Row(
                     children: [
                       Icon(Icons.person),
                       SizedBox(width: 8),
-                      Text('View Profile'),
+                      Text('view_profile'.tr),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'block',
                   child: Row(
                     children: [
                       Icon(Icons.block),
                       SizedBox(width: 8),
-                      Text('Block User'),
+                      Text('block_user'.tr),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'clear',
                   child: Row(
                     children: [
                       Icon(Icons.clear_all),
                       SizedBox(width: 8),
-                      Text('Clear Chat'),
+                      Text('clear_chat'.tr),
                     ],
                   ),
                 ),
@@ -288,7 +288,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(  
+          BoxShadow(
             color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
@@ -331,43 +331,43 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
       },
       itemBuilder:
           (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'camera',
               child: Row(
                 children: [
                   Icon(Icons.camera_alt),
                   SizedBox(width: 8),
-                  Text('Camera'),
+                  Text('camera'.tr),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'gallery',
               child: Row(
                 children: [
                   Icon(Icons.photo_library),
                   SizedBox(width: 8),
-                  Text('Gallery'),
+                  Text('gallery'.tr),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'document',
               child: Row(
                 children: [
                   Icon(Icons.description),
                   SizedBox(width: 8),
-                  Text('Document'),
+                  Text('document'.tr),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'location',
               child: Row(
                 children: [
                   Icon(Icons.location_on),
                   SizedBox(width: 8),
-                  Text('Location'),
+                  Text('location'.tr),
                 ],
               ),
             ),
@@ -386,7 +386,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
           TextField(
             controller: _messageController,
             decoration: InputDecoration(
-              hintText: 'Type a message...',
+              hintText: 'type_a_message_dots'.tr,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
                 borderSide: BorderSide.none,
@@ -416,7 +416,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.1),
+        color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),

@@ -318,11 +318,41 @@ class AuthController extends GetxController {
         navigateBasedOnRole(); // ✅ Redirect properly
       } else if (response.statusCode == 400) {
         final error = jsonDecode(response.body);
-        throw AppException(error['message'] ?? 'Invalid credentials');
+        String errorMessage = 'Invalid credentials';
+
+        // Try to extract specific error message from the response
+        if (error['errors'] != null && error['errors'] is Map) {
+          final errors = error['errors'] as Map;
+          if (errors['MyError'] != null && errors['MyError'] is List) {
+            final myErrors = errors['MyError'] as List;
+            if (myErrors.isNotEmpty) {
+              errorMessage = myErrors.first.toString();
+            }
+          }
+        } else if (error['message'] != null) {
+          errorMessage = error['message'];
+        }
+
+        throw AppException(errorMessage);
       } else {
         debugPrint("❌ Error response: ${response.body}");
         final error = jsonDecode(response.body);
-        throw AppException(error['message'] ?? 'Login failed');
+        String errorMessage = 'Login failed';
+
+        // Try to extract specific error message from the response
+        if (error['errors'] != null && error['errors'] is Map) {
+          final errors = error['errors'] as Map;
+          if (errors['MyError'] != null && errors['MyError'] is List) {
+            final myErrors = errors['MyError'] as List;
+            if (myErrors.isNotEmpty) {
+              errorMessage = myErrors.first.toString();
+            }
+          }
+        } else if (error['message'] != null) {
+          errorMessage = error['message'];
+        }
+
+        throw AppException(errorMessage);
       }
     } on AppException catch (e) {
       _showError(e.message);
@@ -505,8 +535,19 @@ class AuthController extends GetxController {
                 normalized.contains('no user record') ||
                 normalized.contains('user does not exist')
             ? 'user_not_found'.tr
-            : normalized.contains('wrong password')
+            : normalized.contains('user is not registrerd') ||
+                normalized.contains('user is not registered') ||
+                normalized.contains(
+                  'not registrerd with the provided information',
+                )
+            ? 'user_not_registered'.tr
+            : normalized.contains('wrong password') ||
+                normalized.contains('incorrect password')
             ? 'incorrect_password'.tr
+            : normalized.contains('invalid credentials') ||
+                normalized.contains('invalid username') ||
+                normalized.contains('invalid password')
+            ? 'invalid_credentials'.tr
             : normalized.contains('network') ||
                 normalized.contains('socket') ||
                 normalized.contains('503') // Add 503 error code check
@@ -515,8 +556,6 @@ class AuthController extends GetxController {
             ? 'server_error'.tr
             : 'something_went_wrong'.tr;
 
-    errorMessage.value = displayMessage;
-    debugPrint('Login Error: $displayMessage');
     errorMessage.value = displayMessage;
     debugPrint('Login Error: $displayMessage');
 

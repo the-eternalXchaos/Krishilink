@@ -173,7 +173,7 @@ class WeatherWidget extends StatelessWidget {
                             Expanded(
                               child: _WeatherDetailCard(
                                 icon: Icons.water_drop_outlined,
-                                label: 'Humidity',
+                                label: 'humidity'.tr,
                                 value: '${weather.humidity}%',
                                 colorScheme: colorScheme,
                                 accentColor: Colors.blue,
@@ -183,7 +183,7 @@ class WeatherWidget extends StatelessWidget {
                             Expanded(
                               child: _WeatherDetailCard(
                                 icon: Icons.air,
-                                label: 'Wind Speed',
+                                label: 'wind_speed'.tr,
                                 value:
                                     '${weather.windSpeed.toStringAsFixed(1)} m/s',
                                 colorScheme: colorScheme,

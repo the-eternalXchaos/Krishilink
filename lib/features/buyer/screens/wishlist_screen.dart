@@ -175,7 +175,7 @@ class WishlistScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'farmer'.trParams({'name': item.farmerName}),
+                            'farmer_name'.trParams({'name': item.farmerName}),
                             style: textTheme.bodySmall?.copyWith(
                                     color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),

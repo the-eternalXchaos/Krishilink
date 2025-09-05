@@ -20,22 +20,22 @@ class LanguageSwitcher extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: PopupMenuButton<String>(
         icon: const Icon(Icons.language),
-        tooltip: 'Change Language',
+        tooltip: 'change_language'.tr,
         onSelected: (langCode) {
           langController.changeLanguage(langCode);
         },
-        itemBuilder:
-            (context) => [
-              PopupMenuItem(
-                value: 'en',
-                child: Row(children: const [Text('🇬🇧 English')]),
-              ),
-              PopupMenuItem(
-                value: 'ne',
-                child: Row(children: const [Text('🇳🇵 नेपाली')]),
-              ),
-            ],
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: 'en',
+            child: Row(children: [Text('english'.tr)]),
+          ),
+          PopupMenuItem(
+            value: 'ne',
+            child: Row(children: [Text('nepali'.tr)]),
+          ),
+        ],
       ),
     );
   }
 }
+

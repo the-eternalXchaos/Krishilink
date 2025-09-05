@@ -30,7 +30,7 @@ class NotificationController extends GetxController {
     final userId = _authController.userData?.id;
 
     if (userId == null) {
-      errorMessage.value = 'User not logged in';
+      errorMessage.value = 'user_not_logged_in'.tr;
       return;
     }
 

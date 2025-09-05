@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/services/api_services/api_service.dart';
 import 'live_chat_api_service.dart';
 import 'live_chat_model.dart';
 import 'chat_services.dart';
@@ -43,58 +44,88 @@ class LiveChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _api = LiveChatApiService(Get.isRegistered() ? Get.find<Dio>() : Dio());
+    // Use the central ApiService's Dio so auth interceptors attach the JWT
+    final apiService =
+        Get.isRegistered<ApiService>()
+            ? Get.find<ApiService>()
+            : Get.put(ApiService());
+    _api = LiveChatApiService(apiService.dio);
     _auth =
         Get.isRegistered<AuthController>()
             ? Get.find<AuthController>()
             : Get.put(AuthController());
-    _bootstrap();
+
+    // Defer initialization to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _bootstrap();
+    });
   }
 
   Future<void> _bootstrap() async {
-    isLoading.value = true;
     try {
+      isLoading.value = true;
+
       // If farmer opened a buyer thread, set receiver; else buyer flow by product
       if (receiverUserId != null && receiverUserId!.isNotEmpty) {
         // Farmer opened a specific buyer thread
         _selectedBuyerId = receiverUserId;
       } else if (productId.isNotEmpty) {
-        _farmerId = await _api.getFarmerIdByProductId(productId);
-        isOnline.value = await _api.isFarmerLive(productId);
+        try {
+          _farmerId = await _api.getFarmerIdByProductId(productId);
+          isOnline.value = await _api.isFarmerLive(productId);
+        } catch (e) {
+          debugPrint('Error checking farmer status: $e');
+          isOnline.value = false;
+        }
       }
 
       // realtime connect flips presence on backend
-      await ChatRealtimeService.I.connect(
-        tokenProvider: () async => authToken ?? '',
-      );
+      try {
+        await ChatRealtimeService.I.connect(
+          tokenProvider: () async => authToken ?? '',
+        );
+      } catch (e) {
+        debugPrint('Error connecting to SignalR: $e');
+      }
 
       _sub = ChatRealtimeService.I.messages.listen((raw) {
-        // raw = { senderName, message, createdAt } from ReceiveMessage
-        final txt = (raw['message'] as String?) ?? '';
-        final when =
-            DateTime.tryParse((raw['createdAt'] as String?) ?? '') ??
-            DateTime.now();
-        if (txt.isEmpty) return;
-        final isSystem = raw['system'] == true;
-        final senderId = (raw['senderId'] as String?) ?? (isSystem ? 'system' : 'other');
-        messages.add(
-          LiveChatMessage(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            senderId: senderId,
-            receiverId: currentUserId ?? '',
-            body: isSystem ? '[SYSTEM] $txt' : txt,
-            createdAt: when,
-          ),
-        );
+        try {
+          // raw = { senderName, message, createdAt } from ReceiveMessage
+          final txt = (raw['message'] as String?) ?? '';
+          final when =
+              DateTime.tryParse((raw['createdAt'] as String?) ?? '') ??
+              DateTime.now();
+          if (txt.isEmpty) return;
+          final isSystem = raw['system'] == true;
+          final senderId =
+              (raw['senderId'] as String?) ?? (isSystem ? 'system' : 'other');
+          messages.add(
+            LiveChatMessage(
+              id: DateTime.now().microsecondsSinceEpoch.toString(),
+              senderId: senderId,
+              receiverId: currentUserId ?? '',
+              body: isSystem ? '[SYSTEM] $txt' : txt,
+              createdAt: when,
+            ),
+          );
+        } catch (e) {
+          debugPrint('Error processing message: $e');
+        }
       });
 
       // history (needs user2Id)
       final historyUserId = _selectedBuyerId ?? _farmerId;
       if (historyUserId != null && historyUserId.isNotEmpty) {
-        final history = await _api.getChatHistory(historyUserId);
-        history.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        messages.assignAll(history);
+        try {
+          final history = await _api.getChatHistory(historyUserId);
+          history.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          messages.assignAll(history);
+        } catch (e) {
+          debugPrint('Error loading chat history: $e');
+        }
       }
+    } catch (e) {
+      debugPrint('Error in bootstrap: $e');
     } finally {
       isLoading.value = false;
     }
@@ -113,14 +144,30 @@ class LiveChatController extends GetxController {
 
     isSending.value = true;
     try {
-  await ChatRealtimeService.I.sendToUser(receiverId, text);
+      bool delivered = false;
+      // 1) Try realtime hub first (fast path)
+      try {
+        await ChatRealtimeService.I.sendToUser(receiverId, text);
+        delivered = true;
+      } catch (_) {
+        // ignore, fallback to REST
+      }
 
-      // Optimistic echo (server may not echo to sender)
+      // 2) Fallback to REST API to ensure delivery if hub path fails
+      if (!delivered) {
+        try {
+          delivered = await _api.sendMessage(receiverId, text);
+        } catch (_) {
+          delivered = false;
+        }
+      }
+
+      // Optimistic echo so the sender sees their message immediately
       messages.add(
         LiveChatMessage(
           id: DateTime.now().microsecondsSinceEpoch.toString(),
           senderId: currentUserId ?? 'me',
-            receiverId: receiverId,
+          receiverId: receiverId,
           body: text,
           createdAt: DateTime.now(),
         ),

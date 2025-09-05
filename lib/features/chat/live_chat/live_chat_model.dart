@@ -18,24 +18,38 @@ class LiveChatMessage {
 
   factory LiveChatMessage.fromMap(Map<String, dynamic> map) {
     return LiveChatMessage(
-      id: (map['id'] ?? map['messageId'] ?? map['chatMessageId'] ?? '').toString(),
-      senderId: (map['senderId'] ?? map['fromUserId'] ?? map['sender'] ?? '').toString(),
-      receiverId: (map['receiverId'] ?? map['toUserId'] ?? map['receiver'] ?? '').toString(),
-      body: (map['body'] ?? map['text'] ?? map['message'] ?? map['content'] ?? '').toString(),
-      createdAt: DateTime.tryParse(
-            (map['createdAt'] ?? map['timestamp'] ?? map['sentAt'] ?? map['time'] ?? '').toString(),
+      id:
+          (map['id'] ?? map['messageId'] ?? map['chatMessageId'] ?? '')
+              .toString(),
+      senderId:
+          (map['senderId'] ?? map['fromUserId'] ?? map['sender'] ?? '')
+              .toString(),
+      receiverId:
+          (map['receiverId'] ?? map['toUserId'] ?? map['receiver'] ?? '')
+              .toString(),
+      body:
+          (map['body'] ?? map['text'] ?? map['message'] ?? map['content'] ?? '')
+              .toString(),
+      createdAt:
+          DateTime.tryParse(
+            (map['createdAt'] ??
+                    map['timestamp'] ??
+                    map['sentAt'] ??
+                    map['time'] ??
+                    '')
+                .toString(),
           ) ??
           DateTime.now(),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'senderId': senderId,
-        'receiverId': receiverId,
-        'body': body,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'senderId': senderId,
+    'receiverId': receiverId,
+    'body': body,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }
 
 /// Backwards compatibility: previous code referenced `ChatMessage` with `text`.
@@ -67,12 +81,12 @@ class ChatMessage {
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'senderId': senderId,
-        'receiverId': receiverId,
-        'text': text,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'senderId': senderId,
+    'receiverId': receiverId,
+    'text': text,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }
 
 class ChatPartner {
@@ -92,7 +106,8 @@ class ChatPartner {
     return ChatPartner(
       id: (map['id'] ?? map['userId'] ?? '').toString(),
       displayName: (map['displayName'] ?? map['name'] ?? '').toString(),
-      contact: (map['phone'] ?? map['email'] ?? map['contact'] ?? '').toString(),
+      contact:
+          (map['phone'] ?? map['email'] ?? map['contact'] ?? '').toString(),
       isOnline: (map['isOnline'] ?? map['online'] ?? false) == true,
     );
   }

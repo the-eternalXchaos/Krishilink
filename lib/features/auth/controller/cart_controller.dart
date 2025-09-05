@@ -22,7 +22,8 @@ class CartController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchCartItems();
+    // Defer cart items loading to avoid setState during build
+    Future.delayed(Duration.zero, () => fetchCartItems());
   }
 
   Future<void> fetchCartItems() async {

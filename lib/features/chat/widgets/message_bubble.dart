@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../models/message.dart';
+import 'package:get/get.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -200,7 +201,7 @@ class MessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  message.mediaFileName ?? 'Document',
+                  message.mediaFileName ?? 'document'.tr,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -241,7 +242,7 @@ class MessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Voice Message',
+                  'voice_message'.tr,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -351,7 +352,9 @@ class MessageBubble extends StatelessWidget {
       style: TextStyle(
         fontSize: 11,
         color:
-                message.isFromMe ? Colors.white.withValues(alpha: 0.7) : Colors.grey[600],
+            message.isFromMe
+                ? Colors.white.withValues(alpha: 0.7)
+                : Colors.grey[600],
       ),
     );
   }

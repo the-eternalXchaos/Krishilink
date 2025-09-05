@@ -1,5 +1,6 @@
 // lib/features/farmer/screens/farmer_chats_screen.dart
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:krishi_link/features/chat/live_chat/live_chat_api_service.dart';
@@ -8,7 +9,6 @@ import 'package:krishi_link/features/chat/live_chat/chat_services.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/services/api_services/api_service.dart';
-import 'package:flutter/services.dart';
 import 'package:krishi_link/services/token_service.dart';
 
 class FarmerChatScreen extends StatefulWidget {
@@ -29,16 +29,14 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   late final AuthController _auth;
   bool isLive = false;
   bool isConnecting = false;
-  bool showLogs = false;
   List<Map<String, dynamic>> customers = [];
-  String? diagnosticsResult;
-  String? _tokenSummary; // displayed in diagnosticsResult panel
-  bool _showAdvanced = false;
+  String? statusMessage;
+  StreamSubscription<Map<String, dynamic>>? _msgSub; // live inbox listener
 
   @override
   void initState() {
     super.initState();
-    // Use the central ApiService's Dio so auth interceptors attach the JWT.
+    // Use the central ApiService's Dio so auth interceptors
     final apiService =
         Get.isRegistered<ApiService>()
             ? Get.find<ApiService>()
@@ -52,41 +50,109 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   }
 
   Future<void> _load() async {
-    isLive =
-        widget.productId.isEmpty
-            ? false
-            : await _api.isFarmerLive(widget.productId);
-    final partners = await _api.getMyCustomersForChat();
-    customers =
-        partners
-            .map(
-              (p) => {'id': p.id, 'name': p.displayName, 'contact': p.contact},
-            )
-            .toList();
-    if (mounted) setState(() {});
+    try {
+      isLive =
+          widget.productId.isEmpty
+              ? false
+              : await _api.isFarmerLive(widget.productId);
+      final partners = await _api.getMyCustomersForChat();
+      customers =
+          partners
+              .map(
+                (p) => {
+                  'id': p.id,
+                  'name': p.displayName,
+                  'contact': p.contact,
+                },
+              )
+              .toList();
+
+      // Log status to debug console
+      debugPrint(
+        '📱 Farmer Chat Screen loaded - Live: $isLive, Customers: ${customers.length}',
+      );
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('❌ Error loading farmer chat data: $e');
+      setState(() {
+        statusMessage = 'Error loading chat data';
+      });
+    }
+  }
+
+  void _startInboxListener() {
+    if (_msgSub != null) return; // already listening
+    _msgSub = ChatRealtimeService.I.messages.listen((raw) {
+      try {
+        if (raw['system'] == true) return; // ignore system messages
+        final senderId = (raw['senderId'] as String?)?.trim();
+        final senderName = ((raw['senderName'] as String?) ?? '').trim();
+        if (senderId == null || senderId.isEmpty) return;
+        final myId = _auth.userData?.id;
+        if (senderId == myId) return; // ignore self
+
+        final idx = customers.indexWhere((c) => c['id'] == senderId);
+        if (idx == -1) {
+          if (!mounted) return;
+          setState(() {
+            customers.insert(0, {
+              'id': senderId,
+              'name': senderName.isNotEmpty ? senderName : 'Customer',
+              'contact': '',
+            });
+          });
+        } else {
+          if (!mounted) return;
+          setState(() {
+            final entry = customers.removeAt(idx);
+            customers.insert(0, entry);
+          });
+        }
+      } catch (_) {}
+    });
   }
 
   Future<void> _connectLive() async {
     if (isConnecting) return;
-    setState(() => isConnecting = true);
+    setState(() {
+      isConnecting = true;
+      statusMessage = 'connecting_to_hub'.tr;
+    });
+
     try {
+      debugPrint('🔐 Starting connection to chat hub...');
+
       // Ensure token available
-      // Ensure fresh token (refresh if expired)
       if (await TokenService.isTokenExpired()) {
+        debugPrint('🔐 Token expired, refreshing...');
         await TokenService.refreshAccessToken();
         await _auth.checkLogin();
       }
+
       var token =
           await TokenService.getAccessToken() ?? _auth.userData?.token ?? '';
-      debugPrint('🔐 Connecting to hub (token length=${token.length})');
+      debugPrint('🔐 Token length: ${token.length}');
+
       if (token.isEmpty) {
-        Get.snackbar('Auth Error', 'No valid token. Login again.');
+        debugPrint('❌ No valid token available');
+        setState(() {
+          statusMessage = 'authentication_error_login_again'.tr;
+          isConnecting = false;
+        });
+        Get.snackbar(
+          'auth_error'.tr,
+          'login_again'.tr,
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red[700],
+        );
         return;
       }
 
+      // Try connecting with capitalized path first
+      debugPrint('🌐 Attempting connection to ${ApiConstants.baseUrl}/ChatHub');
       var ok = await ChatRealtimeService.I.connect(
         tokenProvider: () async {
-          // On each attempt re-check & refresh if needed
           if (await TokenService.isTokenExpired()) {
             await TokenService.refreshAccessToken();
             await _auth.checkLogin();
@@ -95,9 +161,14 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
               _auth.userData?.token ??
               '';
         },
-        hubUrl: '${ApiConstants.baseUrl}/ChatHub', // try capitalized path first
+        hubUrl: '${ApiConstants.baseUrl}/ChatHub',
       );
+
+      // Try lowercase path if first attempt fails
       if (!ok) {
+        debugPrint(
+          '🌐 Retrying with lowercase path: ${ApiConstants.baseUrl}/chatHub',
+        );
         ok = await ChatRealtimeService.I.connect(
           tokenProvider: () async {
             if (await TokenService.isTokenExpired()) {
@@ -111,47 +182,101 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
           hubUrl: '${ApiConstants.baseUrl}/chatHub',
         );
       }
+
       if (!ok) {
         final err = ChatRealtimeService.I.lastError;
-        Get.snackbar(
-          'Connection Failed',
-          'Could not connect to hub${err != null ? ': $err' : ''}',
-          duration: const Duration(seconds: 6),
-        );
+        debugPrint('❌ Connection failed: $err');
 
-        setState(() => showLogs = true);
+        // Log detailed diagnostics to console
+        final diagnostics = await _runDiagnostics();
+        debugPrint('🔧 Connection diagnostics: $diagnostics');
+
+        setState(() {
+          statusMessage = 'failed_to_connect_to_hub'.tr;
+          isConnecting = false;
+        });
+
+        Get.snackbar(
+          'connection_failed'.tr,
+          'could_not_connect_to_hub'.tr,
+          backgroundColor: Colors.red.withOpacity(0.1),
+          colorText: Colors.red[700],
+          duration: const Duration(seconds: 4),
+        );
         return;
       }
-      if (mounted) setState(() => isLive = true);
+
+      debugPrint('✅ Successfully connected to chat hub');
+      if (mounted) {
+        setState(() {
+          isLive = true;
+          statusMessage = 'connected_to_hub'.tr;
+          isConnecting = false;
+        });
+      }
+      _startInboxListener();
       await _load();
-      Get.snackbar('Live', 'You are now live and can receive messages');
-    } finally {
-      if (mounted) setState(() => isConnecting = false);
+      Get.snackbar(
+        'Live',
+        'You are now live and can receive messages',
+        backgroundColor: Colors.green.withOpacity(0.1),
+        colorText: Colors.green[700],
+      );
+
+      // Clear success message after a delay
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            statusMessage = null;
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ Exception during connection: $e');
+      setState(() {
+        statusMessage = 'Connection error occurred';
+        isConnecting = false;
+      });
+      Get.snackbar(
+        'Error',
+        'An error occurred while connecting',
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red[700],
+      );
     }
   }
 
-  Future<void> _runDiagnostics() async {
-    final token = _auth.userData?.token ?? '';
-    final tokenPreview =
-        token.length > 16
-            ? '${token.substring(0, 8)}...${token.substring(token.length - 8)}'
-            : token;
-    final probe = await ChatRealtimeService.I.negotiateProbe(
-      '${ApiConstants.baseUrl}/ChatHub',
-    );
-    setState(() {
-      diagnosticsResult =
-          'Token len=${token.length} preview=$tokenPreview\nProbe: ${probe ?? 'failed'}\nLastErr: ${ChatRealtimeService.I.lastError}';
-      showLogs = true;
-    });
-    Get.snackbar(
-      'Diagnostics',
-      'Check debug panel for details',
-      duration: const Duration(seconds: 4),
-    );
+  // Run diagnostics silently in background and return summary
+  Future<String> _runDiagnostics() async {
+    try {
+      final token = _auth.userData?.token ?? '';
+      final tokenPreview =
+          token.length > 16
+              ? '${token.substring(0, 8)}...${token.substring(token.length - 8)}'
+              : token;
+      final probe = await ChatRealtimeService.I.negotiateProbe(
+        '${ApiConstants.baseUrl}/ChatHub',
+      );
+
+      // Log all diagnostics to console
+      debugPrint('🔧 === DIAGNOSTICS ===');
+      debugPrint('🔧 Token length: ${token.length}');
+      debugPrint('🔧 Token preview: $tokenPreview');
+      debugPrint('🔧 Probe result: ${probe ?? 'failed'}');
+      debugPrint('🔧 Last error: ${ChatRealtimeService.I.lastError}');
+      debugPrint('🔧 Environment: ${ChatRealtimeService.I.envSummary()}');
+      debugPrint('🔧 Connection snapshot: ${ChatRealtimeService.I.snapshot()}');
+      debugPrint('🔧 === END DIAGNOSTICS ===');
+
+      return 'Token: ${token.length} chars, Probe: ${probe ?? 'failed'}';
+    } catch (e) {
+      debugPrint('🔧 Diagnostics failed: $e');
+      return 'Diagnostics failed: $e';
+    }
   }
 
   void _openChat() {
+    debugPrint('💬 Opening general chat for product: ${widget.productName}');
     Get.to(
       () => LiveChatScreen(
         productId: widget.productId,
@@ -162,508 +287,195 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
     )?.then((_) => _load());
   }
 
+  void _openCustomerChat(Map<String, dynamic> customer) {
+    debugPrint('💬 Opening chat with customer: ${customer['name']}');
+    Get.to(
+      () => LiveChatScreen(
+        productId: widget.productId,
+        productName: widget.productName,
+        farmerName: customer['name'],
+        emailOrPhone: customer['contact'],
+        receiverUserId: customer['id'],
+      ),
+    )?.then((_) => _load());
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Chats (${widget.productName.isEmpty ? 'My Customers' : widget.productName})',
+          'Chats${widget.productName.isNotEmpty ? ' - ${widget.productName}' : ''}',
+          overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          IconButton(
-            tooltip: 'Run diagnostics',
-            icon: const Icon(Icons.health_and_safety_outlined),
-            onPressed: _runDiagnostics,
-          ),
-          TextButton.icon(
-            onPressed:
-                isLive || isConnecting
-                    ? (isLive ? _openChat : null)
-                    : _connectLive,
-            icon:
-                isConnecting
-                    ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : const Icon(Icons.wifi_tethering, size: 18),
-            label: Text(
-              isLive
-                  ? 'Open Chat'
-                  : isConnecting
-                  ? 'Connecting...'
-                  : 'Go Live',
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: ElevatedButton.icon(
+              onPressed:
+                  isLive || isConnecting
+                      ? (isLive ? _openChat : null)
+                      : _connectLive,
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isLive
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.secondary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              icon:
+                  isConnecting
+                      ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Icon(
+                        isLive ? Icons.chat : Icons.wifi_tethering,
+                        size: 18,
+                      ),
+              label: Text(
+                isLive
+                    ? 'open_chat'.tr
+                    : isConnecting
+                    ? 'connecting_to_hub'.tr
+                    : 'go_live'.tr,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Debug toggle
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              tooltip: 'Toggle debug logs',
-              icon: Icon(
-                showLogs ? Icons.bug_report : Icons.bug_report_outlined,
-              ),
-              onPressed: () => setState(() => showLogs = !showLogs),
-            ),
-          ),
-          if (isLive)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.circle, size: 10, color: Colors.green),
-                  const SizedBox(width: 6),
-                  Text('You are live', style: theme.textTheme.bodySmall),
-                ],
-              ),
-            ),
-          if (!isLive && isConnecting)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Connecting to hub...',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          if (showLogs)
+          // Status indicator
+          if (isLive || isConnecting || statusMessage != null)
             Container(
-              height: 140,
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              padding: const EdgeInsets.all(8),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Scrollbar(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            final snap = ChatRealtimeService.I.snapshot();
-                            setState(() {
-                              diagnosticsResult = 'SNAP: ' + snap.toString();
-                            });
-                          },
-                          child: const Text(
-                            'Snapshot',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            final env = ChatRealtimeService.I.envSummary();
-                            setState(() {
-                              diagnosticsResult = 'ENV: ' + env.toString();
-                            });
-                          },
-                          child: const Text(
-                            'Env',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(
-                                text: ChatRealtimeService.I.exportLogs(),
-                              ),
-                            );
-                            Get.snackbar(
-                              'Logs',
-                              'Copied to clipboard',
-                              snackPosition: SnackPosition.BOTTOM,
-                              duration: const Duration(seconds: 2),
-                            );
-                          },
-                          child: const Text(
-                            'Copy Logs',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            ChatRealtimeService.I.clearLogs();
-                            setState(() {});
-                          },
-                          child: const Text(
-                            'Clear Logs',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final list = await ChatRealtimeService.I.fullProbe(
-                              hubUrl: '${ApiConstants.baseUrl}/chatHub',
-                              tokenProvider:
-                                  () async =>
-                                      await TokenService.getAccessToken() ?? '',
-                            );
-                            setState(() {
-                              diagnosticsResult =
-                                  'FullProbe:\n' + list.join('\n');
-                            });
-                          },
-                          child: const Text(
-                            'FullProbe',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            // Quick manual diagnostics without full connection attempt
-                            debugPrint('🔧 Manual Quick Diagnostics Started');
-                            try {
-                              final hubUrl = '${ApiConstants.baseUrl}/chatHub';
-                              final token =
-                                  await TokenService.getAccessToken() ?? '';
-
-                              debugPrint('🔧 Testing hub URL: $hubUrl');
-                              debugPrint('🔧 Token length: ${token.length}');
-                              debugPrint(
-                                '🔧 Token summary: ${ChatRealtimeService.I.summarizeToken(token)}',
-                              );
-
-                              // Test basic connectivity
-                              final env = ChatRealtimeService.I.envSummary();
-                              debugPrint('🔧 Environment: $env');
-
-                              // Test negotiate endpoint
-                              final probe = await ChatRealtimeService.I
-                                  .negotiateProbe(hubUrl);
-                              debugPrint(
-                                '🔧 Negotiate probe: ${probe ?? "failed"}',
-                              );
-
-                              // Test auth negotiate
-                              final authProbe = await ChatRealtimeService.I
-                                  .negotiateAuthProbe(
-                                    hubUrl: hubUrl,
-                                    tokenProvider: () async => token,
-                                  );
-                              debugPrint(
-                                '🔧 Auth negotiate probe: ${authProbe ?? "failed"}',
-                              );
-
-                              debugPrint(
-                                '🔧 Manual Quick Diagnostics Completed',
-                              );
-                            } catch (e) {
-                              debugPrint('🔧 Manual diagnostics failed: $e');
-                            }
-                          },
-                          child: const Text(
-                            'QuickTest',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            try {
-                              debugPrint(
-                                '⚡ Starting FastTest - Short timeout connection test',
-                              );
-                              final result = await ChatRealtimeService.I.connect(
-                                tokenProvider:
-                                    () async =>
-                                        await TokenService.getAccessToken() ??
-                                        '',
-                                serverTimeoutMs: 10000, // Only 10 seconds
-                                keepAliveIntervalMs: 5000, // 5 seconds
-                                verbose: true,
-                                logFinalEnvOnFail: true,
-                                preflightDiagnostics:
-                                    false, // Skip preflight for speed
-                              );
-                              debugPrint('⚡ FastTest result: $result');
-                              if (result) {
-                                debugPrint(
-                                  '⚡ FastTest SUCCESS - Connection works with short timeout!',
-                                );
-                                await ChatRealtimeService.I.disconnect();
-                              } else {
-                                debugPrint(
-                                  '⚡ FastTest FAILED - Even short timeout fails',
-                                );
-                              }
-                            } catch (e) {
-                              debugPrint('⚡ FastTest ERROR: $e');
-                            }
-                          },
-                          child: const Text(
-                            'FastTest',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            try {
-                              debugPrint(
-                                '📺 Starting SSE Test - Server-Sent Events connection test',
-                              );
-                              final result = await ChatRealtimeService.I
-                                  .connectWithServerSentEvents(
-                                    tokenProvider:
-                                        () async =>
-                                            await TokenService.getAccessToken() ??
-                                            '',
-                                    serverTimeoutMs: 15000, // 15 seconds
-                                    keepAliveIntervalMs: 10000, // 10 seconds
-                                  );
-                              debugPrint('📺 SSE Test result: $result');
-                              if (result) {
-                                debugPrint(
-                                  '📺 SSE Test SUCCESS - Server-Sent Events works!',
-                                );
-                                await ChatRealtimeService.I.disconnect();
-                              } else {
-                                debugPrint(
-                                  '📺 SSE Test FAILED - Server-Sent Events also fails',
-                                );
-                              }
-                            } catch (e) {
-                              debugPrint('📺 SSE Test ERROR: $e');
-                            }
-                          },
-                          child: const Text(
-                            'SSE Test',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            try {
-                              debugPrint('🏥 Starting Server Health Check');
-                              final health =
-                                  await ChatRealtimeService.I
-                                      .serverHealthCheck();
-                              debugPrint('🏥 Health Check Results:');
-                              health.forEach((key, value) {
-                                debugPrint('🏥   $key: $value');
-                              });
-
-                              // Show if server APIs are working
-                              final chatAPI =
-                                  health['chatAPI']?.toString() ?? 'unknown';
-                              if (chatAPI.contains('500')) {
-                                debugPrint(
-                                  '⚠️  WARNING: Chat API returning 500 errors - server issue detected',
-                                );
-                              } else if (chatAPI.contains('200')) {
-                                debugPrint('✅ Chat API appears healthy');
-                              }
-                            } catch (e) {
-                              debugPrint('🏥 Health Check ERROR: $e');
-                            }
-                          },
-                          child: const Text(
-                            'Health',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            try {
-                              debugPrint('🔐 Starting Token Debug Check');
-                              final tokenDebug = await ChatRealtimeService.I.tokenDebugCheck();
-                              debugPrint('🔐 Token Debug Results:');
-                              tokenDebug.forEach((key, value) {
-                                debugPrint('🔐   $key: $value');
-                              });
-                              
-                              // Highlight critical issues
-                              if (tokenDebug['TokenService.getAccessToken']?.toString().contains('NULL') == true) {
-                                debugPrint('🔴 CRITICAL: No access token found!');
-                              }
-                              if (tokenDebug['tokenExpired']?.toString().contains('EXPIRED') == true) {
-                                debugPrint('🔴 CRITICAL: Token is expired!');
-                              }
-                              if (tokenDebug['tokensMatch']?.toString().contains('NO') == true) {
-                                debugPrint('🔴 CRITICAL: Token mismatch between methods!');
-                              }
-                            } catch (e) {
-                              debugPrint('🔐 Token Debug ERROR: $e');
-                            }
-                          },
-                          child: const Text('Token', style: TextStyle(fontSize: 11)),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final probe = await ChatRealtimeService.I
-                                .negotiateProbe(
-                                  '${ApiConstants.baseUrl}/chatHub',
-                                );
-                            setState(() {
-                              diagnosticsResult =
-                                  'Probe: ' + (probe ?? 'failed');
-                            });
-                          },
-                          child: const Text(
-                            'Probe',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final authProbe = await ChatRealtimeService.I
-                                .negotiateAuthProbe(
-                                  hubUrl: '${ApiConstants.baseUrl}/chatHub',
-                                  tokenProvider:
-                                      () async =>
-                                          await TokenService.getAccessToken() ??
-                                          '',
-                                );
-                            setState(() {
-                              diagnosticsResult =
-                                  'AuthProbe: ' + (authProbe ?? 'failed');
-                            });
-                          },
-                          child: const Text(
-                            'AuthProbe',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            final tok = _auth.userData?.token ?? '';
-                            if (tok.isNotEmpty) {
-                              final summary = ChatRealtimeService.I
-                                  .summarizeToken(tok);
-                              setState(() {
-                                _tokenSummary = summary;
-                                diagnosticsResult =
-                                    (diagnosticsResult ?? '') +
-                                    '\nToken: ' +
-                                    summary;
-                              });
-                            }
-                          },
-                          child: const Text(
-                            'Token',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            final cid = ChatRealtimeService.I.connectionId;
-                            if (cid != null) {
-                              Clipboard.setData(ClipboardData(text: cid));
-                              setState(() {
-                                diagnosticsResult =
-                                    (diagnosticsResult ?? '') +
-                                    '\nConnId: ' +
-                                    cid;
-                              });
-                              Get.snackbar(
-                                'ConnId',
-                                'Copied $cid',
-                                snackPosition: SnackPosition.BOTTOM,
-                                duration: const Duration(seconds: 2),
-                              );
-                            } else {
-                              setState(() {
-                                diagnosticsResult =
-                                    (diagnosticsResult ?? '') +
-                                    '\nConnId: (null)';
-                              });
-                            }
-                          },
-                          child: const Text(
-                            'ConnId',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed:
-                              () => setState(
-                                () => _showAdvanced = !_showAdvanced,
-                              ),
-                          child: Text(
-                            _showAdvanced ? 'Hide +' : 'Show +',
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 8),
-                    Expanded(
-                      child: ListView(
-                        reverse: true,
-                        children:
-                            ChatRealtimeService.I.logs
-                                .take(400)
-                                .map(
-                                  (l) => Text(
-                                    l,
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                    ),
-                  ],
+                color:
+                    isLive
+                        ? Colors.green.withOpacity(0.1)
+                        : isConnecting
+                        ? Colors.blue.withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
+                border: Border(
+                  bottom: BorderSide(color: theme.dividerColor, width: 0.5),
                 ),
               ),
-            ),
-          if (diagnosticsResult != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text(
-                [
-                  diagnosticsResult,
-                  if (_tokenSummary != null) 'Claims: $_tokenSummary',
-                ].whereType<String>().join('\n'),
-                style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isLive)
+                    const Icon(Icons.circle, size: 12, color: Colors.green)
+                  else if (isConnecting)
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Icons.info_outline,
+                      size: 14,
+                      color: Colors.orange[700],
+                    ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      statusMessage ??
+                          (isLive
+                              ? 'You are live and ready to receive messages'
+                              : isConnecting
+                              ? 'Connecting to chat hub...'
+                              : ''),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            isLive
+                                ? Colors.green[700]
+                                : isConnecting
+                                ? Colors.blue[700]
+                                : Colors.orange[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             ),
-          const Divider(height: 0),
+
+          // Customer list
           Expanded(
             child:
                 customers.isEmpty
-                    ? const Center(child: Text('No customers yet'))
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: theme.colorScheme.onSurface.withOpacity(0.3),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'no_customers_yet'.tr,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            isLive
+                                ? 'youre_live_message'.tr
+                                : 'go_live_to_receive'.tr,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.5,
+                              ),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
                     : ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: customers.length,
                       separatorBuilder: (_, __) => const Divider(height: 0),
                       itemBuilder: (_, i) {
-                        final c = customers[i];
+                        final customer = customers[i];
                         return ListTile(
-                          leading: const Icon(Icons.person),
-                          title: Text(c['name']),
-                          subtitle: Text(c['contact']),
-                          onTap: () {
-                            // Open specific thread with this buyer
-                            Get.to(
-                              () => LiveChatScreen(
-                                productId: widget.productId,
-                                productName: widget.productName,
-                                farmerName: c['name'],
-                                emailOrPhone: c['contact'],
-                                receiverUserId: c['id'],
-                              ),
-                            )?.then((_) => _load());
-                          },
+                          leading: CircleAvatar(
+                            backgroundColor: theme.colorScheme.primary
+                                .withOpacity(0.1),
+                            child: Icon(
+                              Icons.person,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          title: Text(
+                            customer['name'],
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          subtitle: Text(customer['contact']),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () => _openCustomerChat(customer),
                         );
                       },
                     ),
@@ -671,5 +483,11 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _msgSub?.cancel();
+    super.dispose();
   }
 }

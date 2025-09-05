@@ -15,10 +15,8 @@ class LiveChatApiService {
     try {
       final res = await _dio.get(
         '${ApiConstants.getFarmerIdByProductIdEndpoint}/$productId',
-        options: Options(
-          headers: {'accept': '*/*'},
-          extra: {'guestAccess': true},
-        ),
+        // Use default interceptors to attach auth; do not force guest access here
+        options: Options(headers: {'accept': '*/*'}),
       );
       if (res.statusCode == 200) {
         final data = res.data;

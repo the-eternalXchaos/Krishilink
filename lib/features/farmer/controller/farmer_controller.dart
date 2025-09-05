@@ -84,7 +84,7 @@ class FarmerController extends GetxController {
       errorMessage.value = 'failed_to_fetch_tutorials'.trParams({
         'error': e.toString(),
       });
-      PopupService.error(errorMessage.value);
+      // PopupService.error(errorMessage.value); TODO REmove it later after backend it ready
     } finally {
       await _updateLoading(false);
     }

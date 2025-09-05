@@ -35,8 +35,8 @@ class ApiService {
     : _dio = Dio(
         BaseOptions(
           baseUrl: ApiConstants.baseUrl,
-          connectTimeout: const Duration(seconds: 40),
-          receiveTimeout: const Duration(seconds: 40),
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
           headers: {'Content-Type': 'application/json'},
         ),
       ) {
@@ -412,7 +412,6 @@ class ApiService {
       throw _parseDioError(e);
     }
   }
-
 
   // --- HEALTH CHECK LOGIC ---
   Future<bool> checkHealth() async {

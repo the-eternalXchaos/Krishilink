@@ -273,11 +273,11 @@ class WeatherDetailsPage extends StatelessWidget {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'just_now'.tr;
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return 'minutes_ago'.trParams({'m': difference.inMinutes.toString()});
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return 'hours_ago'.trParams({'h': difference.inHours.toString()});
     } else {
       return '${dateTime.day}/${dateTime.month} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
     }

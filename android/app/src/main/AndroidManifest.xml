@@ -44,6 +44,12 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBUm77bV0q26esRHzfI5zdYW7xRe3F2SSg" />
+        
+        <!-- Facebook App ID -->
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+            
     </application>
 
     <!-- For ProcessTextPlugin support -->

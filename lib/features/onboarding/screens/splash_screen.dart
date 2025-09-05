@@ -228,7 +228,7 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Connecting Farmers to Success',
+                                'connecting_farmers_to_success'.tr,
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.white.withValues(alpha: 0.9),

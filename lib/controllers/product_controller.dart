@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/controllers/filter_controller.dart';
 import 'package:krishi_link/core/components/material_ui/popup.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
@@ -61,7 +62,8 @@ class ProductController extends GetxController {
     //   filterController = Get.find<FilterController>();
     // });
 
-    initializeData();
+    // Defer data initialization to avoid setState during build
+    Future.delayed(Duration.zero, () => initializeData());
     // ever(filterController.selectedStatus, (_) => updateFilteredProducts());  //TODO: Uncomment this when the filter is implemented
   }
 
@@ -205,10 +207,10 @@ class ProductController extends GetxController {
             (body['data'] as List).map((item) => Product.fromJson(item)),
           );
         } else {
-          relatedErrorMessage.value = 'No related products found';
+          relatedErrorMessage.value = 'no_related_products_found'.tr;
         }
       } else {
-        relatedErrorMessage.value = 'Failed to load related products';
+        relatedErrorMessage.value = 'failed_to_load_related_products'.tr;
       }
     } catch (e) {
       relatedErrorMessage.value = e.toString();
@@ -495,8 +497,10 @@ class ProductController extends GetxController {
       // Optimistic update
       reviewsModel.insert(0, review);
 
-      PopupService.success(
-        'review_added_successfully_wait_for_admin_approval'.tr,
+      PopupService.showSnackbar(
+        title: 'success'.tr,
+        type: PopupType.success,
+        message: 'review_added_successfully'.tr,
       );
     } catch (e) {
       String errorMsg = '';

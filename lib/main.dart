@@ -25,6 +25,7 @@ import 'package:krishi_link/features/auth/screens/register_screen.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
 import 'package:krishi_link/features/buyer/screens/payment_history_screen.dart';
+import 'package:krishi_link/features/buyer/screens/payment_webview_screen.dart';
 import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
 import 'package:krishi_link/features/disease_detection/screens/disease_detection_screen.dart';
 import 'package:krishi_link/features/farmer/screens/farmer_home_page.dart';
@@ -94,61 +95,62 @@ class AuthMiddleware extends GetMiddleware {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize GetStorage
-  await GetStorage.init();
-  // Initialize deviceId
 
-  // initialized the hive
-  await Hive.initFlutter();
+  // Initialize core services in parallel where possible
+  await Future.wait([GetStorage.init(), Hive.initFlutter()]);
 
+  // Initialize device service
   final deviceService = DeviceService();
-  final deviceId = await deviceService.getDeviceId();
   final prefs = await SharedPreferences.getInstance();
+
+  // Initialize device ID only if not exists
   if (prefs.getString('deviceId') == null) {
+    final deviceId = await deviceService.getDeviceId();
     await prefs.setString('deviceId', deviceId);
     debugPrint('[Main] Initialized deviceId: $deviceId');
   }
-  // final prefs = await SharedPreferences.getInstance();
-  final expiration = prefs.getString('expiration');
-  String initialRoute = '/welcome'; // Default to welcome page
-  // Initialize settings first to ensure theme and locale are ready
-  // Load saved language before app starts
-  if (expiration != null) {
-    final expiryDate = DateTime.parse(expiration);
-    if (DateTime.now().isAfter(expiryDate)) {
-      await prefs.clear(); // Clear all stored data
-      initialRoute = '/login';
-    } else {
-      final role = prefs.getString('role')?.toLowerCase() ?? '';
-      switch (role) {
-        case 'admin':
-          initialRoute = '/admin-dashboard';
-          break;
-        case 'farmer':
-          initialRoute = '/farmer-dashboard';
-          break;
-        case 'buyer':
-          initialRoute = '/buyer-dashboard';
-          break;
-        default:
-          debugPrint('[AUTH] Unknown role detected. Redirecting to welcome.');
 
-          initialRoute = '/welcome';
-          break;
-      }
-    }
-  }
-  // Initialize core controllers
-  // Get.put(AuthController());
-  Get.lazyPut(() => AuthController());
-  Get.lazyPut(() => ProductBinding());
-  Get.lazyPut(() => AdminBinding());
-  Get.lazyPut(() => SettingsController());
-  // Get.put(ProductBinding());
-  Get.put(AdminBinding());
-  Get.put(SettingsController());
+  // Determine initial route
+  final String initialRoute = await _determineInitialRoute(prefs);
+
+  // Initialize controllers lazily to improve startup performance
+  _initializeControllers();
 
   runApp(MyApp(initialRoute: initialRoute));
+}
+
+Future<String> _determineInitialRoute(SharedPreferences prefs) async {
+  final expiration = prefs.getString('expiration');
+
+  if (expiration == null) {
+    return '/welcome';
+  }
+
+  final expiryDate = DateTime.parse(expiration);
+  if (DateTime.now().isAfter(expiryDate)) {
+    await prefs.clear();
+    return '/login';
+  }
+
+  final role = prefs.getString('role')?.toLowerCase() ?? '';
+  return switch (role) {
+    'admin' => '/admin-dashboard',
+    'farmer' => '/farmer-dashboard',
+    'buyer' => '/buyer-dashboard',
+    _ => '/welcome',
+  };
+}
+
+void _initializeControllers() {
+  // Use lazy initialization to reduce startup time
+  Get.lazyPut(() => AuthController(), fenix: true);
+  Get.lazyPut(() => ProductBinding(), fenix: true);
+  Get.lazyPut(() => AdminBinding(), fenix: true);
+  Get.lazyPut(() => SettingsController(), fenix: true);
+  Get.put(
+    LanguageController(),
+    permanent: true,
+  ); // Language controller needs to be permanent
 }
 
 class MyApp extends StatelessWidget {
@@ -282,6 +284,24 @@ class MyApp extends StatelessWidget {
           name: '/payment-history',
           page: () => const PaymentHistoryScreen(),
           binding: ProductBinding(),
+        ),
+        GetPage(
+          name: '/payment-webview',
+          page: () {
+            final args = Get.arguments as Map<String, dynamic>?;
+            final paymentUrl = args?['paymentUrl'] as String?;
+            final pidx = args?['pidx'] as String?;
+            if (paymentUrl == null || pidx == null) {
+              // If arguments missing, pop back safely
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Get.back();
+              });
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return PaymentWebViewScreen(paymentUrl: paymentUrl, pidx: pidx);
+          },
         ),
         // GetPage(
         //   name: '/otp-verify',

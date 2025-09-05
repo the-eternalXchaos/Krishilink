@@ -17,8 +17,6 @@ import 'package:krishi_link/features/weather/weather_widget.dart';
 import 'package:krishi_link/widgets/custom_app_bar.dart';
 import 'package:krishi_link/widgets/notification/notification_controller.dart';
 
-// Placeholder for the new message screen (replace with your actual screen)
-
 class FarmerHomePage extends StatefulWidget {
   const FarmerHomePage({super.key});
 
@@ -95,51 +93,56 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             tooltip: 'chat_ai_tooltip'.tr,
             child: const Icon(Icons.smart_toy, color: Colors.white),
           ),
-          FloatingActionButton(
-            heroTag: 'farmer_go_live',
-            onPressed: () {
-              final user = authController.currentUser.value;
-              if (user != null) {
-                // use the dignal r and go to the chat screen for the farmer where they receive the emessage fron the buyer for their prodcut , in that  pga emak aa button for the
-                //// for the go live option so that th pressing it will make the uesr know the farmer
-                Get.to(() => FarmerChatScreen(productId: '', productName: 'My Customers'));
-              } else {
-                PopupService.error('User not logged in');
-              }
+          // FloatingActionButton(
+          //   heroTag: 'farmer_go_live',
+          //   onPressed: () {
+          //     final user = authController.currentUser.value;
+          //     if (user != null) {
+          //       // use the dignal r and go to the chat screen for the farmer where they receive the emessage fron the buyer for their prodcut , in that  pga emak aa button for the
+          //       //// for the go live option so that th pressing it will make the uesr know the farmer
+          //       Get.to(
+          //         () => FarmerChatScreen(
+          //           productId: '',
+          //           productName: 'My Customers',
+          //         ),
+          //       );
+          //     } else {
+          //       PopupService.error('User not logged in');
+          //     }
 
-              /// working flow for the farmer live chat ,
-              /// / baseurl/chathub it is hide becaseu for the signar r
-              ///   it helps to conec to the chat hub it is the api of the singal r , for the suatheroiszed usedr so send the toke ,m
-              ///  farmer pressed the  go live,  ,=> chathub
-              ///  it willupdate the database and say the farmer is live ,
-              ///  then buyer see the farmer is online buyer will press chat with farmer ,
-              ///  then it will go to the chat hub and it will send the message to the farmer
-              ///  / ofr the buyer it is alos need the / chathub  .
-              ///  then it will go to the chat hub and it will send the message to the farmer
-              ///  then after the buyer sends a message, it will be received by the farmer after they invoke the api get farmer id by product id ,{prodcut id }
-              /// then it will go to the chat hub and it will send the message to the farmer
-              /// then the farmer will receive the message and they can reply to the buyer
-              ///  only if the buyer use that getFarmerIdByProductId method then only the buyer can chat with the farmer
-              ///   then the farmer will receive the message and they can reply to the buyer . then theri is the api getmycustomerforchat becaue there are many customers, it
-              ///
-              ///
-              ///  buyer get the farmer id , and for the farmer too ..
-              ///  farmer get the buyer id
-              ///  only after the farmer press that user then the gethcathistory api load , .
-              ///  for the buyer it load fasly becasue it is  talking t o the farme one at the time   {get hcat history is sue for both  , farmer will add the buyer id , and buyer will add the farmer id }
-              ///
-              ///
-              ///
-              /// /// hub -> sendMessage this  mehtod i sin the backend  ,  to send the message or chat , toke for th authorization
-            },
-            backgroundColor: const Color.fromARGB(255, 231, 228, 236),
-            tooltip: 'farmer go live'.tr,
+          //     /// working flow for the farmer live chat ,
+          //     /// / baseurl/chathub it is hide becaseu for the signar r
+          //     ///   it helps to conec to the chat hub it is the api of the singal r , for the suatheroiszed usedr so send the toke ,m
+          //     ///  farmer pressed the  go live,  ,=> chathub
+          //     ///  it willupdate the database and say the farmer is live ,
+          //     ///  then buyer see the farmer is online buyer will press chat with farmer ,
+          //     ///  then it will go to the chat hub and it will send the message to the farmer
+          //     ///  / ofr the buyer it is alos need the / chathub  .
+          //     ///  then it will go to the chat hub and it will send the message to the farmer
+          //     ///  then after the buyer sends a message, it will be received by the farmer after they invoke the api get farmer id by product id ,{prodcut id }
+          //     /// then it will go to the chat hub and it will send the message to the farmer
+          //     /// then the farmer will receive the message and they can reply to the buyer
+          //     ///  only if the buyer use that getFarmerIdByProductId method then only the buyer can chat with the farmer
+          //     ///   then the farmer will receive the message and they can reply to the buyer . then theri is the api getmycustomerforchat becaue there are many customers, it
+          //     ///
+          //     ///
+          //     ///  buyer get the farmer id , and for the farmer too ..
+          //     ///  farmer get the buyer id
+          //     ///  only after the farmer press that user then the gethcathistory api load , .
+          //     ///  for the buyer it load fasly becasue it is  talking t o the farme one at the time   {get hcat history is sue for both  , farmer will add the buyer id , and buyer will add the farmer id }
+          //     ///
+          //     ///
+          //     ///
+          //     /// /// hub -> sendMessage this  mehtod i sin the backend  ,  to send the message or chat , toke for th authorization
+          //   },
+          //   backgroundColor: const Color.fromARGB(255, 231, 228, 236),
+          //   tooltip: 'farmer go live'.tr,
 
-            child: const Icon(
-              Icons.local_convenience_store_sharp,
-              color: Colors.black,
-            ),
-          ),
+          //   child: const Icon(
+          //     Icons.local_convenience_store_sharp,
+          //     color: Colors.black,
+          //   ),
+          // ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

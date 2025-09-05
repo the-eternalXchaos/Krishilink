@@ -26,7 +26,8 @@ class FilterController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _fetchInitialData();
+    // Defer initial data loading to avoid setState during build
+    Future.delayed(Duration.zero, () => _fetchInitialData());
   }
 
   void searchProducts(String query) {

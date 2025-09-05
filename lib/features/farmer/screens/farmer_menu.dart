@@ -41,7 +41,7 @@ class FarmerMenu extends StatelessWidget {
                 () => Future.delayed(const Duration(milliseconds: 10), () {
                   Get.to(() => BuyerHomePage(isGuest: false));
                 }),
-              ),
+              ),  
               _buildMenuItem(
                 Icons.precision_manufacturing_outlined,
                 'product_management'.tr,
