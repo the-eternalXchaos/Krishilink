@@ -162,7 +162,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
       return FloatingActionButton(
         onPressed: isBusy ? null : _handleAddProduct,
         backgroundColor:
-            isBusy ? theme.primaryColor.withOpacity(0.5) : theme.primaryColor,
+            isBusy
+                ? theme.primaryColor.withValues(alpha: 0.5)
+                : theme.primaryColor,
         tooltip: 'add_product'.tr,
         child:
             isBusy
@@ -195,7 +197,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         color: theme.cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 1),

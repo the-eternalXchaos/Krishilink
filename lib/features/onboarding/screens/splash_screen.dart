@@ -17,6 +17,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _textController;
   late AnimationController _progressController;
   late AnimationController _particleController;
+  bool _isDisposed = false;
 
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
@@ -100,23 +101,36 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 300));
-    _logoController.forward();
+    if (!mounted || _isDisposed) return;
+    try {
+      _logoController.forward();
+    } catch (_) {}
 
     await Future.delayed(const Duration(milliseconds: 800));
-    _textController.forward();
+    if (!mounted || _isDisposed) return;
+    try {
+      _textController.forward();
+    } catch (_) {}
 
     await Future.delayed(const Duration(milliseconds: 500));
-    _progressController.forward();
+    if (!mounted || _isDisposed) return;
+    try {
+      _progressController.forward();
+    } catch (_) {}
   }
 
   Future<void> _initApp() async {
-    await Future.delayed(const Duration(milliseconds: 1000));
-    final authController = Get.put(AuthController());
+    await Future.delayed(
+      const Duration(milliseconds: 2500),
+    ); // Increased delay for better user experience
+    if (!mounted || _isDisposed) return;
+    final authController = Get.find<AuthController>();
     await authController.checkLogin();
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _logoController.dispose();
     _textController.dispose();
     _progressController.dispose();
@@ -164,9 +178,9 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Container(
                               padding: const EdgeInsets.all(32),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.95),
+                                color: Colors.white.withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(24),
-                                 boxShadow: [
+                                boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.15),
                                     blurRadius: 32,
@@ -270,7 +284,9 @@ class _SplashScreenState extends State<SplashScreen>
                                     borderRadius: BorderRadius.circular(2),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.white.withValues(alpha: 0.3),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         blurRadius: 8,
                                         spreadRadius: 1,
                                       ),
@@ -365,7 +381,7 @@ class _SplashScreenState extends State<SplashScreen>
                 borderRadius: BorderRadius.circular(size / 2),
                 boxShadow: [
                   BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     blurRadius: 4,
                     spreadRadius: 1,
                   ),

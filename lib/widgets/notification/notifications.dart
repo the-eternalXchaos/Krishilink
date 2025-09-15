@@ -4,7 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:krishi_link/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/admin/models/notification_model.dart';
-import 'package:krishi_link/widgets/notification/notification_controller.dart';
+import 'package:krishi_link/src/features/notification/presentation/controllers/notification_controller.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -14,7 +14,7 @@ class NotificationsScreen extends StatelessWidget {
     final controller = Get.find<NotificationController>();
     final theme = Theme.of(context);
 
-    void _handleNotificationTap(NotificationModel notification) {
+    void handleNotificationTap(NotificationModel notification) {
       if (!notification.isRead) {
         controller.markNotificationAsRead(notification.id);
       }
@@ -102,7 +102,7 @@ class NotificationsScreen extends StatelessWidget {
                       return NotificationTile(
                         notification: notification,
                         index: index,
-                        onTap: () => _handleNotificationTap(notification),
+                        onTap: () => handleNotificationTap(notification),
                         onMarkRead:
                             () => controller.markNotificationAsRead(
                               notification.id,

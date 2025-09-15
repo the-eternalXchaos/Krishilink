@@ -54,7 +54,7 @@ class AppSendButton extends StatelessWidget {
             hasText
                 ? [
                   BoxShadow(
-                    color: cs.primary.withOpacity(0.25),
+                    color: cs.primary.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

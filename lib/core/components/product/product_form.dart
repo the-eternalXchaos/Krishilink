@@ -44,7 +44,8 @@ class _ProductFormState extends State<ProductForm>
   final RxString unit = 'kg'.obs;
   final RxBool isLoadingImage = false.obs;
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  // TODO: Unused animation - commented out to resolve lint warnings
+  // late Animation<double> _fadeAnimation;
 
   // Controllers
   final TextEditingController productNameController = TextEditingController();
@@ -71,9 +72,10 @@ class _ProductFormState extends State<ProductForm>
         duration: const Duration(milliseconds: 800),
         vsync: this,
       );
-      _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-      );
+      // TODO: Unused animation - commented out to resolve lint warnings
+      // _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      //   CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      // );
       _animationController.forward();
       debugPrint('✅ [ProductForm] Animation controller initialized');
 
@@ -1122,10 +1124,13 @@ class _ProductFormState extends State<ProductForm>
       final colors =
           loading
               ? [
-                colorScheme.primary.withOpacity(0.5),
-                colorScheme.primary.withOpacity(0.3),
+                colorScheme.primary.withValues(alpha: 0.5),
+                colorScheme.primary.withValues(alpha: 0.3),
               ]
-              : [colorScheme.primary, colorScheme.primary.withOpacity(0.8)];
+              : [
+                colorScheme.primary,
+                colorScheme.primary.withValues(alpha: 0.8),
+              ];
 
       return Container(
         width: double.infinity,
@@ -1135,7 +1140,7 @@ class _ProductFormState extends State<ProductForm>
           gradient: LinearGradient(colors: colors),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.primary.withOpacity(loading ? 0.1 : 0.3),
+              color: colorScheme.primary.withValues(alpha: loading ? 0.1 : 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),

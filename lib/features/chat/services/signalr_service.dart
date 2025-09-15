@@ -7,11 +7,14 @@ import '../../../features/auth/controller/auth_controller.dart';
 import '../../../core/utils/api_constants.dart';
 
 class SignalRService extends GetxService {
-  static const String _hubUrl = '/ChatHub';
+  static const String _hubUrl =
+      '/chatHub'; //TODO ChatHub or chatHub based on server
 
   late HubConnection _hubConnection;
   final Logger _logger = Logger();
   final AuthController _authController = Get.find<AuthController>();
+  String?
+  _currentRoomId; // track last joined room for routing incoming messages
 
   // Observables for real-time updates
   final RxList<Message> newMessages = <Message>[].obs;
@@ -70,24 +73,66 @@ class SignalRService extends GetxService {
   }
 
   void _setupEventHandlers() {
-    // Message received
-    _hubConnection.on('ReceiveMessage', (arguments) {
-      try {
-        if (arguments != null && arguments.isNotEmpty) {
-          final messageData = arguments[0] as Map<String, dynamic>;
-          final message = Message.fromJson(messageData);
+    void registerReceiveHandler(String eventName) {
+      _hubConnection.on(eventName, (arguments) {
+        try {
+          if (arguments == null || arguments.isEmpty) return;
 
-          _logger.d('Received message: ${message.id}');
-          newMessages.add(message);
+          // Path 1: tuple payload [senderId, senderName, message, createdAt?]
+          if (arguments.length >= 3 && arguments[2] is String) {
+            final senderId = arguments[0]?.toString();
+            final senderName = (arguments[1] as String?) ?? 'Unknown';
+            final content = (arguments[2] as String?) ?? '';
+            final createdAtStr =
+                arguments.length > 3 ? arguments[3]?.toString() : null;
 
-          if (onMessageReceived != null) {
-            onMessageReceived!(message);
+            if (content.isEmpty) return;
+
+            final now = DateTime.now();
+            final ts =
+                createdAtStr != null
+                    ? (DateTime.tryParse(createdAtStr) ?? now)
+                    : now;
+            final currentUserId = _authController.currentUser.value?.id;
+
+            final synthetic = Message(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              chatRoomId: _currentRoomId ?? '',
+              senderId: senderId ?? '',
+              senderName: senderName,
+              content: content,
+              type: MessageType.text,
+              status: MessageStatus.delivered,
+              timestamp: ts,
+              isFromMe: (senderId != null && senderId == currentUserId),
+            );
+
+            _logger.d('Received tuple message from $senderName');
+            newMessages.add(synthetic);
+            onMessageReceived?.call(synthetic);
+            return;
           }
+
+          // Path 2: legacy JSON map in first arg
+          final first = arguments.first;
+          if (first is Map<String, dynamic>) {
+            final message = Message.fromJson(first);
+            _logger.d('Received JSON message: ${message.id}');
+            newMessages.add(message);
+            onMessageReceived?.call(message);
+            return;
+          }
+
+          _logger.w('Unknown $eventName payload: $arguments');
+        } catch (e) {
+          _logger.e('Error parsing $eventName: $e');
         }
-      } catch (e) {
-        _logger.e('Error parsing received message: $e');
-      }
-    });
+      });
+    }
+
+    // Support both correct and current backend misspelling
+    registerReceiveHandler('ReceiveMessage');
+    registerReceiveHandler('Reveivemesage');
 
     // Typing indicator
     _hubConnection.on('UserTyping', (arguments) {
@@ -241,6 +286,7 @@ class SignalRService extends GetxService {
       }
 
       await _hubConnection.invoke('JoinChatRoom', args: [chatRoomId]);
+      _currentRoomId = chatRoomId;
       _logger.d('Joined chat room: $chatRoomId');
     } catch (e) {
       _logger.e('Failed to join chat room: $e');

@@ -1,0 +1,11 @@
+import 'package:get/get.dart';
+import 'package:krishi_link/controllers/direct_payment_controller.dart';
+
+/// Payment page binding
+class PaymentBinding extends Bindings {
+  @override
+  void dependencies() {
+    // Payment-specific controllers with fenix for recreation
+    Get.lazyPut(() => DirectPaymentController(), fenix: true);
+  }
+}

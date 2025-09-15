@@ -376,31 +376,32 @@ class UnifiedProductController extends GetxController {
     }).toList();
   }
 
-  Future<File?> _downloadImageToLocal(String imageUrl) async {
-    try {
-      debugPrint('🔄 [UnifiedProductController] Downloading image: $imageUrl');
-      final response = await dio.Dio().get(
-        imageUrl,
-        options: dio.Options(responseType: dio.ResponseType.bytes),
-      );
+  // TODO: Unused method - commented out to resolve lint warnings
+  // Future<File?> _downloadImageToLocal(String imageUrl) async {
+  //   try {
+  //     debugPrint('🔄 [UnifiedProductController] Downloading image: $imageUrl');
+  //     final response = await dio.Dio().get(
+  //       imageUrl,
+  //       options: dio.Options(responseType: dio.ResponseType.bytes),
+  //     );
 
-      if (response.statusCode == 200) {
-        final bytes = response.data as List<int>;
-        final tempDir = await getTemporaryDirectory();
-        final fileName =
-            'temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final file = File('${tempDir.path}/$fileName');
-        await file.writeAsBytes(bytes);
-        debugPrint(
-          '✅ [UnifiedProductController] Image downloaded to: ${file.path}',
-        );
-        return file;
-      }
-    } catch (e) {
-      debugPrint('❌ [UnifiedProductController] Failed to download image: $e');
-    }
-    return null;
-  }
+  //     if (response.statusCode == 200) {
+  //       final bytes = response.data as List<int>;
+  //       final tempDir = await getTemporaryDirectory();
+  //       final fileName =
+  //           'temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  //       final file = File('${tempDir.path}/$fileName');
+  //       await file.writeAsBytes(bytes);
+  //       debugPrint(
+  //         '✅ [UnifiedProductController] Image downloaded to: ${file.path}',
+  //       );
+  //       return file;
+  //     }
+  //   } catch (e) {
+  //     debugPrint('❌ [UnifiedProductController] Failed to download image: $e');
+  //   }
+  //   return null;
+  // }
 
   Future<bool> _checkNetworkConnectivity() async {
     try {
@@ -454,7 +455,7 @@ class UnifiedProductController extends GetxController {
     }
   }
 
-  getCooldownStatus() {
+  String getCooldownStatus() {
     if (_lastRequestTime == null) return 'No requests made yet';
     final elapsed = DateTime.now().difference(_lastRequestTime!);
     if (elapsed >= _requestCooldown) {

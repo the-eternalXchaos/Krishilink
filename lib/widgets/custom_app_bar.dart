@@ -7,7 +7,7 @@ import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
 import 'package:krishi_link/widgets/language_switcher.dart';
-import 'package:krishi_link/widgets/notification/notification_controller.dart';
+import 'package:krishi_link/src/features/notification/presentation/controllers/notification_controller.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isGuest;

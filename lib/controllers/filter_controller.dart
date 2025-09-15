@@ -1,6 +1,8 @@
+// Legacy shim
+export 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
 import 'dart:async';
 import 'package:get/get.dart';
-import 'package:krishi_link/controllers/product_controller.dart';
+import 'package:krishi_link/features/product/controllers/product_controller.dart';
 
 class FilterController extends GetxController {
   final RxList<String> categories = <String>[].obs;
@@ -19,9 +21,9 @@ class FilterController extends GetxController {
   Timer? _searchDebounce;
 
   final ProductController productController =
-      Get.isRegistered()
+      Get.isRegistered<ProductController>()
           ? Get.find<ProductController>()
-          : Get.put(ProductController());
+          : throw Exception('ProductController must be initialized first');
 
   @override
   void onInit() {

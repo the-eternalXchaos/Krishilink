@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:krishi_link/core/bindings/admin_binding.dart';
+import 'package:krishi_link/src/core/config/architecture_config.dart';
+import 'package:krishi_link/core/bindings/admin_binding.dart' hide AdminBinding;
 import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/core/controllers/settings_controller.dart';
 import 'package:krishi_link/core/screens/unified_settings_page.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/core/translations/app_translations.dart';
+import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/core/services/connectivity_service.dart';
 import 'package:krishi_link/features/admin/controllers/admin_product_controller.dart';
 import 'package:krishi_link/features/admin/screens/admin_home_page.dart';
 import 'package:krishi_link/features/admin/screens/analytics_screen.dart';
@@ -24,8 +27,16 @@ import 'package:krishi_link/features/auth/screens/otp_verification_screen.dart';
 import 'package:krishi_link/features/auth/screens/register_screen.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
-import 'package:krishi_link/features/buyer/screens/payment_history_screen.dart';
-import 'package:krishi_link/features/buyer/screens/payment_webview_screen.dart';
+import 'package:krishi_link/features/payment/screens/payment_history_screen.dart';
+import 'package:krishi_link/features/payment/screens/payment_webview_screen.dart';
+import 'package:krishi_link/features/order_summary/screens/order_summary_page.dart';
+import 'package:krishi_link/features/order_summary/bindings/order_summary_binding.dart';
+import 'package:krishi_link/core/bindings/app_binding.dart';
+import 'package:krishi_link/features/buyer/bindings/buyer_binding.dart';
+import 'package:krishi_link/features/product/bindings/product_detail_binding.dart';
+import 'package:krishi_link/features/farmer/bindings/farmer_binding.dart';
+import 'package:krishi_link/features/admin/bindings/admin_binding.dart';
+import 'package:krishi_link/features/payment/bindings/payment_binding.dart';
 import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
 import 'package:krishi_link/features/disease_detection/screens/disease_detection_screen.dart';
 import 'package:krishi_link/features/farmer/screens/farmer_home_page.dart';
@@ -37,9 +48,10 @@ import 'package:krishi_link/features/onboarding/screens/splash_screen.dart';
 import 'package:krishi_link/features/onboarding/screens/welcome_page.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
 import 'package:krishi_link/product_binding.dart';
+import 'package:krishi_link/guest_product_binding.dart';
 import 'package:krishi_link/services/device_service.dart';
-import 'package:krishi_link/widgets/notification/notifications.dart';
-import 'package:krishi_link/widgets/product_detail_page.dart';
+import 'package:krishi_link/features/notification/screens/notifications.dart';
+import 'package:krishi_link/features/product/screens/product_detail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/components/product/management/unified_product_management.dart';
@@ -49,47 +61,71 @@ import 'core/lottie/popup_service.dart';
 class AuthMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
-    final authController = Get.find<AuthController>();
-    final currentUser = authController.currentUser.value;
-
-    // Allow public routes
+    // Allow public routes first - no auth check needed
     if (route == '/welcome' ||
-        // route == '/splash' ||
+        route == '/splash' ||
         route == '/login' ||
         route == '/register') {
       return null;
     }
 
-    // Block authenticated users from going back to welcome/login/register
-    if (currentUser != null) {
-      if (route == '/welcome' ||
-          route == '/login' ||
-          // route == '/product-details' ||
-          route == '/register') {
-        final role = currentUser.role.toLowerCase();
-        return RouteSettings(name: '/$role-dashboard');
-      }
-    }
-
-    // Check authentication
-    if (currentUser == null) {
-      PopupService.error(
-        'please_login_to_access'.tr,
-        title: 'authentication_required'.tr,
-      );
+    // Check if AuthController exists, if not, redirect to login
+    if (!Get.isRegistered<AuthController>()) {
       return const RouteSettings(name: '/login');
     }
 
-    // Check role-based access
-    if (route!.contains('-dashboard')) {
-      final role = currentUser.role.toLowerCase();
-      if (!route.contains(role)) {
-        PopupService.error('no_permission'.tr, title: 'unauthorized_access'.tr);
-        return RouteSettings(name: '/$role-dashboard');
-      }
-    }
+    try {
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
 
-    return null;
+      // If we have tokens saved but last refresh failed due to network issues,
+      // do NOT force redirect while offline. Let the user continue and try later.
+      if (TokenService.lastRefreshWasNetworkError) {
+        PopupService.warning(
+          'You appear to be offline. Some actions may be unavailable.',
+          title: 'Network Issue',
+        );
+        return null;
+      }
+
+      // Block authenticated users from going back to welcome/login/register
+      if (currentUser != null) {
+        if (route == '/welcome' ||
+            route == '/login' ||
+            // route == '/product-details' ||
+            route == '/register') {
+          final role = currentUser.role.toLowerCase();
+          return RouteSettings(name: '/$role-dashboard');
+        }
+      }
+
+      // Check authentication
+      if (currentUser == null) {
+        PopupService.error(
+          'please_login_to_access'.tr,
+          title: 'authentication_required'.tr,
+        );
+        return const RouteSettings(name: '/login');
+      }
+
+      // Check role-based access
+      if (route!.contains('-dashboard')) {
+        final role = currentUser.role.toLowerCase();
+        if (!route.contains(role)) {
+          PopupService.error(
+            'no_permission'.tr,
+            title: 'unauthorized_access'.tr,
+          );
+          return RouteSettings(name: '/$role-dashboard');
+        }
+      }
+
+      return null;
+    } catch (e) {
+      // If AuthController access fails, redirect to login
+      debugPrint('AuthMiddleware error: $e');
+      return const RouteSettings(name: '/login');
+    }
   }
 }
 
@@ -98,6 +134,9 @@ void main() async {
 
   // Initialize core services in parallel where possible
   await Future.wait([GetStorage.init(), Hive.initFlutter()]);
+
+  // Initialize new feature-first architecture
+  await ArchitectureConfig.initialize();
 
   // Initialize device service
   final deviceService = DeviceService();
@@ -113,44 +152,29 @@ void main() async {
   // Determine initial route
   final String initialRoute = await _determineInitialRoute(prefs);
 
-  // Initialize controllers lazily to improve startup performance
+  // IMPORTANT: Register all global controllers BEFORE any splash or navigation logic runs.
+  // This ensures Get.find() always works in splash and throughout the app.
   _initializeControllers();
 
   runApp(MyApp(initialRoute: initialRoute));
 }
 
 Future<String> _determineInitialRoute(SharedPreferences prefs) async {
-  final expiration = prefs.getString('expiration');
-
-  if (expiration == null) {
-    return '/welcome';
-  }
-
-  final expiryDate = DateTime.parse(expiration);
-  if (DateTime.now().isAfter(expiryDate)) {
-    await prefs.clear();
-    return '/login';
-  }
-
-  final role = prefs.getString('role')?.toLowerCase() ?? '';
-  return switch (role) {
-    'admin' => '/admin-dashboard',
-    'farmer' => '/farmer-dashboard',
-    'buyer' => '/buyer-dashboard',
-    _ => '/welcome',
-  };
+  // Always start with splash screen
+  return '/splash';
 }
 
 void _initializeControllers() {
-  // Use lazy initialization to reduce startup time
-  Get.lazyPut(() => AuthController(), fenix: true);
-  Get.lazyPut(() => ProductBinding(), fenix: true);
-  Get.lazyPut(() => AdminBinding(), fenix: true);
+  // Global controllers - always available throughout app lifecycle
+  Get.put(AuthController(), permanent: true);
+  Get.put(LanguageController(), permanent: true);
+  Get.put(ConnectivityService(), permanent: true);
+
+  // Re-creatable global controllers (created when needed, can be recreated)
   Get.lazyPut(() => SettingsController(), fenix: true);
-  Get.put(
-    LanguageController(),
-    permanent: true,
-  ); // Language controller needs to be permanent
+
+  // Note: CartController will be lazy-loaded only for authenticated users
+  // ProductBinding and AdminBinding are now handled per-page, not globally
 }
 
 class MyApp extends StatelessWidget {
@@ -166,7 +190,8 @@ class MyApp extends StatelessWidget {
       locale: languageController.currentLocale,
 
       fallbackLocale: const Locale('en', 'US'),
-      initialBinding: ProductBinding(),
+      // Removed initialBinding to prevent early controller initialization
+      // ProductBinding will be initialized only when needed on specific pages
       navigatorKey: Get.key,
       title: 'Krishi Link'.tr,
       debugShowCheckedModeBanner: false,
@@ -186,6 +211,7 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/welcome',
           page: () => const WelcomePage(),
+          binding: GuestProductBinding(),
           middlewares: [AuthMiddleware()],
           transition: Transition.fade,
         ),
@@ -209,7 +235,7 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/farmer-dashboard',
           page: () => const FarmerHomePage(),
-          binding: ProductBinding(),
+          binding: FarmerBinding(),
           middlewares: [AuthMiddleware()],
           transition: Transition.fadeIn,
         ),
@@ -219,7 +245,7 @@ class MyApp extends StatelessWidget {
             final args = Get.arguments as Map<String, dynamic>?;
             return BuyerHomePage(isGuest: args?['isGuest'] ?? true);
           },
-          binding: ProductBinding(),
+          binding: BuyerBinding(),
           middlewares: [AuthMiddleware()],
           transition: Transition.fadeIn,
         ),
@@ -228,7 +254,7 @@ class MyApp extends StatelessWidget {
           page: () {
             return ProductDetailPage(product: Get.arguments);
           },
-          binding: ProductBinding(),
+          binding: ProductDetailBinding(),
         ),
         GetPage(
           name: '/settings',
@@ -273,25 +299,25 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/wishlist',
           page: () => const WishlistScreen(),
-          binding: ProductBinding(),
+          binding: BuyerBinding(),
         ),
         GetPage(
           name: '/checkout',
           page: () => const CheckoutScreen(),
-          binding: ProductBinding(),
+          binding: BuyerBinding(),
         ),
         GetPage(
           name: '/payment-history',
           page: () => const PaymentHistoryScreen(),
-          binding: ProductBinding(),
+          binding: PaymentBinding(),
         ),
         GetPage(
           name: '/payment-webview',
           page: () {
             final args = Get.arguments as Map<String, dynamic>?;
-            final paymentUrl = args?['paymentUrl'] as String?;
-            final pidx = args?['pidx'] as String?;
-            if (paymentUrl == null || pidx == null) {
+            final paymentUrl =
+                args?['paymentUrl'] as String? ?? args?['url'] as String?;
+            if (paymentUrl == null) {
               // If arguments missing, pop back safely
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 Get.back();
@@ -300,8 +326,16 @@ class MyApp extends StatelessWidget {
                 body: Center(child: CircularProgressIndicator()),
               );
             }
-            return PaymentWebViewScreen(paymentUrl: paymentUrl, pidx: pidx);
+            return PaymentWebViewScreen(url: paymentUrl);
           },
+          binding: PaymentBinding(),
+        ),
+        GetPage(
+          name: '/orders/summary',
+          page: () => const OrderSummaryPage(),
+          binding: OrderSummaryBinding(),
+          middlewares: [AuthMiddleware()],
+          transition: Transition.fadeIn,
         ),
         // GetPage(
         //   name: '/otp-verify',
@@ -478,10 +512,10 @@ import 'package:krishi_link/features/farmer/screens/order_details_screen.dart';
 import 'package:krishi_link/features/farmer/screens/tutorial_details.dart';
 import 'package:krishi_link/features/farmer/screens/tutorials.dart';
 import 'package:krishi_link/features/onboarding/screens/welcome_page.dart';
-import 'package:krishi_link/mock_login.dart';
+// import 'package:krishi_link/mock_login.dart'; // COMMENTED OUT - Mock login disabled
 import 'package:krishi_link/product_binding.dart';
-import 'package:krishi_link/widgets/notifications.dart';
-import 'package:krishi_link/widgets/product_detail_page.dart';
+import 'package:krishi_link/features/notification/screens/notifications.dart';
+import 'package:krishi_link/features/product/screens/product_detail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthMiddleware extends GetMiddleware {
@@ -493,17 +527,17 @@ class AuthMiddleware extends GetMiddleware {
     // Allow public routes
     if (route == '/welcome' ||
         route == '/login' ||
-        route == '/register' ||
-        route == '/mock-login') {
+        route == '/register') {
+        // route == '/mock-login') { // COMMENTED OUT - Mock login disabled
       return null;
     }
 
-    // Block authenticated users from going back to welcome/login/register/mock-login
+    // Block authenticated users from going back to welcome/login/register
     if (currentUser != null) {
       if (route == '/welcome' ||
           route == '/login' ||
-          route == '/register' ||
-          route == '/mock-login') {
+          route == '/register') {
+          // route == '/mock-login') { // COMMENTED OUT - Mock login disabled
         final role = currentUser.role.toLowerCase();
         return RouteSettings(name: '/$role-dashboard');
       }
@@ -513,8 +547,8 @@ class AuthMiddleware extends GetMiddleware {
     if (currentUser == null) {
       PopupService.error('Please login to access this feature', title: 'Authentication Required');
       return const RouteSettings(
-        name: '/mock-login',
-      ); // Redirect to mock-login instead of login
+        name: '/login', // Changed from '/mock-login' to '/login'
+      ); // Redirect to login instead of mock-login
     }
 
     // Check role-based access
@@ -542,8 +576,8 @@ void main() async {
   Get.put(AdminBinding());
 
   runApp(
-    const MyApp(initialRoute: '/mock-login'),
-  ); // Force mock-login for testing
+    const MyApp(initialRoute: '/welcome'), // Changed from '/mock-login' to '/welcome'
+  ); // Mock login disabled - using normal flow
 }
 
 class MyApp extends StatelessWidget {
@@ -640,11 +674,11 @@ class MyApp extends StatelessWidget {
           name: '/tutorial-details',
           page: () => TutorialDetailsScreen(tutorial: Get.arguments),
         ),
-        GetPage(
-          name: '/mock-login',
-          page: () => const MockLoginScreen(),
-          transition: Transition.fadeIn,
-        ),
+        // GetPage( // COMMENTED OUT - Mock login disabled
+        //   name: '/mock-login',
+        //   page: () => const MockLoginScreen(),
+        //   transition: Transition.fadeIn,
+        // ),
         GetPage(
           name: '/otp-verify',
           page: () {
@@ -653,7 +687,7 @@ class MyApp extends StatelessWidget {
               if (args == null || !args.containsKey('identifier')) {
                 debugPrint('[NAV] Missing OTP verification parameters');
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Get.offNamed('/mock-login');
+                  Get.offNamed('/login'); // Changed from '/mock-login' to '/login'
                 });
                 return const SizedBox();
               }
@@ -665,7 +699,7 @@ class MyApp extends StatelessWidget {
               debugPrint('[NAV] Error in OTP verification navigation: $e');
               debugPrint(stackTrace.toString());
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                Get.offNamed('/mock-login');
+                Get.offNamed('/login'); // Changed from '/mock-login' to '/login'
               });
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),

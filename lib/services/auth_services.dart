@@ -1,13 +1,5 @@
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:krishi_link/models/user_model.dart';
-
-// class AuthService {
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
-//   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-//   // Stream to listen for auth state changes
-//   Stream<User?> get authStateChanges => _auth.authStateChanges();
+// Legacy auth service - now exports the new feature-first architecture
+export '../src/features/auth/data/auth_service.dart';
 
 //   // Register new user
 //   Future<UserModel?> registerUser({
@@ -51,7 +43,6 @@
 //       throw Exception('Registration failed: ${e.toString()}');
 //     }
 //   }
-
 
 //   // Get current user data from Firestore
 //   Future<UserModel?> getCurrentUser() async {

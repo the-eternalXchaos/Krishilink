@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Default: disallow cleartext; trust system certs -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Dev allowances: permit HTTP for local/testing hosts only -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.0.1</domain>
+        <domain includeSubdomains="true">192.168.1.1</domain>
+        <!-- Add your API host here if you use http in dev (remove for prod) -->
+        <!-- <domain includeSubdomains="true">dev.your-api-domain.com</domain> -->
+    </domain-config>
+</network-security-config>

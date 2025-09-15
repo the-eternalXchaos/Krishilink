@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen>
       PopupService.show(
         type: PopupType.error,
         message: 'some_error_occurred_try_again'.tr,
-        title: 'Error'.tr,
+        title: 'error'.tr,
       );
     }
   }
@@ -130,8 +130,12 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-              Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.2),
+              Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withValues(alpha: 0.2),
               Theme.of(context).colorScheme.surface,
             ],
             stops: const [0.0, 0.4, 1.0],
@@ -200,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildLoginCard(bool isTablet) {
     return Card(
       elevation: 12,
-      shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.2),
+      shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: EdgeInsets.all(isTablet ? 32 : 24),
@@ -223,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen>
       decoration: BoxDecoration(
         color: Theme.of(
           context,
-        ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: TabBar(
@@ -239,13 +243,13 @@ class _LoginScreenState extends State<LoginScreen>
           fontSize: isTablet ? 16 : 14,
         ),
         indicator: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         splashFactory: NoSplash.splashFactory,
-        overlayColor: MaterialStateProperty.all(Colors.transparent),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
         tabs: [
           Tab(
             height: isTablet ? 70 : 60,
@@ -328,13 +332,13 @@ class _LoginScreenState extends State<LoginScreen>
               return null;
             },
           ),
-          SizedBox(height: isTablet ? 24 : 20),
+          // SizedBox(height: isTablet ? 24 : 20),
           Container(
             padding: EdgeInsets.all(isTablet ? 16 : 12),
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.primaryContainer.withOpacity(0.3),
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -470,7 +474,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ? Theme.of(context).colorScheme.error
                 : focused
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
         width: focused ? 2 : 1,
       ),
     );
@@ -490,7 +494,9 @@ class _LoginScreenState extends State<LoginScreen>
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             elevation: authController.isLoading.value ? 0 : 4,
-            shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            shadowColor: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.3),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -545,7 +551,9 @@ class _LoginScreenState extends State<LoginScreen>
           children: [
             Expanded(
               child: Divider(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.5),
               ),
             ),
             Padding(
@@ -560,7 +568,9 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             Expanded(
               child: Divider(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -586,7 +596,9 @@ class _LoginScreenState extends State<LoginScreen>
           style: OutlinedButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             side: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.5),
             ),
             padding: EdgeInsets.symmetric(
               vertical: isTablet ? 16 : 12,

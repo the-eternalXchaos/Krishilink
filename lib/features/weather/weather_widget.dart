@@ -46,7 +46,7 @@ class WeatherWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: weatherTheme.primaryColor.withOpacity(0.2),
+                color: weatherTheme.primaryColor.withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -101,7 +101,7 @@ class WeatherWidget extends StatelessWidget {
                                     style: theme.textTheme.titleMedium
                                         ?.copyWith(
                                           color: colorScheme.onSurface
-                                              .withOpacity(0.9),
+                                              .withValues(alpha: 0.9),
                                           fontWeight: FontWeight.w500,
                                         ),
                                   ),
@@ -115,8 +115,9 @@ class WeatherWidget extends StatelessWidget {
                                       Icon(
                                         Icons.location_on_outlined,
                                         size: 16,
-                                        color: colorScheme.onSurface
-                                            .withOpacity(0.6),
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.6,
+                                        ),
                                       ),
                                       const SizedBox(width: AppSpacing.xs),
                                       Flexible(
@@ -125,7 +126,7 @@ class WeatherWidget extends StatelessWidget {
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
                                                 color: colorScheme.onSurface
-                                                    .withOpacity(0.6),
+                                                    .withValues(alpha: 0.6),
                                               ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -146,8 +147,9 @@ class WeatherWidget extends StatelessWidget {
                                 gradient: RadialGradient(
                                   colors: [
                                     weatherTheme.iconBackgroundColor,
-                                    weatherTheme.iconBackgroundColor
-                                        .withOpacity(0.3),
+                                    weatherTheme.iconBackgroundColor.withValues(
+                                      alpha: 0.3,
+                                    ),
                                   ],
                                 ),
                                 shape: BoxShape.circle,
@@ -213,25 +215,25 @@ class WeatherWidget extends StatelessWidget {
         secondaryColor: colorScheme.surfaceContainerHighest,
         accentColor:
             isDark
-                ? Colors.orange.shade800.withOpacity(0.2)
-                : Colors.amber.shade100.withOpacity(0.6),
+                ? Colors.orange.shade800.withValues(alpha: 0.2)
+                : Colors.amber.shade100.withValues(alpha: 0.6),
         icon: Icons.wb_sunny_outlined,
         iconColor: isDark ? Colors.orange.shade400 : Colors.orange.shade700,
         iconBackgroundColor:
             isDark
-                ? Colors.orange.shade900.withOpacity(0.2)
+                ? Colors.orange.shade900.withValues(alpha: 0.2)
                 : Colors.orange.shade50,
-        patternColor: Colors.orange.withOpacity(0.08),
+        patternColor: Colors.orange.withValues(alpha: 0.08),
       );
     } else if (condition.contains('Cloud')) {
       return WeatherTheme(
         primaryColor: colorScheme.surface,
         secondaryColor: colorScheme.surfaceContainerHighest,
-        accentColor: colorScheme.outline.withOpacity(0.1),
+        accentColor: colorScheme.outline.withValues(alpha: 0.1),
         icon: Icons.cloud_outlined,
         iconColor: colorScheme.onSurfaceVariant,
-        iconBackgroundColor: colorScheme.outline.withOpacity(0.1),
-        patternColor: colorScheme.outline.withOpacity(0.06),
+        iconBackgroundColor: colorScheme.outline.withValues(alpha: 0.1),
+        patternColor: colorScheme.outline.withValues(alpha: 0.06),
       );
     } else if (condition.contains('Rain')) {
       return WeatherTheme(
@@ -239,25 +241,25 @@ class WeatherWidget extends StatelessWidget {
         secondaryColor: colorScheme.surfaceContainerHighest,
         accentColor:
             isDark
-                ? Colors.blue.shade800.withOpacity(0.2)
-                : Colors.blue.shade50.withOpacity(0.8),
+                ? Colors.blue.shade800.withValues(alpha: 0.2)
+                : Colors.blue.shade50.withValues(alpha: 0.8),
         icon: Icons.grain,
         iconColor: isDark ? Colors.blue.shade400 : Colors.blue.shade700,
         iconBackgroundColor:
             isDark
-                ? Colors.blue.shade900.withOpacity(0.2)
+                ? Colors.blue.shade900.withValues(alpha: 0.2)
                 : Colors.blue.shade50,
-        patternColor: Colors.blue.withOpacity(0.08),
+        patternColor: Colors.blue.withValues(alpha: 0.08),
       );
     } else {
       return WeatherTheme(
         primaryColor: colorScheme.surface,
         secondaryColor: colorScheme.surfaceContainerHighest,
-        accentColor: colorScheme.primary.withOpacity(0.1),
+        accentColor: colorScheme.primary.withValues(alpha: 0.1),
         icon: Icons.wb_cloudy_outlined,
         iconColor: colorScheme.primary,
-        iconBackgroundColor: colorScheme.primary.withOpacity(0.1),
-        patternColor: colorScheme.primary.withOpacity(0.06),
+        iconBackgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+        patternColor: colorScheme.primary.withValues(alpha: 0.06),
       );
     }
   }
@@ -285,10 +287,10 @@ class _WeatherDetailCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.3),
+          color: colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -297,10 +299,14 @@ class _WeatherDetailCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
+              color: accentColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 24, color: accentColor.withOpacity(0.8)),
+            child: Icon(
+              icon,
+              size: 24,
+              color: accentColor.withValues(alpha: 0.8),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -314,7 +320,7 @@ class _WeatherDetailCard extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 11,
             ),
           ),

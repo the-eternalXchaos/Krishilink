@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/components/app_text_input_field.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/admin/models/cart_item.dart';
+import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/core/components/material_ui/popup.dart';
-import 'package:krishi_link/services/payment_service.dart';
+import 'package:krishi_link/src/features/payment/data/payment_service.dart';
+import 'package:krishi_link/src/features/payment/data/khalti_direct_payment_service.dart';
+import 'package:krishi_link/src/features/payment/data/payment_keys.dart';
+import 'package:krishi_link/src/core/config/payment_config.dart';
 import 'package:krishi_link/core/components/product/location_picker.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -27,9 +30,23 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  final AuthController authController = Get.find<AuthController>();
-  final CartController cartController = Get.find<CartController>();
+  final AuthController authController =
+      Get.isRegistered<AuthController>()
+          ? Get.find<AuthController>()
+          : Get.put(AuthController());
+  final CartController cartController =
+      Get.isRegistered<CartController>()
+          ? Get.find<CartController>()
+          : Get.put(CartController());
   final PaymentService paymentService = Get.put(PaymentService());
+  final KhaltiDirectPaymentService khaltiDirectPaymentService = Get.put(
+    PaymentKeys.isConfigured
+        ? KhaltiDirectPaymentService(
+          khaltiPublicKey: PaymentKeys.publicKey,
+          khaltiSecretKey: PaymentKeys.secretKey,
+        )
+        : KhaltiDirectPaymentService(),
+  );
 
   String selectedPaymentMethod = 'cash_on_delivery';
   final _addressController = TextEditingController();
@@ -342,7 +359,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
@@ -378,11 +395,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _processOrder() async {
     // Debug: log order context
-    debugPrint('[Checkout] _processOrder start | method=$selectedPaymentMethod, '
-        'items=${checkoutItems.length}, subtotal=${totalAmount.toStringAsFixed(2)}, '
-        'deliveryFee=${deliveryFee.toStringAsFixed(2)}, total=${finalTotal.toStringAsFixed(2)}');
-    debugPrint('[Checkout] Address="${_addressController.text.trim()}" '
-        'lat=$selectedLatitude, lng=$selectedLongitude, phone=${_phoneController.text.trim()}');
+    debugPrint(
+      '[Checkout] _processOrder start | method=$selectedPaymentMethod, '
+      'items=${checkoutItems.length}, subtotal=${totalAmount.toStringAsFixed(2)}, '
+      'deliveryFee=${deliveryFee.toStringAsFixed(2)}, total=${finalTotal.toStringAsFixed(2)}',
+    );
+    debugPrint(
+      '[Checkout] Address="${_addressController.text.trim()}" '
+      'lat=$selectedLatitude, lng=$selectedLongitude, phone=${_phoneController.text.trim()}',
+    );
     // Validate inputs
     if (_addressController.text.trim().isEmpty) {
       PopupService.warning(
@@ -462,11 +483,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
-      // Using Khalti SDK (sandbox) directly since backend is not ready
-      debugPrint('[Khalti] Using SDK sandbox; user=${user.fullName}, amount=${finalTotal.toStringAsFixed(2)}');
-      PopupService.info('Backend not ready. Using Khalti SDK (sandbox).');
-
-      final started = await paymentService.startKhaltiSdkPaymentDirect(
+      // Use direct in-app Khalti flow (no backend)
+      debugPrint(
+        '[Khalti] Using in-app direct flow, amount=${finalTotal.toStringAsFixed(2)}',
+      );
+      await khaltiDirectPaymentService.initiateDirectPayment(
         items: checkoutItems,
         amount: finalTotal,
         customerName: user.fullName ?? 'Customer',
@@ -475,28 +496,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         deliveryAddress: _addressController.text.trim(),
         latitude: selectedLatitude,
         longitude: selectedLongitude,
+        onSuccess: (transactionId) {
+          debugPrint('[Khalti] Payment success: $transactionId');
+          if (widget.isFromCart) {
+            try {
+              Get.find<CartController>().clearCart();
+            } catch (_) {}
+          }
+          PopupService.success('Payment successful!');
+          // Centralized navigation behavior
+          PaymentConfig.navigateAfterSuccess();
+        },
+        onFailure: (error) {
+          PopupService.error('Payment failed: $error');
+        },
+        onCancel: () {
+          PopupService.warning('Payment cancelled');
+        },
       );
-
-      if (!started) {
-        debugPrint('[Khalti] SDK launch failed; falling back to mock flow');
-        // Fallback to local mock flow if SDK fails
-        final pidx = await paymentService.initiatePayment(
-          items: checkoutItems,
-          amount: finalTotal,
-          customerName: user.fullName ?? 'Customer',
-          customerPhone: _phoneController.text.trim(),
-          customerEmail: user.email,
-          deliveryAddress: _addressController.text.trim(),
-          latitude: selectedLatitude,
-          longitude: selectedLongitude,
-        );
-        if (pidx != null) {
-          debugPrint('[Khalti] Mock payment initiated with pidx=$pidx, opening local Khalti');
-          paymentService.openKhaltiPayment();
-        } else {
-          PopupService.error('Failed to initiate payment');
-        }
-      }
     } catch (e) {
       debugPrint('[Khalti] Payment processing failed: $e');
       PopupService.error('Payment processing failed: $e');
@@ -511,4 +528,3 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 }
-

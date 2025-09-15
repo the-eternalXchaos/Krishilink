@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/controllers/filter_controller.dart';
 import 'package:krishi_link/controllers/product_controller.dart';
-import 'package:krishi_link/widgets/filter_sheet.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
+import 'package:krishi_link/src/features/product/presentation/widgets/filter_sheet.dart';
 
 class SearchBar extends StatefulWidget {
   final Function(String) onSearch;
@@ -29,7 +30,7 @@ class _SearchBarState extends State<SearchBar>
   final ProductController productController =
       Get.isRegistered<ProductController>()
           ? Get.find<ProductController>()
-          : Get.put(ProductController());
+          : throw Exception('ProductController must be initialized first');
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   final FocusNode _focusNode = FocusNode();
@@ -75,11 +76,7 @@ class _SearchBarState extends State<SearchBar>
             curve: Curves.easeOutCubic,
           ),
         ),
-        child: FilterSheet(
-          onFiltersApplied: (categories, locations, status) {
-            filterController.applyFilters(categories, locations, status);
-          },
-        ),
+        child: FilterSheet(),
       ),
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surface,

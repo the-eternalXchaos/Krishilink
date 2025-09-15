@@ -28,6 +28,12 @@ android {
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Enable multidex for large app
+        multiDexEnabled = true
+        
+        // Add any additional configurations for SignalR/WebSocket support
+        manifestPlaceholders["usesCleartextTraffic"] = "true"
     }
 
     buildTypes {
@@ -50,4 +56,11 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging-ktx:23.1.0") // Firebase Messaging
     implementation("com.facebook.android:facebook-android-sdk:17.0.0") // Facebook SDK
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    
+    // WebSocket and HTTP support for SignalR
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    
+    // Multidex support for large apps
+    implementation("androidx.multidex:multidex:2.0.1")
 }

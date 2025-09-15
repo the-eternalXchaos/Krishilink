@@ -157,7 +157,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -258,7 +258,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 6,
-                            shadowColor: Colors.black.withOpacity(0.2),
+                            shadowColor: Colors.black.withValues(alpha: 0.2),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child:
@@ -495,7 +495,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           elevation: 5,
-          shadowColor: Colors.black.withOpacity(0.2),
+          shadowColor: Colors.black.withValues(alpha: 0.2),
         ),
         onPressed: onPressed,
       ),

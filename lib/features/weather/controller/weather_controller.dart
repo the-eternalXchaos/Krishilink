@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:krishi_link/src/features/weather/data/weather_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/weather/weather_api_services.dart';
 import 'package:krishi_link/features/weather/weather_model.dart';
 
 class WeatherController extends GetxController {
@@ -13,10 +13,10 @@ class WeatherController extends GetxController {
   final RxDouble longitude = 83.9784.obs;
   final RxBool isLoading = false.obs;
 
-  final WeatherApiServices _apiServices =
-      Get.isRegistered<WeatherApiServices>()
-          ? Get.find<WeatherApiServices>()
-          : WeatherApiServices();
+  final WeatherApiService _apiServices =
+      Get.isRegistered<WeatherApiService>()
+          ? Get.find<WeatherApiService>()
+          : WeatherApiService();
 
   static const String _weatherKey = 'saved_weather';
 
@@ -38,7 +38,7 @@ class WeatherController extends GetxController {
       await _updateLoading(true);
       errorMessage.value = '';
 
-      final weatherData = await _apiServices.fetchWeather(
+      final weatherData = await _apiServices.fetchWeatherByCoordinates(
         latitude: latitude,
         longitude: longitude,
       );
@@ -49,8 +49,8 @@ class WeatherController extends GetxController {
       await _saveWeather(weatherData);
 
       // Update local lat/long state
-      this.latitude.value = weatherData.latitude ?? latitude;
-      this.longitude.value = weatherData.longitude ?? longitude;
+      this.latitude.value = weatherData.latitude;
+      this.longitude.value = weatherData.longitude;
     } catch (e) {
       errorMessage.value = 'failed_to_fetch_weather'.trParams({
         'error': e.toString(),
@@ -78,9 +78,9 @@ class WeatherController extends GetxController {
       weather.value = weatherData;
 
       // Update lat/lon state as well
-      latitude.value = weatherData.latitude ?? latitude.value;
+      latitude.value = weatherData.latitude;
       debugPrint(latitude.value.toString());
-      longitude.value = weatherData.longitude ?? longitude.value;
+      longitude.value = weatherData.longitude;
     }
 
     // Always try to refresh latest

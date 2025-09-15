@@ -162,24 +162,34 @@ class MessageBubble extends StatelessWidget {
           ),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: CachedNetworkImage(
-            imageUrl: message.mediaUrl ?? '',
-            placeholder:
-                (context, url) => Container(
-                  width: 200,
-                  height: 150,
-                  color: Colors.grey[300],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-            errorWidget:
-                (context, url, error) => Container(
-                  width: 200,
-                  height: 150,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.error),
-                ),
-            fit: BoxFit.cover,
-          ),
+          child:
+              (message.mediaUrl?.isNotEmpty == true)
+                  ? CachedNetworkImage(
+                    imageUrl: message.mediaUrl!,
+                    placeholder:
+                        (context, url) => Container(
+                          width: 200,
+                          height: 150,
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                    errorWidget:
+                        (context, url, error) => Container(
+                          width: 200,
+                          height: 150,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.error),
+                        ),
+                    fit: BoxFit.cover,
+                  )
+                  : Container(
+                    width: 200,
+                    height: 150,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image_not_supported),
+                  ),
         ),
       ],
     );
@@ -286,24 +296,36 @@ class MessageBubble extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: message.mediaThumbnail ?? message.mediaUrl ?? '',
-                placeholder:
-                    (context, url) => Container(
-                      width: 200,
-                      height: 150,
-                      color: Colors.grey[300],
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                errorWidget:
-                    (context, url, error) => Container(
-                      width: 200,
-                      height: 150,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.error),
-                    ),
-                fit: BoxFit.cover,
-              ),
+              child:
+                  ((message.mediaThumbnail?.isNotEmpty == true) ||
+                          (message.mediaUrl?.isNotEmpty == true))
+                      ? CachedNetworkImage(
+                        imageUrl:
+                            message.mediaThumbnail ?? message.mediaUrl ?? '',
+                        placeholder:
+                            (context, url) => Container(
+                              width: 200,
+                              height: 150,
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                        errorWidget:
+                            (context, url, error) => Container(
+                              width: 200,
+                              height: 150,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.error),
+                            ),
+                        fit: BoxFit.cover,
+                      )
+                      : Container(
+                        width: 200,
+                        height: 150,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.videocam_off),
+                      ),
             ),
             Positioned.fill(
               child: Center(

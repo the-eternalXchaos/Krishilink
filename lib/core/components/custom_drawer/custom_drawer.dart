@@ -109,7 +109,7 @@ class _CustomDrawerState extends State<CustomDrawer>
                 ? LinearGradient(
                   colors: [
                     theme.primaryColor,
-                    theme.primaryColor.withOpacity(0.8),
+                    theme.primaryColor.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -176,7 +176,7 @@ class _CustomDrawerState extends State<CustomDrawer>
             child: Text(
               item.title ?? '',
               style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w600,
                 letterSpacing: .3,
               ),
@@ -230,7 +230,8 @@ class _CustomDrawerState extends State<CustomDrawer>
                 !widget.menuItems[index + 1].isSectionHeader)
               Divider(
                 color:
-                    widget.dividerColor ?? theme.dividerColor.withOpacity(0.3),
+                    widget.dividerColor ??
+                    theme.dividerColor.withValues(alpha: 0.3),
                 height: 1,
                 thickness: 0.5,
                 indent: 16,

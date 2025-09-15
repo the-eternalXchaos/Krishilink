@@ -22,6 +22,8 @@ import 'package:krishi_link/features/admin/models/user_model.dart';
 import 'package:dio/dio.dart' as dio;
 
 class TokenService {
+  // Tracks whether the last refresh attempt failed due to a network error.
+  static bool lastRefreshWasNetworkError = false;
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';

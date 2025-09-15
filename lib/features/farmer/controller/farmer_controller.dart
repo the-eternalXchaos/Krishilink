@@ -9,15 +9,15 @@ import 'package:krishi_link/features/admin/models/notification_model.dart';
 import 'package:krishi_link/features/admin/models/order_model.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/services/farmer_api_service.dart';
+import 'package:krishi_link/src/features/farmer/data/farmer_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tutorial_model.dart';
 import '../models/crop_model.dart';
 import 'package:krishi_link/core/components/product/product_form_data.dart';
 
 class FarmerController extends GetxController {
-  final FarmerApiServices apiServices =
-      Get.isRegistered() ? Get.find<FarmerApiServices>() : FarmerApiServices();
+  final FarmerApiService apiServices =
+      Get.isRegistered() ? Get.find<FarmerApiService>() : FarmerApiService();
   final RxList<Product> products = <Product>[].obs;
   final RxList<Product> filteredProducts = <Product>[].obs;
   final RxString errorMessage = ''.obs;
@@ -28,8 +28,8 @@ class FarmerController extends GetxController {
   final RxList<OrderModel> filteredOrders = <OrderModel>[].obs;
   // final RxList<NotificationModel> notifications = <NotificationModel>[].obs;
 
-  get selectedFarmer => null;
-  get farmersList => null;
+  Null get selectedFarmer => null;
+  Null get farmersList => null;
 
   @override
   void onInit() {

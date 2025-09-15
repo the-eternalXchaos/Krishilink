@@ -678,7 +678,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? Theme.of(context).colorScheme.error
                 : focused
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
         width: focused ? 2 : 1,
       ),
     );
@@ -696,7 +696,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           style: OutlinedButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             side: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.5),
             ),
             padding: EdgeInsets.symmetric(
               vertical: isTablet ? 16 : 12,
@@ -733,8 +735,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-              Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.2),
+              Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withValues(alpha: 0.2),
               Theme.of(context).colorScheme.surface,
             ],
             stops: const [0.0, 0.4, 1.0],
@@ -753,7 +759,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   elevation: 12,
                   shadowColor: Theme.of(
                     context,
-                  ).colorScheme.shadow.withOpacity(0.2),
+                  ).colorScheme.shadow.withValues(alpha: 0.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
@@ -798,7 +804,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.primaryContainer.withOpacity(0.3),
+            ).colorScheme.primaryContainer.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -989,7 +995,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             color:
                 isSelected
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    : Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.5),
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(16),
@@ -1080,7 +1088,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           elevation: _isLoading ? 0 : 4,
-          shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          shadowColor: Theme.of(
+            context,
+          ).colorScheme.primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1121,7 +1131,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Expanded(
               child: Divider(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.5),
               ),
             ),
             Padding(
@@ -1136,7 +1148,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             Expanded(
               child: Divider(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.5),
               ),
             ),
           ],

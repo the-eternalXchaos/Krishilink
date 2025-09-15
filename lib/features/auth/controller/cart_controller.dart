@@ -1,18 +1,25 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:krishi_link/core/components/material_ui/popup.dart';
 import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/features/cart/models/cart_item.dart';
+import 'package:krishi_link/services/api_services/api_service.dart';
 import 'package:krishi_link/services/popup_service.dart';
-import 'package:krishi_link/core/components/material_ui/popup.dart';
-import 'package:krishi_link/features/admin/models/cart_item.dart';
+import 'package:krishi_link/services/token_service.dart';
 
 class CartController extends GetxController {
   final _cartItems = <CartItem>[].obs;
   final isLoading = false.obs;
   List<CartItem> get cartItems => _cartItems;
+
+  // Use centralized ApiService with interceptors (adds Authorization header)
+  late final ApiService _api =
+      Get.isRegistered<ApiService>() ? Get.find<ApiService>() : ApiService();
 
   double get totalPrice => _cartItems.fold(
     0,
@@ -22,62 +29,134 @@ class CartController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Defer cart items loading to avoid setState during build
-    Future.delayed(Duration.zero, () => fetchCartItems());
+    debugPrint('🛒 [CartController] Controller initialized');
+    debugPrint('🛒 [CartController] Current cart items: ${_cartItems.length}');
+    Future.delayed(Duration.zero, () {
+      debugPrint('🛒 [CartController] Starting initial fetchCartItems...');
+      fetchCartItems();
+    });
   }
 
   Future<void> fetchCartItems() async {
     try {
+      debugPrint('🛒 [CartController] 🚀 Starting fetchCartItems...');
       isLoading.value = true;
-      final token = await TokenService.getAccessToken();
-      if (token == null) throw Exception('No authentication token');
 
-      final response = await http.get(
-        Uri.parse(ApiConstants.getCartEndpoint),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+      debugPrint(
+        '🛒 [CartController] 📡 Making API call to: ${ApiConstants.getCartEndpoint}',
       );
+      final response = await _api.dio.get(ApiConstants.getCartEndpoint);
+
+      debugPrint(
+        '🛒 [CartController] 📥 Response received - Status: ${response.statusCode}',
+      );
+      debugPrint(
+        '🛒 [CartController] 📄 Response data type: ${response.data.runtimeType}',
+      );
+      debugPrint('🛒 [CartController] 📄 Response data: ${response.data}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true &&
-            data['data'] != null &&
-            data['data'] is List) {
+        final data =
+            response.data is String ? jsonDecode(response.data) : response.data;
+        debugPrint('🛒 [CartController] 📊 Parsed data: $data');
+        debugPrint('🛒 [CartController] ✅ Success flag: ${data['success']}');
+
+        if (data['success'] == true && data['data'] is List) {
           final cartDataList = data['data'] as List;
+          debugPrint(
+            '🛒 [CartController] 📦 Cart data list length: ${cartDataList.length}',
+          );
+
           if (cartDataList.isNotEmpty && cartDataList[0]['items'] != null) {
             final itemsList = cartDataList[0]['items'] as List;
+            debugPrint(
+              '🛒 [CartController] 🎯 Items list length: ${itemsList.length}',
+            );
+            debugPrint('🛒 [CartController] 🛍️ Items data: $itemsList');
+
             final items =
-                itemsList
-                    .map(
-                      (item) => CartItem(
-                        id: item['productId'] ?? '',
-                        name: item['productName'] ?? '',
-                        price: (item['price'] ?? item['rate'] ?? 0).toString(),
-                        // The API response for cart does not contain an image URL.
-                        // This will be an empty string for now.
-                        imageUrl: item['imageUrl'] ?? item['image'] ?? '',
-                        quantity: item['quantity'] ?? 1,
-                      ),
-                    )
-                    .toList();
+                itemsList.map((item) {
+                  final imageUrl = item['imageUrl'] ?? item['image'] ?? '';
+                  final productName = item['productName'] ?? '';
+                  final productId =
+                      item['productId'] ??
+                      ''; // This is the actual product ID for image fetching
+
+                  debugPrint(
+                    '🛒 [CartController] 🖼️ Processing item: $productName',
+                  );
+                  debugPrint(
+                    '🛒 [CartController] 🖼️ Cart Item ID: "${item['id']}"',
+                  );
+                  debugPrint(
+                    '🛒 [CartController] 🖼️ Product ID (for image): "$productId"',
+                  );
+                  debugPrint(
+                    '🛒 [CartController] 🖼️ Raw API image data: imageUrl="${item['imageUrl']}", image="${item['image']}"',
+                  );
+                  debugPrint(
+                    '🛒 [CartController] 🖼️ Final imageUrl: "$imageUrl"',
+                  );
+
+                  return CartItem(
+                    id: productId, // Use productId as the id for image fetching
+                    name: productName,
+                    price: (item['price'] ?? item['rate'] ?? 0).toString(),
+                    imageUrl: imageUrl,
+                    quantity: item['quantity'] ?? 1,
+                  );
+                }).toList();
             _cartItems.assignAll(items);
+            debugPrint(
+              '🛒 [CartController] ✅ Cart items assigned: ${_cartItems.length} items',
+            );
+
+            for (int i = 0; i < _cartItems.length; i++) {
+              final item = _cartItems[i];
+              debugPrint(
+                '🛒 [CartController] 📋 Item $i: ${item.name} (${item.id}) - ₹${item.price} x ${item.quantity}',
+              );
+              debugPrint(
+                '🛒 [CartController] 🖼️ Item $i image: "${item.imageUrl}" (${item.imageUrl.isEmpty ? "EMPTY" : "NOT EMPTY"})',
+              );
+            }
           } else {
-            // Cart is empty or data format is unexpected.
+            debugPrint('🛒 [CartController] 📭 No items found in cart data');
             _cartItems.clear();
           }
         } else {
-          // API reports success: false or no data.
+          debugPrint(
+            '🛒 [CartController] ❌ API response not successful or invalid format',
+          );
           _cartItems.clear();
         }
       } else {
+        debugPrint('🛒 [CartController] ❌ HTTP error: ${response.statusCode}');
         throw Exception('Failed to fetch cart: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      debugPrint(
+        '🛒 [CartController] ❌ DioException in fetchCartItems: ${e.type}',
+      );
+      debugPrint('🛒 [CartController] ❌ Error message: ${e.message}');
+      debugPrint(
+        '🛒 [CartController] ❌ Request: ${e.requestOptions.method} ${e.requestOptions.uri}',
+      );
+      debugPrint('🛒 [CartController] ❌ Response: ${e.response?.data}');
+      PopupService.error('Failed to load cart: ${e.message}', title: 'Error');
     } catch (e) {
+      debugPrint(
+        '🛒 [CartController] ❌ General exception in fetchCartItems: $e',
+      );
       PopupService.error('Failed to load cart: $e', title: 'Error');
     } finally {
       isLoading.value = false;
+      debugPrint(
+        '🛒 [CartController] 🏁 fetchCartItems completed. Final cart count: ${_cartItems.length}',
+      );
+      debugPrint(
+        '🛒 [CartController] 💰 Total price: ₹${totalPrice.toStringAsFixed(2)}',
+      );
     }
   }
 
@@ -85,7 +164,7 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
       final token = await TokenService.getAccessToken();
-      if (token == null) {
+      if (token == null || token.isEmpty) {
         PopupService.warning(
           'Please login to add items to cart',
           title: 'Login Required',
@@ -94,27 +173,28 @@ class CartController extends GetxController {
         return;
       }
 
-      // Format according to the API specification
       final requestBody = {
         'items': [
           {'productId': item.id, 'quantity': item.quantity},
         ],
       };
 
-      final response = await http.post(
-        Uri.parse(ApiConstants.addToCartEndpoint),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(requestBody),
+      debugPrint('🛒 [Cart] addToCart -> ${ApiConstants.addToCartEndpoint}');
+      debugPrint('🛒 [Cart] payload: $requestBody');
+      final response = await _api.dio.post(
+        ApiConstants.addToCartEndpoint,
+        data: requestBody,
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      debugPrint('🛒 [Cart] status: ${response.statusCode}');
+      debugPrint('🛒 [Cart] response: ${response.data}');
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
+        final data =
+            response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
-          // To ensure consistency, refetch the entire cart from the server
-          // instead of performing an optimistic local update.
           await fetchCartItems();
           PopupService.show(
             message: '${item.name} added to cart',
@@ -128,8 +208,13 @@ class CartController extends GetxController {
       } else {
         throw Exception('Failed to add to cart: ${response.statusCode}');
       }
-    } catch (e) {
-      PopupService.error('Failed to add to cart: $e', title: 'Error');
+    } on DioException catch (e) {
+      debugPrint('❌ [Cart] DioException addToCart: ${e.type} ${e.message}');
+      debugPrint(
+        '❌ [Cart] request: ${e.requestOptions.method} ${e.requestOptions.uri}',
+      );
+      debugPrint('❌ [Cart] data: ${e.response?.data}');
+      PopupService.error('Failed to add to cart: ${e.message}', title: 'Error');
     } finally {
       isLoading.value = false;
     }
@@ -138,24 +223,17 @@ class CartController extends GetxController {
   Future<void> removeFromCart(String productId) async {
     try {
       isLoading.value = true;
-      final token = await TokenService.getAccessToken();
-      if (token == null) throw Exception('No authentication token');
-
-      final response = await http.delete(
-        Uri.parse(
-          '${ApiConstants.removeFromCartEndpoint}?productId=$productId',
-        ),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+      final response = await _api.dio.delete(
+        ApiConstants.removeFromCartEndpoint,
+        queryParameters: {'productId': productId},
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
+        final data =
+            response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
-          // To ensure consistency, refetch the cart from the server
-          // instead of performing an optimistic local update.
           await fetchCartItems();
           PopupService.success('Item removed from cart', title: 'Success');
         } else {
@@ -164,8 +242,11 @@ class CartController extends GetxController {
       } else {
         throw Exception('Failed to remove from cart: ${response.statusCode}');
       }
-    } catch (e) {
-      PopupService.error('Failed to remove from cart: $e', title: 'Error');
+    } on DioException catch (e) {
+      PopupService.error(
+        'Failed to remove from cart: ${e.message}',
+        title: 'Error',
+      );
     } finally {
       isLoading.value = false;
     }
@@ -174,21 +255,14 @@ class CartController extends GetxController {
   Future<void> clearCart() async {
     try {
       isLoading.value = true;
-      final token = await TokenService.getAccessToken();
-      if (token == null) throw Exception('No authentication token');
+      final response = await _api.dio.delete(ApiConstants.clearCartEndpoint);
 
-      final response = await http.delete(
-        Uri.parse(ApiConstants.clearCartEndpoint),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
+        final data =
+            response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
-          // After clearing on the server, clear the local list.
           _cartItems.clear();
           PopupService.success('Cart cleared successfully', title: 'Success');
         } else {
@@ -197,14 +271,13 @@ class CartController extends GetxController {
       } else {
         throw Exception('Failed to clear cart: ${response.statusCode}');
       }
-    } catch (e) {
-      PopupService.error('Failed to clear cart: $e', title: 'Error');
+    } on DioException catch (e) {
+      PopupService.error('Failed to clear cart: ${e.message}', title: 'Error');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Helper method to add product to cart
   Future<void> addProductToCart(
     String productId,
     String productName,
@@ -212,6 +285,15 @@ class CartController extends GetxController {
     String imageUrl, {
     int quantity = 1,
   }) async {
+    debugPrint('🛒 [CartController] 🚀 addProductToCart called with:');
+    debugPrint('🛒 [CartController]   - Product ID: $productId');
+    debugPrint('🛒 [CartController]   - Product Name: $productName');
+    debugPrint('🛒 [CartController]   - Price: ₹$price');
+    debugPrint(
+      '🛒 [CartController]   - Image URL: "$imageUrl" (${imageUrl.isEmpty ? "EMPTY" : "NOT EMPTY"})',
+    );
+    debugPrint('🛒 [CartController]   - Quantity: $quantity');
+
     final cartItem = CartItem(
       id: productId,
       name: productName,
@@ -219,10 +301,52 @@ class CartController extends GetxController {
       imageUrl: imageUrl,
       quantity: quantity,
     );
+
+    debugPrint(
+      '🛒 [CartController] 📦 CartItem created: ${cartItem.toString()}',
+    );
+    debugPrint('🛒 [CartController] 🔄 Calling addToCart method...');
+
     await addToCart(cartItem);
+
+    debugPrint('🛒 [CartController] ✅ addProductToCart completed');
+    debugPrint(
+      '🛒 [CartController] 🛍️ Current cart items count: ${_cartItems.length}',
+    );
   }
 
-  // Helper method to update quantity
+  /// Enhanced method that accepts full Product reference for better image handling
+  Future<void> addProductWithReference(
+    Product product, {
+    int quantity = 1,
+  }) async {
+    debugPrint('🛒 [CartController] 🚀 addProductWithReference called with:');
+    debugPrint('🛒 [CartController]   - Product ID: ${product.id}');
+    debugPrint('🛒 [CartController]   - Product Name: ${product.productName}');
+    debugPrint('🛒 [CartController]   - Price: ₹${product.rate}');
+    debugPrint(
+      '🛒 [CartController]   - Product Image: "${product.image}" (${product.image.isEmpty ? "EMPTY" : "NOT EMPTY"})',
+    );
+    debugPrint('🛒 [CartController]   - Quantity: $quantity');
+    debugPrint(
+      '🛒 [CartController]   - Full Product Reference: Available for proper image handling',
+    );
+
+    final cartItem = CartItem.fromProduct(product, quantity: quantity);
+
+    debugPrint(
+      '🛒 [CartController] 📦 CartItem created with Product reference: ${cartItem.toString()}',
+    );
+    debugPrint('🛒 [CartController] 🔄 Calling addToCart method...');
+
+    await addToCart(cartItem);
+
+    debugPrint('🛒 [CartController] ✅ addProductWithReference completed');
+    debugPrint(
+      '🛒 [CartController] 🛍️ Current cart items count: ${_cartItems.length}',
+    );
+  }
+
   Future<void> updateQuantity(String productId, int newQuantity) async {
     if (newQuantity <= 0) {
       await removeFromCart(productId);
@@ -233,11 +357,6 @@ class CartController extends GetxController {
     if (index != -1) {
       final item = _cartItems[index];
       final updatedItem = item.copyWith(quantity: newQuantity);
-
-      // WARNING: This performs two separate API operations (remove then add),
-      // which is inefficient and may cause a flicker in the UI as the cart
-      // is refetched twice. A dedicated backend endpoint to update an item's
-      // quantity (e.g., PUT /api/Cart/items/{productId}) is highly recommended.
       try {
         isLoading.value = true;
         await removeFromCart(productId);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
@@ -12,15 +13,29 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🛒 [CartScreen] 🖼️ Building CartScreen widget...');
+
     final CartController cartController =
         Get.isRegistered()
             ? Get.find<CartController>()
             : Get.put(CartController());
-    final WishlistController wishlistController =
-        Get.isRegistered()
-            ? Get.find<WishlistController>()
-            : Get.put(WishlistController());
+    debugPrint(
+      '🛒 [CartScreen] ✅ CartController obtained: ${cartController.runtimeType}',
+    );
+
+    // final WishlistController wishlistController =
+    //     Get.isRegistered()
+    //         ? Get.find<WishlistController>()
+    //         : Get.put(WishlistController());
+    debugPrint('🛒 [CartScreen] ✅ WishlistController obtained');
+
     final AuthController authController = Get.find<AuthController>();
+    debugPrint(
+      '🛒 [CartScreen] ✅ AuthController obtained - User logged in: ${authController.isLoggedIn}',
+    );
+    debugPrint(
+      '🛒 [CartScreen] 🛍️ Current cart items: ${cartController.cartItems.length}',
+    );
 
     return Scaffold(
       // silverbar
@@ -38,8 +53,23 @@ class CartScreen extends StatelessWidget {
       ),
       body: Obx(() {
         final cartItems = cartController.cartItems;
+        debugPrint(
+          '🛒 [CartScreen] 🔄 Obx rebuilding - Cart items count: ${cartItems.length}',
+        );
+        debugPrint(
+          '🛒 [CartScreen] 📊 Loading state: ${cartController.isLoading.value}',
+        );
+        debugPrint(
+          '🛒 [CartScreen] 💰 Total price: ₹${cartController.totalPrice}',
+        );
+
+        if (cartController.isLoading.value) {
+          debugPrint('🛒 [CartScreen] ⏳ Showing loading indicator');
+          return const Center(child: CircularProgressIndicator());
+        }
 
         if (cartItems.isEmpty) {
+          debugPrint('🛒 [CartScreen] 📭 Cart is empty, showing empty state');
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -77,6 +107,9 @@ class CartScreen extends StatelessWidget {
           );
         }
 
+        debugPrint(
+          '🛒 [CartScreen] 🛍️ Showing cart with ${cartItems.length} items',
+        );
         return Column(
           children: [
             Expanded(
@@ -85,29 +118,104 @@ class CartScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 itemBuilder: (context, index) {
                   final item = cartItems[index];
+                  debugPrint(
+                    '🛒 [CartScreen] 📋 Building item $index: ${item.name}',
+                  );
                   return Card(
                     elevation: 2,
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: ListTile(
-                      leading:
-                          item.imageUrl.isEmpty
-                              ? Image.asset(
-                                plantPlaceholder,
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.cover,
-                              )
-                              : Image.network(
-                                item.imageUrl,
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (context, error, stackTrace) => Image.asset(
-                                      plantPlaceholder,
-                                      fit: BoxFit.cover,
-                                    ),
-                              ),
+                      leading: Builder(
+                        builder: (context) {
+                          debugPrint(
+                            '🛒 [CartScreen] 🖼️ Original Image URL for ${item.name}: "${item.imageUrl}"',
+                          );
+                          debugPrint(
+                            '🛒 [CartScreen] 🖼️ Image URL isEmpty: ${item.imageUrl.isEmpty}',
+                          );
+
+                          // Construct proper image URL using the API endpoint and product ID
+                          final constructedImageUrl =
+                              '${ApiConstants.getProductImageEndpoint}/${item.id}';
+                          debugPrint(
+                            '🛒 [CartScreen] 🔧 Constructed image URL: "$constructedImageUrl"',
+                          );
+
+                          if (item.imageUrl.isEmpty) {
+                            debugPrint(
+                              '🛒 [CartScreen] 🖼️ Using placeholder image for ${item.name}',
+                            );
+                            return Image.asset(
+                              plantPlaceholder,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            );
+                          } else {
+                            // Always construct the image URL using the API endpoint and product ID
+                            // This ensures we use the correct endpoint regardless of what's stored in imageUrl
+                            final imageUrl =
+                                '${ApiConstants.getProductImageEndpoint}/${item.id}?t=${DateTime.now().millisecondsSinceEpoch}';
+
+                            debugPrint(
+                              '🛒 [CartScreen] 🔧 Using constructed image URL: "$imageUrl"',
+                            );
+                            debugPrint(
+                              '🛒 [CartScreen] 🌐 Loading image for ${item.name} using product ID: ${item.id}',
+                            );
+                            return Image.network(
+                              imageUrl,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (
+                                context,
+                                child,
+                                loadingProgress,
+                              ) {
+                                if (loadingProgress == null) {
+                                  debugPrint(
+                                    '🛒 [CartScreen] ✅ Image loaded successfully for ${item.name}',
+                                  );
+                                  return child;
+                                }
+                                debugPrint(
+                                  '🛒 [CartScreen] ⏳ Loading image for ${item.name}: ${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes ?? 'unknown'}',
+                                );
+                                return Container(
+                                  width: 48,
+                                  height: 48,
+                                  alignment: Alignment.center,
+                                  child: CircularProgressIndicator(
+                                    value:
+                                        loadingProgress.expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
+                                            : null,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                debugPrint(
+                                  '🛒 [CartScreen] ❌ Image failed to load for ${item.name}: $error',
+                                );
+                                debugPrint(
+                                  '🛒 [CartScreen] 🔄 Falling back to placeholder',
+                                );
+                                return Image.asset(
+                                  plantPlaceholder,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            );
+                          }
+                        },
+                      ),
                       title: Text(item.name),
                       subtitle: Text('₹${item.price} x ${item.quantity}'),
                       trailing: IconButton(

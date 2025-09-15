@@ -16,6 +16,7 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   List<Animation<double>>? _menuAnimations;
+  bool _controllerDisposed = false;
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final authController = Get.find<AuthController>();
       final role = authController.currentUser.value?.role.toLowerCase();
       final totalTiles = 5 + (role == 'farmer' ? 1 : 0);
@@ -44,14 +46,21 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
           ),
         ),
       );
-
-      _animationController.forward();
+      try {
+        if (!_controllerDisposed) {
+          _animationController.forward();
+        }
+      } catch (_) {}
       setState(() {});
     });
   }
 
   @override
   void dispose() {
+    _controllerDisposed = true;
+    try {
+      _animationController.stop();
+    } catch (_) {}
     _animationController.dispose();
     super.dispose();
   }
@@ -187,16 +196,20 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
               radius: 28,
               backgroundColor: colorScheme.surfaceContainerHighest,
               child: ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl ?? '',
-                  placeholder: (_, __) => const CircularProgressIndicator(),
-                  errorWidget:
-                      (_, __, ___) =>
-                          Image.asset(guestImage, fit: BoxFit.cover),
-                  fit: BoxFit.cover,
-                  width: 56,
-                  height: 56,
-                ),
+                child:
+                    imageUrl != null && imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          placeholder:
+                              (_, __) => const CircularProgressIndicator(),
+                          errorWidget:
+                              (_, __, ___) =>
+                                  Image.asset(guestImage, fit: BoxFit.cover),
+                          fit: BoxFit.cover,
+                          width: 56,
+                          height: 56,
+                        )
+                        : Image.asset(guestImage, fit: BoxFit.cover),
               ),
             ),
           ),

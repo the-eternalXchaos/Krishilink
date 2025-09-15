@@ -1,0 +1,158 @@
+name: Architecture Guard
+on: 
+  pull_request:
+    paths:
+      - 'lib/**'
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'lib/**'
+
+jobs:
+  guard-legacy:
+    runs-on: ubuntu-latest
+    name: Ensure Legacy Dirs Only Contain Export Shims
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check legacy directories for non-shim code
+        run: |
+          echo "🔍 Checking legacy directories for non-export files..."
+          bad=0
+          
+          # Define patterns for legacy paths that should only contain export shims
+          legacy_patterns=(
+            "^lib/services/.*\.dart$"
+            "^lib/features/.*/services/.*\.dart$" 
+            "^lib/features/weather/weather_api_services\.dart$"
+            "^lib/core/components/.*/unified_.*_api_services\.dart$"
+          )
+          
+          # Get all Dart files in legacy locations
+          for pattern in "${legacy_patterns[@]}"; do
+            echo "Checking pattern: $pattern"
+            files=$(find lib -name "*.dart" | grep -E "$pattern" || true)
+            
+            for file in $files; do
+              if [ -f "$file" ]; then
+                echo "Checking file: $file"
+                # Check if file contains only comments and export statements
+                if ! grep -qE "^\s*(//.*|export\s+['\"][^'\"]*['\"];?\s*|import\s+['\"][^'\"]*['\"];?\s*)?$" "$file" || \
+                   grep -qE "^\s*(class|abstract\s+class|enum|mixin|extension|typedef)" "$file"; then
+                  echo "::error file=$file::File in legacy area contains non-export code. Legacy files should only contain 'export' statements."
+                  echo "::error file=$file::Expected format: export '../src/features/<feature>/data/<service>.dart';"
+                  bad=1
+                fi
+                
+                # Check if export points to src/ structure
+                if grep -qE "^\s*export\s+" "$file" && ! grep -qE "export\s+['\"](\.\./)*src/" "$file"; then
+                  echo "::warning file=$file::Export statement should point to src/ structure"
+                fi
+              fi
+            done
+          done
+          
+          if [ $bad -eq 1 ]; then
+            echo ""
+            echo "❌ Legacy directory violations found!"
+            echo ""
+            echo "📋 Guidelines:"
+            echo "  • Legacy files in lib/services/ and lib/features/*/services/ should only contain export statements"
+            echo "  • New services should be created in lib/src/features/<feature>/data/"
+            echo "  • Use this format: export '../src/features/<feature>/data/<service>.dart';"
+            echo ""
+            echo "📚 See ARCHITECTURE.md for detailed migration guidelines"
+            exit 1
+          else
+            echo "✅ All legacy directories contain only export shims"
+          fi
+
+      - name: Check for new code in wrong locations
+        run: |
+          echo "🔍 Checking for new services in incorrect locations..."
+          bad=0
+          
+          # Check if new services are being added to legacy locations
+          if git diff --name-only HEAD~1 2>/dev/null | grep -qE "^lib/(services|features/.*/services)/.*\.dart$"; then
+            echo "::warning::New files detected in legacy service directories"
+            echo "::warning::Consider creating them in lib/src/features/<feature>/data/ instead"
+          fi
+          
+          # Check if src/ structure is being used for new services
+          src_services=$(find lib/src/features -name "*.dart" 2>/dev/null | wc -l || echo 0)
+          if [ "$src_services" -gt 0 ]; then
+            echo "✅ Found $src_services files in the new src/ structure"
+          fi
+
+      - name: Validate BaseService usage
+        run: |
+          echo "🔍 Checking BaseService usage in new services..."
+          
+          # Find all service files in src/features/*/data/
+          service_files=$(find lib/src/features -path "*/data/*.dart" 2>/dev/null || true)
+          
+          for file in $service_files; do
+            if [ -f "$file" ]; then
+              # Check if service extends BaseService
+              if grep -qE "class.*Service" "$file" && ! grep -qE "extends.*BaseService" "$file"; then
+                echo "::warning file=$file::Service should extend BaseService for consistent HTTP handling"
+              fi
+              
+              # Check if service imports BaseService
+              if grep -qE "extends.*BaseService" "$file" && ! grep -qE "import.*base_service" "$file"; then
+                echo "::error file=$file::Service extends BaseService but doesn't import it"
+              fi
+            fi
+          done
+
+  architecture-report:
+    runs-on: ubuntu-latest
+    name: Generate Architecture Report
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate architecture statistics
+        run: |
+          echo "📊 Architecture Migration Status"
+          echo "================================="
+          echo ""
+          
+          # Count files in new structure
+          src_core=$(find lib/src/core -name "*.dart" 2>/dev/null | wc -l || echo 0)
+          src_features=$(find lib/src/features -name "*.dart" 2>/dev/null | wc -l || echo 0)
+          
+          # Count export shims
+          export_shims=$(find lib/services lib/features -name "*.dart" -exec grep -l "^export" {} \; 2>/dev/null | wc -l || echo 0)
+          
+          # Count legacy files
+          legacy_services=$(find lib/services -name "*.dart" 2>/dev/null | wc -l || echo 0)
+          legacy_features=$(find lib/features -name "*.dart" 2>/dev/null | wc -l || echo 0)
+          
+          echo "🏗️  New Architecture (lib/src/):"
+          echo "   Core files: $src_core"
+          echo "   Feature files: $src_features"
+          echo ""
+          echo "🔗 Export Shims: $export_shims"
+          echo ""
+          echo "📁 Legacy Structure:"
+          echo "   Services: $legacy_services"
+          echo "   Features: $legacy_features"
+          echo ""
+          
+          # Calculate migration progress
+          total_new=$((src_core + src_features))
+          total_legacy=$((legacy_services + legacy_features))
+          
+          if [ $((total_new + total_legacy)) -gt 0 ]; then
+            progress=$((100 * total_new / (total_new + total_legacy)))
+            echo "📈 Migration Progress: $progress% ($total_new/$((total_new + total_legacy)) files migrated)"
+          fi
+          
+          echo ""
+          echo "🎯 Next Steps:"
+          echo "   • Migrate controllers to src/features/**/presentation/"
+          echo "   • Migrate screens to src/features/**/presentation/"
+          echo "   • Create export shims for remaining legacy services"
+          echo "   • Ensure all new services extend BaseService"

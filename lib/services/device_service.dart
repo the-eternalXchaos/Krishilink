@@ -26,5 +26,5 @@ class DeviceService {
 }
 
 extension on AndroidDeviceInfo {
-  get androidId => null;
+  Null get androidId => null;
 }

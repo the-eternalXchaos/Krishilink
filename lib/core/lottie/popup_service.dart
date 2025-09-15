@@ -17,7 +17,7 @@ class PopupService {
   /// - [barrierDismissible]: A boolean value that determines whether the
   ///   dialog can be dismissed by tapping on the barrier (the area outside
   ///   the dialog). Defaults to false.
-  static lottieLoading({bool barrierDismissible = false}) {
+  static void lottieLoading({bool barrierDismissible = false}) {
     // final themeColor  = Theme.of(context).colorScheme.surface;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.isDialogOpen != true) {

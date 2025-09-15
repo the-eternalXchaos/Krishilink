@@ -5,7 +5,8 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
     'en_US': {
       // Product Related
-      'price_per_kg': 'Rs. %{price}/kg',
+      'price_per_kg': 'Rs. @price/kg',
+      'price_with_unit': 'Rs. @price/@unit',
       'unknown': 'Unknown',
       'quantity_available': 'Available: %s kg',
       'quantity_sold': 'Sold: %s kg',
@@ -21,6 +22,7 @@ class AppTranslations extends Translations {
       'ok': 'OK',
       'explore_fresh_products_from_local_farmers':
           'Explore fresh products from local farmers.',
+      'type_a_message_dots': 'Type a message...',
 
       'check_out_this_product': 'Check out this product: %s',
       'krishilink_product': 'KrishiLink Product',
@@ -395,10 +397,10 @@ class AppTranslations extends Translations {
       'observation_time': 'Observation Time',
       'daytime': 'Daytime',
       'just_now': 'Just now',
-      'minutes_ago': '%{m}m ago',
-      'hours_ago': '%{h}h ago',
-      'fetching_weather_for': 'Fetching weather for %{place}',
-      'failed_to_fetch_weather': 'Failed to fetch weather: %{error}',
+      'minutes_ago': '@m m ago',
+      'hours_ago': '@h h ago',
+      'fetching_weather_for': 'Fetching weather for @place',
+      'failed_to_fetch_weather': 'Failed to fetch weather: @error',
 
       // Settings
       'change_language': 'Change Language',
@@ -442,7 +444,7 @@ class AppTranslations extends Translations {
       'your_wishlist_is_empty': 'Your wishlist is empty',
       'add_products_to_wishlist': 'Add products to your wishlist',
       'explore_products': 'Explore Products',
-      'farmer_name': 'Farmer: %{name}',
+      'farmer_name': 'Farmer: @name',
 
       // Checkout
       'payment_method': 'Payment Method',
@@ -453,7 +455,7 @@ class AppTranslations extends Translations {
       'order_summary': 'Order Summary',
       'order_notes': 'Order Notes',
       'special_instructions': 'Special Instructions',
-      'place_order_rs': 'Place Order (Rs. %{amount})',
+      'place_order_rs': 'Place Order (Rs. @amount)',
       'please_enter_delivery_address': 'Please enter delivery address',
       'please_enter_phone_number': 'Please enter phone number',
       'order_processing_failed': 'Order processing failed',
@@ -466,6 +468,12 @@ class AppTranslations extends Translations {
       'connecting_farmers_to_success': 'Connecting Farmers to Success',
       'registration_success_check_email':
           'Registration successful! Please check your email to verify your account.',
+
+      // Payments (screen labels)
+      'transaction_id': 'Transaction ID',
+      'amount': 'Amount',
+      'items': 'Items',
+      'no_items_available': 'No items available',
     },
 
     'ne_NP': {
@@ -480,8 +488,8 @@ class AppTranslations extends Translations {
       'observation_time': 'अवलोकन समय',
       'daytime': 'दिनको समय',
       'just_now': 'अहिल्यै',
-      'minutes_ago': '%{m} मिनेट अघि',
-      'hours_ago': '%{h} घण्टा अघि',
+      'minutes_ago': '@m मिनेट अघि',
+      'hours_ago': '@h घण्टा अघि',
       'fetching_weather_for': '%{place} को मौसम ल्याइँदै',
       'failed_to_fetch_weather': 'मौसम ल्याउन असफल: %{error}',
 
@@ -529,7 +537,7 @@ class AppTranslations extends Translations {
       'your_wishlist_is_empty': 'तपाईंको विशलिस्ट खाली छ',
       'add_products_to_wishlist': 'विशलिस्टमा उत्पादनहरू थप्नुहोस्',
       'explore_products': 'उत्पादन अन्वेषण गर्नुहोस्',
-      'farmer_name': 'किसान: %{name}',
+      'farmer_name': 'किसान: @name',
 
       // Checkout
       'payment_method': 'भुक्तानी विधि',
@@ -540,7 +548,7 @@ class AppTranslations extends Translations {
       'order_summary': 'अर्डर सारांश',
       'order_notes': 'अर्डर नोट',
       'special_instructions': 'विशेष निर्देशन',
-      'place_order_rs': 'अर्डर गरौं (रु %{amount})',
+      'place_order_rs': 'अर्डर गरौं (रु @amount)',
       'please_enter_delivery_address': 'डेलिभरी ठेगाना प्रविष्ट गर्नुहोस्',
       'please_enter_phone_number': 'फोन नम्बर प्रविष्ट गर्नुहोस्',
       'order_processing_failed': 'अर्डर प्रशोधन असफल भयो',
@@ -554,7 +562,8 @@ class AppTranslations extends Translations {
       'registration_success_check_email':
           'दर्ता सफल! कृपया आफ्नो इमेल जाँचेर खाताको प्रमाणीकरण गर्नुहोस्।',
       // Product Related
-      'price_per_kg': 'रु %{price}/केजी',
+      'price_per_kg': 'रु %s/केजी',
+      'price_with_unit': 'रु %s/केजी',
       // 'price_per_kg': 'रु %s/के',
       'unknown': 'अज्ञात',
       'quantity_available': 'उपलब्ध: %s केजी',
@@ -570,6 +579,7 @@ class AppTranslations extends Translations {
       'ok': 'ठीक छ',
       'explore_fresh_products_from_local_farmers':
           'स्थानीय किसानबाट ताजा उत्पादनहरू अन्वेषण गर्नुहोस्।',
+      'type_a_message_dots': 'सन्देश टाइप गर्नुहोस्...',
 
       'app_name': 'कृषि लिंक',
       'check_out_this_product': 'यो उत्पादन हेर्नुहोस्: %s',

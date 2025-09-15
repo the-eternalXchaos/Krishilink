@@ -23,9 +23,7 @@ class ApiService {
 
   Future<Options> getJsonOptions() => _jsonOptions();
 
-  // Protected getter for _dio to allow access in subclasses
-
-  // Public client getter for external consumers
+  // getter for the dio
   Dio get dio => _dio;
 
   bool _isRefreshing = false;
@@ -77,11 +75,31 @@ class ApiService {
             return handler.next(options);
           } catch (e) {
             debugPrint('[Interceptor] Error building auth headers: $e');
-            PopupService.error(
-              'Failed to build auth headers Login Again',
-              title: 'Auth Headers Error',
+            // Do NOT proceed without Authorization; reject to let caller handle
+            if (e is AppException && e.message == 'OFFLINE') {
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.connectionError,
+                  error: e,
+                ),
+              );
+            }
+            // If token cannot be built, force login flow
+            if (Get.currentRoute != '/login') {
+              PopupService.error(
+                'Please login to continue',
+                title: 'Session Required',
+              );
+              Get.offAllNamed('/login');
+            }
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.badResponse,
+                error: e,
+              ),
             );
-            return handler.next(options);
           }
         },
         onError: (error, handler) async {
@@ -428,6 +446,12 @@ class ApiService {
   }
 
   // --- CART LOGIC ---
+  // display the cart
+
+  //  remove    item from cart
+
+  // clear the cart
+
   Future<bool> addToCart(List<Map<String, dynamic>> items) async {
     try {
       final response = await _dio.post(

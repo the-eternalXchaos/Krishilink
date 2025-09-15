@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/utils/constants.dart';
-import 'package:krishi_link/features/admin/models/cart_item.dart';
+import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
 import 'package:lottie/lottie.dart';
@@ -12,8 +12,13 @@ class WishlistScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final WishlistController wishlistController = Get.find<WishlistController>();
-    final CartController cartController = Get.find<CartController>();
+    final WishlistController wishlistController =
+        Get.isRegistered<WishlistController>()
+            ? Get.find<WishlistController>()
+            : Get.put(WishlistController());
+    final CartController cartController = Get.isRegistered<CartController>()
+        ? Get.find<CartController>()
+        : Get.put(CartController());
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -23,12 +28,19 @@ class WishlistScreen extends StatelessWidget {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         actions: [
-          Obx(() => wishlistController.wishlistItems.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear_all),
-                  onPressed: () => _showClearWishlistDialog(context, wishlistController),
-                )
-              : const SizedBox.shrink()),
+          Obx(
+            () =>
+                wishlistController.wishlistItems.isNotEmpty
+                    ? IconButton(
+                      icon: const Icon(Icons.clear_all),
+                      onPressed:
+                          () => _showClearWishlistDialog(
+                            context,
+                            wishlistController,
+                          ),
+                    )
+                    : const SizedBox.shrink(),
+          ),
         ],
       ),
       body: Obx(() {
@@ -98,36 +110,57 @@ class WishlistScreen extends StatelessWidget {
                     // Product Image
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: item.imageUrl,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          width: 80,
-                          height: 80,
-                          color: colorScheme.surface,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: colorScheme.primary,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.image_not_supported,
-                            color: colorScheme.onSurface.withValues(alpha: 0.5),
-                            size: 30,
-                          ),
-                        ),
-                      ),
+                      child:
+                          item.imageUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                imageUrl: item.imageUrl,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                placeholder:
+                                    (context, url) => Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: colorScheme.surface,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          color: colorScheme.primary,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    ),
+                                errorWidget:
+                                    (context, url, error) => Container(
+                                      width: 80,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        size: 30,
+                                      ),
+                                    ),
+                              )
+                              : Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  size: 30,
+                                ),
+                              ),
                     ),
                     const SizedBox(width: 12),
                     // Product Info
@@ -165,7 +198,9 @@ class WishlistScreen extends StatelessWidget {
                                 child: Text(
                                   item.location,
                                   style: textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                    color: colorScheme.onSurface.withValues(
+                                      alpha: 0.6,
+                                    ),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -177,7 +212,9 @@ class WishlistScreen extends StatelessWidget {
                           Text(
                             'farmer_name'.trParams({'name': item.farmerName}),
                             style: textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                           ),
                         ],
@@ -210,7 +247,10 @@ class WishlistScreen extends StatelessWidget {
                             Icons.delete_outline,
                             color: colorScheme.error,
                           ),
-                          onPressed: () => wishlistController.removeFromWishlist(item.id),
+                          onPressed:
+                              () => wishlistController.removeFromWishlist(
+                                item.id,
+                              ),
                         ),
                       ],
                     ),
@@ -224,16 +264,16 @@ class WishlistScreen extends StatelessWidget {
     );
   }
 
-  void _showClearWishlistDialog(BuildContext context, WishlistController controller) {
+  void _showClearWishlistDialog(
+    BuildContext context,
+    WishlistController controller,
+  ) {
     Get.dialog(
       AlertDialog(
         title: Text('clear_wishlist'.tr),
         content: Text('are_you_sure_clear_wishlist'.tr),
         actions: [
-          TextButton(
-            onPressed: Get.back,
-            child: Text('cancel'.tr),
-          ),
+          TextButton(onPressed: Get.back, child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
               Get.back();

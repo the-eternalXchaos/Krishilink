@@ -14,7 +14,6 @@ import 'package:krishi_link/core/components/custom_drawer/custom_drawer.dart';
 
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_controller.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/chat/widgets/typing_indicator.dart';
 
 class AiChatScreen extends StatefulWidget {
@@ -34,10 +33,7 @@ class _AiChatScreenState extends State<AiChatScreen>
   late final FocusNode _textFieldFocusNode;
   Timer? _debounceTimer;
   late final AiChatController controller;
-  final _authController =
-      Get.isRegistered()
-          ? Get.find<AuthController>()
-          : Get.put(AuthController());
+  // AuthController not needed in this screen; removed unused field.
 
   @override
   void initState() {
@@ -142,7 +138,7 @@ class _AiChatScreenState extends State<AiChatScreen>
               Text(
                 timeStr,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: cs.onSurface.withOpacity(.6),
+                  color: cs.onSurface.withValues(alpha: .6),
                 ),
               ),
             const SizedBox(width: 6),
@@ -245,7 +241,7 @@ class _AiChatScreenState extends State<AiChatScreen>
       height: 160,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.primary, cs.primary.withOpacity(0.8)],
+          colors: [cs.primary, cs.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -260,7 +256,7 @@ class _AiChatScreenState extends State<AiChatScreen>
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: cs.onPrimary.withOpacity(0.2),
+                    backgroundColor: cs.onPrimary.withValues(alpha: 0.2),
                     child: LottieWidget(path: LottieAssets.aiLogo, height: 32),
                   ),
                   const SizedBox(width: 12),
@@ -278,7 +274,7 @@ class _AiChatScreenState extends State<AiChatScreen>
               Text(
                 'Tap to open, swipe to delete',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onPrimary.withOpacity(0.7),
+                  color: cs.onPrimary.withValues(alpha: 0.7),
                 ),
                 semanticsLabel: 'Tap to open, swipe to delete',
               ),
@@ -405,13 +401,13 @@ class _AppBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.primary, cs.primary.withOpacity(.90)],
+          colors: [cs.primary, cs.primary.withValues(alpha: .90)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: cs.shadow.withOpacity(0.1),
+            color: cs.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -437,7 +433,7 @@ class _AppBar extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: cs.onPrimary.withOpacity(0.2),
+                        color: cs.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Semantics(
@@ -465,7 +461,7 @@ class _AppBar extends StatelessWidget {
                             'Chatting with $userName',
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onPrimary.withOpacity(0.8),
+                              color: cs.onPrimary.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -574,7 +570,7 @@ class _EmptyState extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: cs.shadow.withOpacity(0.1),
+                    color: cs.shadow.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -595,7 +591,7 @@ class _EmptyState extends StatelessWidget {
               'Start a conversation by typing a message below',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: cs.onSurface.withOpacity(0.65),
+                color: cs.onSurface.withValues(alpha: 0.65),
               ),
             ),
             const SizedBox(height: 32),
@@ -673,7 +669,7 @@ class _TypingIndicator extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: cs.shadow.withOpacity(0.05),
+                  color: cs.shadow.withValues(alpha: 0.05),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -772,7 +768,7 @@ class _MessageBubble extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: cs.shadow.withOpacity(0.05),
+                        color: cs.shadow.withValues(alpha: 0.05),
                         blurRadius: 5,
                         offset: const Offset(0, 2),
                       ),
@@ -788,7 +784,7 @@ class _MessageBubble extends StatelessWidget {
                             userName,
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: cs.onPrimary.withOpacity(0.9),
+                              color: cs.onPrimary.withValues(alpha: 0.9),
                             ),
                           ),
                         ),
@@ -808,8 +804,8 @@ class _MessageBubble extends StatelessWidget {
                             style: theme.textTheme.labelSmall?.copyWith(
                               color:
                                   isUser
-                                      ? cs.onPrimary.withOpacity(0.7)
-                                      : cs.onSurface.withOpacity(0.6),
+                                      ? cs.onPrimary.withValues(alpha: 0.7)
+                                      : cs.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ),
@@ -876,7 +872,7 @@ class _InputArea extends StatelessWidget {
         color: cs.surface,
         boxShadow: [
           BoxShadow(
-            color: cs.shadow.withOpacity(0.05),
+            color: cs.shadow.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -936,7 +932,7 @@ class _ImagePickerButton extends StatelessWidget {
       child: IconButton(
         icon: Icon(
           Icons.add_photo_alternate_outlined,
-          color: cs.onSurface.withOpacity(0.65),
+          color: cs.onSurface.withValues(alpha: 0.65),
           size: 24,
         ),
         tooltip: 'send_image'.tr,
@@ -1006,8 +1002,11 @@ class _DrawerFooter extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           'User',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: cs.onSurface.withOpacity(0.7)),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.7),
+                          ),
                         ),
                       ],
                     ),

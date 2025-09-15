@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/controllers/filter_controller.dart';
-import 'package:krishi_link/controllers/product_controller.dart';
+import 'package:krishi_link/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 import 'package:krishi_link/core/components/material_ui/popup.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/constants.dart';
@@ -15,9 +16,10 @@ import 'package:krishi_link/features/buyer/screens/buyer_menu_page.dart';
 import 'package:krishi_link/features/buyer/screens/cart_screen.dart';
 import 'package:krishi_link/features/chat/screens/chat_list_screen.dart';
 import 'package:krishi_link/services/popup_service.dart';
+import 'package:krishi_link/src/features/product/presentation/widgets/product_grid.dart';
+import 'package:krishi_link/src/features/product/presentation/widgets/search_bar.dart'
+    as custom;
 import 'package:krishi_link/widgets/custom_app_bar.dart';
-import 'package:krishi_link/widgets/product_grid.dart';
-import 'package:krishi_link/widgets/search_bar.dart' as custom;
 import 'package:lottie/lottie.dart';
 
 class BuyerHomePage extends StatefulWidget {
@@ -31,12 +33,11 @@ class BuyerHomePage extends StatefulWidget {
 class _BuyerHomePageState extends State<BuyerHomePage> {
   final _searchController = TextEditingController();
   int _selectedIndex = 0;
-  Timer? _debounce;
 
   // Controllers
   late final AuthController authController;
-  late final CartController cartController;
-  late final WishlistController wishlistController;
+  CartController? cartController;
+  WishlistController? wishlistController;
   late final ProductController productController;
   late final FilterController filterController;
 
@@ -45,19 +46,25 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
     super.initState();
 
     // init controllers safely
-    authController = Get.find<AuthController>();
-    cartController =
-        Get.isRegistered<CartController>()
-            ? Get.find<CartController>()
-            : Get.put(CartController());
-    wishlistController =
-        Get.isRegistered<WishlistController>()
-            ? Get.find<WishlistController>()
-            : Get.put(WishlistController());
+    authController =
+        Get.isRegistered<AuthController>()
+            ? Get.find<AuthController>()
+            : Get.put(AuthController());
+
+    if (authController.isLoggedIn) {
+      cartController =
+          Get.isRegistered<CartController>()
+              ? Get.find<CartController>()
+              : Get.put(CartController());
+      wishlistController =
+          Get.isRegistered<WishlistController>()
+              ? Get.find<WishlistController>()
+              : Get.put(WishlistController());
+    }
     productController =
         Get.isRegistered<ProductController>()
             ? Get.find<ProductController>()
-            : Get.put(ProductController());
+            : Get.put(ProductController(), permanent: true);
     filterController =
         Get.isRegistered<FilterController>()
             ? Get.find<FilterController>()
@@ -68,10 +75,17 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
 
   Future<void> _initializeData() async {
     try {
-      if (productController.products.isEmpty) {
+      // Only fetch if products are empty or very old (cache for 5 minutes)
+      final shouldFetch =
+          productController.products.isEmpty ||
+          productController.lastSuccessfulFetch == null ||
+          DateTime.now().difference(productController.lastSuccessfulFetch!) >
+              const Duration(minutes: 5);
+
+      if (shouldFetch) {
         await productController.fetchProducts();
       }
-      await filterController.loadInitialData();
+      // FilterController now fetches initial data on its own init.
 
       if (_searchController.text.trim().isEmpty) {
         filterController.clearFilters();
@@ -79,14 +93,6 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
     } catch (e) {
       debugPrint('Error initializing data: $e');
     }
-  }
-
-  void _onSearchChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      final query = _searchController.text.trim();
-      filterController.searchProducts(query);
-    });
   }
 
   void _onTabTapped(int index) {
@@ -103,13 +109,13 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
   Widget _buildLoginRequiredScreen(String title) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -163,10 +169,7 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
           const SizedBox(height: 12),
           Semantics(
             label: 'search_products'.tr,
-            child: custom.SearchBar(
-              searchController: _searchController,
-              onSearch: (_) => _onSearchChanged(),
-            ),
+            child: const custom.SearchBar(),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -179,21 +182,56 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
 
               if (productController.filteredProducts.isEmpty) {
                 return Center(
-                  child: Text(
-                    'no_products_found'.tr,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                  child: RefreshIndicator.adaptive(
+                    onRefresh: () => productController.fetchProducts(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          // lottie error
+                          Lottie.asset(
+                            LottieAssets.notAvailable,
+                            height: 250,
+                            repeat: true,
+                          ),
+                          Text(
+                            'no_products_found'.tr,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: productController.fetchProducts,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('retry'.tr),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.refresh),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               }
 
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
-                child: ProductGrid(
-                  key: ValueKey(
-                    '${productController.filteredProducts.length}_${filterController.productSearchQuery}',
+                child: RefreshIndicator.adaptive(
+                  onRefresh: () => productController.fetchProducts(),
+                  child: ProductGrid(
+                    key: ValueKey(
+                      '${productController.filteredProducts.length}_${filterController.productSearchQuery}',
+                    ),
                   ),
-                  products: productController.filteredProducts,
-                  controller: productController,
                 ),
               );
             }),
@@ -234,11 +272,20 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
                           heroTag: 'cart_fab',
                           backgroundColor: colorScheme.primary,
                           foregroundColor: colorScheme.onPrimary,
-                          onPressed: () => Get.to(() => CartScreen()),
+                          onPressed: () {
+                            debugPrint(
+                              '🛒 [BuyerHomePage] 🚀 Cart FAB pressed - Navigating to CartScreen...',
+                            );
+                            debugPrint(
+                              '🛒 [BuyerHomePage] 🛍️ Current cart items: ${cartController?.cartItems.length ?? 0}',
+                            );
+                            Get.to(() => CartScreen());
+                          },
                           tooltip: 'cart'.tr,
                           child: const Icon(Icons.local_grocery_store_rounded),
                         ),
-                        if (cartController.cartItems.isNotEmpty)
+                        if (cartController != null &&
+                            cartController!.cartItems.isNotEmpty)
                           Positioned(
                             right: 0,
                             top: 0,
@@ -253,7 +300,7 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
                                 minHeight: 20,
                               ),
                               child: Text(
-                                '${cartController.cartItems.length}',
+                                '${cartController!.cartItems.length}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,

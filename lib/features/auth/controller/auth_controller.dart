@@ -139,8 +139,10 @@ class AuthController extends GetxController {
 
     try {
       if (!await TokenService.hasTokens()) {
-        debugPrint('❌ No tokens found — attempting fallback...');
-        await performMockLogin();
+        debugPrint('❌ No tokens found — redirecting to welcome');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.offAllNamed('/welcome');
+        });
         return;
       }
 
@@ -153,7 +155,9 @@ class AuthController extends GetxController {
           final prefs = await SharedPreferences.getInstance();
           await prefs.clear();
           currentUser.value = null;
-          Get.offAllNamed('/login');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.offAllNamed('/login');
+          });
           return;
         } else {
           debugPrint('✅ Token refreshed successfully');
@@ -173,19 +177,26 @@ class AuthController extends GetxController {
         deviceId: prefs.getString('deviceId') ?? '',
       );
 
-      debugPrint('✅ User loaded: ${currentUser.value?.fullName}');
+      debugPrint('✅ User loaded: [32m${currentUser.value?.fullName}[0m');
 
       if (currentUser.value != null) {
-        navigateBasedOnRole();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigateBasedOnRole();
+        });
       }
     } catch (e, stackTrace) {
-      debugPrint('🔥 checkLogin() failed — fallback to mock login');
+      debugPrint('🔥 checkLogin() failed — redirecting to login');
       debugPrint('Error: $e');
       debugPrint(stackTrace.toString());
-      await performMockLogin(); // fallback here
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed('/login');
+      });
+      // await performMockLogin(); // COMMENTED OUT - Mock login disabled as fallback
     }
   }
 
+  // COMMENTED OUT - Mock login functionality disabled
+  /*
   Future<void> performMockLogin() async {
     debugPrint('🤖 Performing mock login...');
     final prefs = await SharedPreferences.getInstance();
@@ -220,6 +231,7 @@ class AuthController extends GetxController {
     debugPrint('✅ Mock user loaded: Admin User');
     navigateBasedOnRole();
   }
+  */ // END OF COMMENTED OUT performMockLogin method
 
   void navigateBasedOnRole() {
     if (currentUser.value == null) {
