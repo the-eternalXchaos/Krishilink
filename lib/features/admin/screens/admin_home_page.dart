@@ -5,7 +5,7 @@ import 'package:krishi_link/core/components/product/management/unified_product_c
 import 'package:krishi_link/features/admin/controllers/component_animation_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
-import 'package:krishi_link/widgets/custom_app_bar.dart';
+import 'package:krishi_link/core/widgets/custom_app_bar.dart';
 import 'package:lottie/lottie.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:krishi_link/core/constants/constants.dart';
