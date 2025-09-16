@@ -236,7 +236,7 @@ class _WelcomePageState extends State<WelcomePage>
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                 ),
                 child: const LanguageSwitcher(),
               ),
@@ -257,10 +257,10 @@ class _WelcomePageState extends State<WelcomePage>
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white.withOpacity(0.1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -311,8 +311,8 @@ class _WelcomePageState extends State<WelcomePage>
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.3),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              color: Colors.white.withOpacity(isDark ? 0.05 : 0.3),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
             child: Text(
               'welcome_subtitle'.tr,
@@ -350,7 +350,7 @@ class _WelcomePageState extends State<WelcomePage>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFE05F34).withValues(alpha: 0.4),
+                        color: const Color(0xFFE05F34).withOpacity(0.4),
                         blurRadius: 15,
                         offset: const Offset(0, 8),
                       ),
@@ -398,7 +398,7 @@ class _WelcomePageState extends State<WelcomePage>
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        Colors.grey.withValues(alpha: 0.5),
+                        Colors.grey.withOpacity(0.5),
                         Colors.transparent,
                       ],
                     ),
@@ -413,7 +413,7 @@ class _WelcomePageState extends State<WelcomePage>
                 ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withOpacity(0.1),
                 ),
                 child: Text(
                   'or'.tr,
@@ -431,7 +431,7 @@ class _WelcomePageState extends State<WelcomePage>
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        Colors.grey.withValues(alpha: 0.5),
+                        Colors.grey.withOpacity(0.5),
                         Colors.transparent,
                       ],
                     ),
@@ -454,7 +454,7 @@ class _WelcomePageState extends State<WelcomePage>
               border: Border.all(color: theme.primaryColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: theme.primaryColor.withValues(alpha: 0.2),
+                  color: theme.primaryColor.withOpacity(0.2),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -513,8 +513,8 @@ class _WelcomePageState extends State<WelcomePage>
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.3),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          color: Colors.white.withOpacity(isDark ? 0.05 : 0.3),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Column(
           children: [
@@ -541,8 +541,8 @@ class _WelcomePageState extends State<WelcomePage>
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: (feature['color'] as Color).withValues(
-                                alpha: 0.1,
+                              color: (feature['color'] as Color).withOpacity(
+                                0.1,
                               ),
                             ),
                             child: Icon(

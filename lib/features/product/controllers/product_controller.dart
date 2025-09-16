@@ -152,7 +152,7 @@ class ProductController extends GetxController {
     }
   }
 
-  // Enhanced fetchProducts with better error handling and performance
+  // fetchProducts
   Future<void> fetchProducts({
     int? page,
     int? pageSizeParam,

@@ -27,7 +27,7 @@ class ProductListManagement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final toggleKey = product.id ?? 'temp_${product.hashCode}';
+    final toggleKey = product.id;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -41,8 +41,8 @@ class ProductListManagement extends StatelessWidget {
             height: 60,
             fit: BoxFit.cover,
             errorBuilder:
-                (_, __, ___) => Container(
-                  width: 60,
+                (_, _, _) => Container(
+                  width: 0,
                   height: 60,
                   color: Colors.grey[300],
                   child: const Icon(Icons.image_not_supported),

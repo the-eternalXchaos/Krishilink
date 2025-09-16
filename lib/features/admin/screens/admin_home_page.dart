@@ -421,7 +421,7 @@ class AdminHomePage extends StatelessWidget {
       final controller =
           Get.isRegistered<ComponentAnimationController>()
               ? Get.find<ComponentAnimationController>(tag: 'dashboard_metrics')
-              : Get.put(ComponentAnimationController( ));
+              : Get.put(ComponentAnimationController());
       return VisibilityDetector(
         key: const Key('dashboard-metrics'),
         onVisibilityChanged: (info) {
@@ -682,10 +682,10 @@ class AdminHomePage extends StatelessWidget {
 
   Widget _buildProfileCard(BuildContext context) {
     return Obx(() {
-      final controller = 
-       Get.isRegistered() ?Get.find<ComponentAnimationController>(
-        tag: 'profile_card',
-      ) :Get.put(ComponentAnimationController(),  tag: 'profile_card',);
+      final controller =
+          Get.isRegistered()
+              ? Get.find<ComponentAnimationController>(tag: 'profile_card')
+              : Get.put(ComponentAnimationController(), tag: 'profile_card');
       return VisibilityDetector(
         key: const Key('profile-card'),
         onVisibilityChanged: (info) {

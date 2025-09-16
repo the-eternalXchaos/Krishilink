@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/lottie/popup.dart';
 import 'package:lottie/lottie.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/product_card.dart';
@@ -30,41 +31,55 @@ class ProductGrid extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
       if (list.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Lottie animation
-              Lottie.asset(
-                LottieAssets.notAvailable,
-                height: 250,
-                repeat: true,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'no_products_found'.tr,
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => controller.fetchProducts(reset: true),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+        return RefreshIndicator(
+          onRefresh: () async {
+            try {
+              await controller.fetchProducts();
+            } catch (e) {
+              PopupService.showSnackbar(
+                type: PopupType.error,
+                title: 'error'.tr,
+                message: e.toString().trim(),
+              );
+            }
+          },
+
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Lottie animation
+                Lottie.asset(
+                  LottieAssets.notAvailable,
+                  height: 250,
+                  repeat: true,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'no products'.tr,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => controller.fetchProducts(),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('retry'.tr),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.refresh),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('retry'.tr),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.refresh),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }
@@ -77,26 +92,6 @@ class ProductGrid extends StatelessWidget {
         itemBuilder: (_, i) {
           final p = list[i];
           return ProductCard(product: p);
-          // return Card(
-          //   child: Column(
-          //     children: [
-          //       Expanded(
-          //         child:
-          //             p.image != null
-          //                 ? Image.network(p.image!, fit: BoxFit.cover)
-          //                 : const Icon(Icons.image_not_supported),
-          //       ),
-          //       Padding(
-          //         padding: const EdgeInsets.all(4.0),
-          //         child: Text(
-          //           p.productName,
-          //           maxLines: 1,
-          //           overflow: TextOverflow.ellipsis,
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // );
         },
       );
     });

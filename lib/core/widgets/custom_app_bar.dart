@@ -113,17 +113,14 @@ class _CustomAppBarState extends State<CustomAppBar>
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child:
-                _showSearchBar
-                    ? _buildSearchBar(theme)
-                    : _buildMainContent(
-                      theme,
-                      user,
-                      isLoggedIn,
-                      imageUrl,
-                      notificationController,
-                      isDark,
-                    ),
+            child: _buildMainContent(
+              theme,
+              user,
+              isLoggedIn,
+              imageUrl,
+              notificationController,
+              isDark,
+            ),
           ),
         ),
       );
@@ -167,7 +164,6 @@ class _CustomAppBarState extends State<CustomAppBar>
       child: FadeInLeft(
         duration: const Duration(milliseconds: 600),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: theme.colorScheme.primaryContainer.withOpacity(0.1),
@@ -197,7 +193,6 @@ class _CustomAppBarState extends State<CustomAppBar>
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.all(2),
                     child: CircleAvatar(
                       radius: 22,
                       backgroundImage: profileImage,
@@ -232,15 +227,7 @@ class _CustomAppBarState extends State<CustomAppBar>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'welcome_back'.tr,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      user.fullName,
+                      'hi_user'.trArgs([user.fullName.toString()]),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
@@ -248,6 +235,8 @@ class _CustomAppBarState extends State<CustomAppBar>
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
+
+                    const SizedBox(height: 2),
                   ],
                 ),
               ),
@@ -262,7 +251,6 @@ class _CustomAppBarState extends State<CustomAppBar>
     return FadeInLeft(
       duration: const Duration(milliseconds: 600),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
@@ -270,7 +258,6 @@ class _CustomAppBarState extends State<CustomAppBar>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -317,19 +304,7 @@ class _CustomAppBarState extends State<CustomAppBar>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Search button
-          SlideInDown(
-            delay: const Duration(milliseconds: 200),
-            child: _buildActionButton(
-              icon: Icons.search,
-              onTap: () => setState(() => _showSearchBar = true),
-              theme: theme,
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Notifications button
+          // Notifications we
           SlideInDown(
             delay: const Duration(milliseconds: 400),
             child: _buildNotificationButton(
@@ -378,7 +353,6 @@ class _CustomAppBarState extends State<CustomAppBar>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
@@ -415,7 +389,6 @@ class _CustomAppBarState extends State<CustomAppBar>
       child: Stack(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
@@ -445,9 +418,7 @@ class _CustomAppBarState extends State<CustomAppBar>
                   return Transform.scale(
                     scale: _pulseAnimation.value,
                     child: Container(
-                      min: 18,
                       height: 18,
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [Colors.red[400]!, Colors.red[600]!],
@@ -485,7 +456,6 @@ class _CustomAppBarState extends State<CustomAppBar>
     return GestureDetector(
       onTap: () => Get.to(() => const LoginScreen()),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [

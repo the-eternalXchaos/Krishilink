@@ -19,7 +19,9 @@ import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/product_grid.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/search_bar.dart'
     as custom;
-import 'package:krishi_link/src/core/customappbar/custom_app_bar.dart';
+// import 'package:krishi_link/src/core/customappbar/custom_app_bar.dart';
+import 'package:krishi_link/core/widgets/custom_app_bar.dart';
+
 import 'package:lottie/lottie.dart';
 
 class BuyerHomePage extends StatefulWidget {
