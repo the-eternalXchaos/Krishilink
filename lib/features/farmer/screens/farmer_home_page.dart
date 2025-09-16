@@ -14,7 +14,7 @@ import 'package:krishi_link/features/farmer/widgets/tips_banner.dart';
 import 'package:krishi_link/features/weather/controller/weather_controller.dart';
 import 'package:krishi_link/features/weather/page/weather_details_page.dart';
 import 'package:krishi_link/features/weather/weather_widget.dart';
-import 'package:krishi_link/widgets/custom_app_bar.dart';
+import 'package:krishi_link/core/widgets/custom_app_bar.dart';
 import 'package:krishi_link/src/features/notification/presentation/controllers/notification_controller.dart';
 
 class FarmerHomePage extends StatefulWidget {
