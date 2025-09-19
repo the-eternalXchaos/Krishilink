@@ -243,7 +243,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/features/product/controllers/product_controller.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
@@ -252,6 +251,7 @@ import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart'
 import 'package:krishi_link/features/chat/live_chat/live_chat_controller.dart';
 import 'package:krishi_link/features/product/screens/product_detail_page.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/widgets/safe_network_image.dart';
 
 class ProductCard extends StatefulWidget {
@@ -401,13 +401,13 @@ class _ProductCardState extends State<ProductCard>
       children: [
         Hero(
           tag: 'product-${widget.product.id}',
-            child: SafeNetworkImage(
-              imageUrl: widget.product.image,
+          child: SafeNetworkImage(
+            imageUrl: widget.product.image,
             height: imageHeight,
             width: double.infinity,
             fit: BoxFit.cover,
-              placeholder: _buildImagePlaceholder(theme, imageHeight),
-              errorWidget: _buildErrorImage(imageHeight),
+            placeholder: _buildImagePlaceholder(theme, imageHeight),
+            errorWidget: _buildErrorImage(imageHeight),
           ),
         ),
         _buildImageOverlay(theme),
@@ -462,7 +462,7 @@ class _ProductCardState extends State<ProductCard>
           colors: [Colors.grey.shade200, Colors.grey.shade100],
         ),
       ),
-      child: Image.asset(plantPlaceholder, fit: BoxFit.cover),
+      child: Image.asset(AssetPaths.plantPlaceholder, fit: BoxFit.cover),
     );
   }
 

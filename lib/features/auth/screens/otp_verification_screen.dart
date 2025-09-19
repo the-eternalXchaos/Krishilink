@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/exceptions/app_exception.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/services/device_service.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
@@ -166,7 +166,11 @@ class OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 duration: const Duration(milliseconds: 600),
                 child: Semantics(
                   label: 'OTP animation',
-                  child: Lottie.asset(sending, height: 200, repeat: true),
+                  child: Lottie.asset(
+                    AssetPaths.sending,
+                    height: 200,
+                    repeat: true,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

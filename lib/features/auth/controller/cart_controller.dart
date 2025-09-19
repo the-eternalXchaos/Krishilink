@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/material_ui/popup.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
@@ -15,6 +14,7 @@ import 'package:krishi_link/services/token_service.dart';
 class CartController extends GetxController {
   final _cartItems = <CartItem>[].obs;
   final isLoading = false.obs;
+  final isImageLoading = <String, bool>{}.obs; // Track image loading state
   List<CartItem> get cartItems => _cartItems;
 
   // Use centralized ApiService with interceptors (adds Authorization header)
@@ -37,6 +37,7 @@ class CartController extends GetxController {
     });
   }
 
+  /// Fetches cart items and their images from the API
   Future<void> fetchCartItems() async {
     try {
       debugPrint('🛒 [CartController] 🚀 Starting fetchCartItems...');
@@ -74,38 +75,44 @@ class CartController extends GetxController {
             );
             debugPrint('🛒 [CartController] 🛍️ Items data: $itemsList');
 
-            final items =
-                itemsList.map((item) {
-                  final imageUrl = item['imageUrl'] ?? item['image'] ?? '';
-                  final productName = item['productName'] ?? '';
-                  final productId =
-                      item['productId'] ??
-                      ''; // This is the actual product ID for image fetching
+            final items = <CartItem>[];
+            for (var item in itemsList) {
+              final productId = item['productId'] ?? '';
+              final productName = item['productName'] ?? '';
+              final price = (item['price'] ?? item['rate'] ?? 0).toString();
+              final quantity = item['quantity'] ?? 1;
 
-                  debugPrint(
-                    '🛒 [CartController] 🖼️ Processing item: $productName',
-                  );
-                  debugPrint(
-                    '🛒 [CartController] 🖼️ Cart Item ID: "${item['id']}"',
-                  );
-                  debugPrint(
-                    '🛒 [CartController] 🖼️ Product ID (for image): "$productId"',
-                  );
-                  debugPrint(
-                    '🛒 [CartController] 🖼️ Raw API image data: imageUrl="${item['imageUrl']}", image="${item['image']}"',
-                  );
-                  debugPrint(
-                    '🛒 [CartController] 🖼️ Final imageUrl: "$imageUrl"',
-                  );
+              // Fetch image from getImageEndpoint
+              String imageUrl = '';
+              if (productId.isNotEmpty) {
+                isImageLoading[productId] = true;
+                imageUrl = await _fetchProductImage(productId);
+                isImageLoading[productId] = false;
+              }
 
-                  return CartItem(
-                    id: productId, // Use productId as the id for image fetching
-                    name: productName,
-                    price: (item['price'] ?? item['rate'] ?? 0).toString(),
-                    imageUrl: imageUrl,
-                    quantity: item['quantity'] ?? 1,
-                  );
-                }).toList();
+              debugPrint(
+                '🛒 [CartController] 🖼️ Processing item: $productName',
+              );
+              debugPrint(
+                '🛒 [CartController] 🖼️ Cart Item ID: "${item['id']}"',
+              );
+              debugPrint(
+                '🛒 [CartController] 🖼️ Product ID (for image): "$productId"',
+              );
+              debugPrint(
+                '🛒 [CartController] 🖼️ Fetched imageUrl: "$imageUrl"',
+              );
+
+              items.add(
+                CartItem(
+                  id: productId,
+                  name: productName,
+                  price: price,
+                  imageUrl: imageUrl,
+                  quantity: quantity,
+                ),
+              );
+            }
             _cartItems.assignAll(items);
             debugPrint(
               '🛒 [CartController] ✅ Cart items assigned: ${_cartItems.length} items',
@@ -157,6 +164,31 @@ class CartController extends GetxController {
       debugPrint(
         '🛒 [CartController] 💰 Total price: ₹${totalPrice.toStringAsFixed(2)}',
       );
+    }
+  }
+
+  /// Fetches product image from getImageEndpoint
+  Future<String> _fetchProductImage(String productId) async {
+    try {
+      final endpoint = '${ApiConstants.getProductImageEndpoint}/$productId';
+      debugPrint('🛒 [CartController] 📸 Fetching image from: $endpoint');
+      final response = await _api.dio.get(endpoint);
+      if (response.statusCode == 200) {
+        final data =
+            response.data is String ? jsonDecode(response.data) : response.data;
+        debugPrint('🛒 [CartController] 📸 Full image response data: $data');
+        final imageUrl = data['imageUrl'] ?? '';
+        debugPrint('🛒 [CartController] 📸 Image URL fetched: $imageUrl');
+        return imageUrl;
+      } else {
+        debugPrint(
+          '🛒 [CartController] ❌ Failed to fetch image: ${response.statusCode}',
+        );
+        return '';
+      }
+    } catch (e) {
+      debugPrint('🛒 [CartController] ❌ Error fetching image: $e');
+      return '';
     }
   }
 

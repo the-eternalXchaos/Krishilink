@@ -1,17 +1,7 @@
-// import 'dart:convert';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/foundation.dart';
-// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-// import 'package:get/get.dart';
-// import 'package:jwt_decoder/jwt_decoder.dart';
-// import 'package:krishi_link/core/utils/api_constants.dart';
-// import 'package:krishi_link/exceptions/app_exception.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:krishi_link/features/admin/models/user_model.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
@@ -39,9 +29,11 @@ class TokenService {
       debugPrint(
         '[TokenService] Saving tokens: access=$accessToken, refresh=$refreshToken, exp=$expiration',
       );
+      // Normalize expiration before persisting so later parsing is reliable.
+      final normalizedExpiration = _normalizeExpiration(expiration);
       await _storage.write(key: _tokenKey, value: accessToken);
       await _storage.write(key: _refreshTokenKey, value: refreshToken);
-      await _storage.write(key: _expirationKey, value: expiration);
+      await _storage.write(key: _expirationKey, value: normalizedExpiration);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('hasTokens', true);
@@ -168,7 +160,7 @@ class TokenService {
         debugPrint('[TokenService] No expiration stored');
         return true;
       }
-      final expiryDate = DateTime.parse(expStr);
+      final expiryDate = _parseExpiration(expStr);
       final isExpired = DateTime.now().isAfter(expiryDate);
       debugPrint(
         '[TokenService] Token expiration check: isExpired=$isExpired, expiry=$expStr',
@@ -268,5 +260,49 @@ class TokenService {
       debugPrint('[TokenService] Error decoding token: $e');
       return null;
     }
+  }
+
+  // --- Private helpers --------------------------------------------------
+
+  // Accepts several possible backend formats and returns a DateTime.
+  // Supported examples:
+  // 1) ISO 8601: 2025-09-17T10:03:13.000Z
+  // 2) Backend AM/PM: 2025-09-17 10:03:13 AM
+  // 3) Backend 24h  : 2025-09-17 14:03:13
+  static DateTime _parseExpiration(String raw) {
+    // Fast path: try native parse (handles ISO 8601 & "yyyy-MM-dd HH:mm:ss")
+    try {
+      final dt = DateTime.parse(raw);
+      return dt; // Already has timezone info or treated as local.
+    } catch (_) {
+      // fall through
+    }
+
+    // Try AM/PM format.
+    final patterns = <String>[
+      'yyyy-MM-dd hh:mm:ss a', // 12h with AM/PM
+      'yyyy-MM-dd HH:mm:ss', // 24h without AM/PM
+    ];
+    for (final p in patterns) {
+      try {
+        final fmt = DateFormat(p);
+        return fmt.parse(raw, false); // treat as local time
+      } catch (_) {
+        // continue
+      }
+    }
+
+    // As last resort, return now so caller treats as expired soon.
+    debugPrint(
+      '[TokenService] Unknown expiration format: "$raw"; defaulting to now',
+    );
+    return DateTime.now();
+  }
+
+  // Normalize any backend expiration string to ISO8601 (UTC) for consistent future parsing.
+  static String _normalizeExpiration(String raw) {
+    final dt = _parseExpiration(raw);
+    // Store in UTC to avoid device timezone skew; some server strings are local w/out TZ.
+    return dt.toUtc().toIso8601String();
   }
 }

@@ -483,10 +483,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/auth/controller/register_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/auth/widgets/social_iconbutton.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 
@@ -1159,17 +1159,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Row(
           children: [
             _buildSocialButton(
-              googleLogoPath,
+              AssetPaths.googleLogo,
               () => _handleSocialRegister('Google'),
               isTablet,
             ),
             _buildSocialButton(
-              facebookLogoPath,
+              AssetPaths.facebookLogo,
               () => _handleSocialRegister('Facebook'),
               isTablet,
             ),
             _buildSocialButton(
-              appleLogoPath,
+              AssetPaths.appleLogo,
               () => _handleSocialRegister('Apple'),
               isTablet,
             ),

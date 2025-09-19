@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/controllers/profile_controller.dart';
-import 'package:krishi_link/core/utils/constants.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 
 class ProfileEdit extends StatelessWidget {
   const ProfileEdit({super.key});
@@ -71,7 +71,9 @@ class ProfileEdit extends StatelessWidget {
                                                   .value!
                                                   .profileImageUrl!,
                                             )
-                                            : AssetImage(defaultImage)
+                                            : AssetImage(
+                                                  AssetPaths.defaultImage,
+                                                )
                                                 as ImageProvider,
                                     backgroundColor:
                                         Theme.of(context).cardColor,
@@ -154,7 +156,7 @@ class ProfileEdit extends StatelessWidget {
                                     value!.isEmpty ? 'required'.tr : null,
                           ),
                           DropdownButtonFormField<String>(
-                            value: controller.gender?.value,
+                            initialValue: controller.gender?.value,
                             items:
                                 ['Male', 'Female', 'Rather not say']
                                     .map(

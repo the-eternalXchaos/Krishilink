@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/buyer/models/wishlist_item.dart';

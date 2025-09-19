@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.krishi_link"
-    compileSdk = 35
+    // Raised to 36 to satisfy plugins requiring Android SDK 36 (file_picker, geolocator_android, etc.)
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
     
     // Use Java 17 compatibility for Android development (recommended)
@@ -24,8 +25,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.krishi_link"
-        minSdk = 23
-        targetSdk = 34
+        minSdk = flutter.minSdkVersion
+    // You can raise to 35 or 36; keeping one below compile while you finish installing platform 36 is acceptable.
+    // Once Platform 36 is installed, you may also set this to 36 for Play compliance when 36 is finalized.
+    targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:krishi_link/core/components/product/location_picker.dart';
+import 'package:krishi_link/src/core/components/product/location_picker.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/weather/controller/weather_controller.dart';
 import 'package:krishi_link/features/weather/weather_model.dart';

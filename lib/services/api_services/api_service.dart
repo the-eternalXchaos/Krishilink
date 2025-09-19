@@ -5,17 +5,19 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
-import 'package:krishi_link/core/components/material_ui/popup.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/core/utils/constants.dart';
+
+// Local project imports
+import '../../core/utils/api_constants.dart';
+import '../../core/lottie/pop_up.dart';
+import '../../core/lottie/popup_service.dart';
+import '../../src/core/constants/constants.dart';
+
+// Package-level imports within this app
 import 'package:krishi_link/exceptions/app_exception.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/models/review_model.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
-import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/services/token_service.dart';
 
 class ApiService {

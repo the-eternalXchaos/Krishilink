@@ -7,9 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
 
 import 'package:krishi_link/core/controllers/language_controller.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/widgets/language_switcher.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -267,7 +267,7 @@ class _WelcomePageState extends State<WelcomePage>
                 ],
               ),
               child: Image.asset(
-                krishilinkLogo,
+                AssetPaths.krishilinkLogo,
                 height: 160,
                 fit: BoxFit.contain,
               ),

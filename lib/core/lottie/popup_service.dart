@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
-import 'package:krishi_link/core/constants/constants.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
 
 class PopupService {

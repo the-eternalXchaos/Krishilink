@@ -1,7 +1,7 @@
 // lib/features/farmer/screens/crop_card.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/features/farmer/models/crop_model.dart';

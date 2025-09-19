@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
-import 'package:krishi_link/core/constants/constants.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/widgets/social_iconbutton.dart';
 import 'package:krishi_link/services/device_service.dart';
@@ -579,9 +579,9 @@ class _LoginScreenState extends State<LoginScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildSocialButton(googleLogoPath, 'Google', isTablet),
-            _buildSocialButton(facebookLogoPath, 'Facebook', isTablet),
-            _buildSocialButton(appleLogoPath, 'Apple', isTablet),
+            _buildSocialButton(AssetPaths.googleLogo, 'Google', isTablet),
+            _buildSocialButton(AssetPaths.facebookLogo, 'Facebook', isTablet),
+            _buildSocialButton(AssetPaths.appleLogo, 'Apple', isTablet),
           ],
         ),
       ],

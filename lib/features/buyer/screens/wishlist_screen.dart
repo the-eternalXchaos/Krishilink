@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
 
 class WishlistScreen extends StatelessWidget {
@@ -16,9 +16,10 @@ class WishlistScreen extends StatelessWidget {
         Get.isRegistered<WishlistController>()
             ? Get.find<WishlistController>()
             : Get.put(WishlistController());
-    final CartController cartController = Get.isRegistered<CartController>()
-        ? Get.find<CartController>()
-        : Get.put(CartController());
+    final CartController cartController =
+        Get.isRegistered<CartController>()
+            ? Get.find<CartController>()
+            : Get.put(CartController());
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -54,7 +55,8 @@ class WishlistScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Lottie.asset(
-                    emptyCart, // You can create a separate wishlist animation
+                    AssetPaths
+                        .emptyCart, // You can create a separate wishlist animation
                     height: 200,
                   ),
                   const SizedBox(height: 16),

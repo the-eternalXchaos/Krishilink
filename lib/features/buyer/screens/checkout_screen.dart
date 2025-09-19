@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/app_text_input_field.dart';
+import 'package:krishi_link/src/core/components/app_text_input_field.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/services/popup_service.dart';
-import 'package:krishi_link/core/components/material_ui/popup.dart';
 import 'package:krishi_link/src/features/payment/data/payment_service.dart';
 import 'package:krishi_link/src/features/payment/data/khalti_direct_payment_service.dart';
 import 'package:krishi_link/src/features/payment/data/payment_keys.dart';
 import 'package:krishi_link/src/core/config/payment_config.dart';
-import 'package:krishi_link/core/components/product/location_picker.dart';
+import 'package:krishi_link/src/core/components/product/location_picker.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final List<CartItem>? items;

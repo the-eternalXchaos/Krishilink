@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/features/weather/weather_model.dart';
 

@@ -9,9 +9,9 @@ import 'package:krishi_link/src/features/product/presentation/controllers/filter
 class BuyerBinding extends Bindings {
   @override
   void dependencies() {
-    // Page-specific controllers (disposed when leaving page)
-    Get.create<ProductController>(() => ProductController());
-    Get.create<FilterController>(() => FilterController());
+    // Core browsing controllers as lazy singletons; recreate with fenix when needed
+    Get.lazyPut<ProductController>(() => ProductController(), fenix: true);
+    Get.lazyPut<FilterController>(() => FilterController(), fenix: true);
 
     // Auth-dependent controllers - only create if logged in
     final auth = Get.find<AuthController>();
@@ -27,7 +27,7 @@ class GuestBuyerBinding extends Bindings {
   @override
   void dependencies() {
     // Only product-related controllers, no auth-dependent ones
-    Get.create<ProductController>(() => ProductController());
-    Get.create<FilterController>(() => FilterController());
+    Get.lazyPut<ProductController>(() => ProductController(), fenix: true);
+    Get.lazyPut<FilterController>(() => FilterController(), fenix: true);
   }
 }

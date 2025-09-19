@@ -3,18 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import 'package:krishi_link/core/components/app_text_input_field.dart' as kl;
-
-import 'package:krishi_link/core/components/confirm box/custom_confirm_dialog.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
-import 'package:krishi_link/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
-import 'package:krishi_link/core/components/custom_drawer/custom_drawer.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
 
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_controller.dart';
 import 'package:krishi_link/features/chat/widgets/typing_indicator.dart';
+import 'package:krishi_link/src/core/components/app_text_input_field.dart';
+import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
+import 'package:krishi_link/src/core/components/custom_drawer/custom_drawer.dart';
 
 class AiChatScreen extends StatefulWidget {
   final String name;
@@ -888,7 +887,7 @@ class _InputArea extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Obx(
-                  () => kl.AppTextInputField(
+                  () => AppTextInputField(
                     controller: controller.inputController,
                     focusNode: focusNode,
                     hint: 'type_your_message'.tr,

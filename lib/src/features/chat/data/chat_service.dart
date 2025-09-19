@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:signalr_netcore/signalr_client.dart';
-import 'package:krishi_link/src/core/utils/api_constants.dart';
 import 'package:krishi_link/src/core/storage/token_storage.dart';
 
 class ChatService {
@@ -121,7 +121,8 @@ class ChatService {
                 .withUrl(
                   _lastUsedUrl!,
                   options: HttpConnectionOptions(
-                    accessTokenFactory: () async => await TokenStorage.getToken() ?? '',
+                    accessTokenFactory:
+                        () async => await TokenStorage.getToken() ?? '',
                     logMessageContent: verbose,
                     skipNegotiation: false,
                     transport: HttpTransportType.WebSockets,
@@ -148,7 +149,8 @@ class ChatService {
                 .withUrl(
                   _lastUsedUrl ?? hubUrl,
                   options: HttpConnectionOptions(
-                    accessTokenFactory: () async => await TokenStorage.getToken() ?? '',
+                    accessTokenFactory:
+                        () async => await TokenStorage.getToken() ?? '',
                     logMessageContent: verbose,
                     skipNegotiation: false,
                     transport: HttpTransportType.ServerSentEvents,

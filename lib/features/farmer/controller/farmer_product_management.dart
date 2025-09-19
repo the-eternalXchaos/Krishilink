@@ -7,8 +7,8 @@
 // import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 // import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 // import 'package:krishi_link/widgets/search_bar.dart';
-// import 'package:krishi_link/core/components/product/product_form.dart';
-// import 'package:krishi_link/core/components/product/product_form_data.dart';
+// import 'package:krishi_link/src/core/components/product/product_form.dart';
+// import 'package:krishi_link/src/core/components/product/product_form_data.dart';
 
 // class FarmerProductManagementScreen extends StatefulWidget {
 //   const FarmerProductManagementScreen({super.key});
@@ -69,7 +69,7 @@
 //               if (product == null) {
 //                 await controller.addProductFromForm(formData, imagePath);
 //               } else {
-//                 
+//
 // tFromForm(
 //                   product.id,
 //                   formData,

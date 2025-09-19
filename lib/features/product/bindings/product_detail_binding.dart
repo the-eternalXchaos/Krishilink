@@ -5,7 +5,7 @@ import 'package:krishi_link/src/features/product/presentation/controllers/produc
 class ProductDetailBinding extends Bindings {
   @override
   void dependencies() {
-    // Page-specific controller for product details
-    Get.create<ProductController>(() => ProductController());
+    // Lazy product controller (shared singleton) reused by detail pages
+    Get.lazyPut<ProductController>(() => ProductController(), fenix: true);
   }
 }

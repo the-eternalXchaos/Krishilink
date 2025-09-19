@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:krishi_link/core/controllers/settings_controller.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
 

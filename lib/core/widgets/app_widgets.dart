@@ -1,6 +1,6 @@
 // lib/core/widgets/app_widgets.dart
 import 'package:flutter/material.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'dart:async';
 import 'ui.dart';
 import 'buttons.dart';

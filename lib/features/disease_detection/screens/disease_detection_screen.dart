@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
-import 'package:krishi_link/core/utils/constants.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/features/disease_detection/controller/disease_controller.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 
@@ -170,7 +170,7 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
                                           MainAxisAlignment.center,
                                       children: [
                                         Lottie.asset(
-                                          leafScanning,
+                                          AssetPaths.leafScanning,
                                           height: 120,
                                           repeat: true,
                                         ),

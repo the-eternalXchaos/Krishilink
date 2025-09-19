@@ -1,11 +1,8 @@
-// lib/core/widgets/ui.dart
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
-import '../constants/app_spacing.dart';
+import '../../src/core/constants/app_spacing.dart';
 
-/// General UI components for consistent styling
 class UI {
-  /// Modern TextField with consistent styling
   static Widget textField({
     required TextEditingController controller,
     required String label,
@@ -64,7 +61,7 @@ class UI {
     );
   }
 
-  /// Modern Card with shadow and rounded corners
+  ///  Card 
   static Widget card({
     required Widget child,
     String? title,
@@ -130,7 +127,7 @@ class UI {
     );
   }
 
-  /// Modern Dropdown with consistent styling
+  /// Dropdown widget
   static Widget dropdown({
     required String? value,
     required List<String> items,

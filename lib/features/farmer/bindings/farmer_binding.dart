@@ -6,8 +6,8 @@ import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 class FarmerBinding extends Bindings {
   @override
   void dependencies() {
-    // Page-specific controllers for farmer dashboard
-    Get.create<ProductController>(() => ProductController());
+    // Shared product controller with fenix recreation
+    Get.lazyPut<ProductController>(() => ProductController(), fenix: true);
 
     // Farmer-specific controllers with fenix for recreation
     Get.lazyPut(() => FarmerController(), fenix: true);

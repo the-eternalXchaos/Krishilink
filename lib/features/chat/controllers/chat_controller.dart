@@ -206,7 +206,7 @@ class ChatController extends GetxController {
     final tempMessage = Message(
       id: tempId,
       chatRoomId: currentChatRoomId.value,
-      senderId: currentUser.id ?? '',
+      senderId: currentUser.id,
       senderName: currentUser.fullName,
       content: content,
       type: type,

@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/product/management/unified_product_api_services.dart';
-import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_api_services.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_analytics_controler.dart';
 import 'package:krishi_link/features/admin/controllers/admin_category_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';

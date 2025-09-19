@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/profile/profile_edit.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
@@ -32,11 +32,11 @@ class ProfileScreen extends StatelessWidget {
         final profileImage =
             imageUrl.isNotEmpty
                 ? FadeInImage.assetNetwork(
-                  placeholder: guestImage,
+                  placeholder: AssetPaths.guestImage,
                   image: imageUrl,
                   fit: BoxFit.cover,
                 ).image
-                : AssetImage(guestImage);
+                : AssetImage(AssetPaths.guestImage);
 
         final formattedDate =
             userData?.createdAt != null
@@ -304,7 +304,7 @@ class ProfileScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage(guestImage),
+              backgroundImage: AssetImage(AssetPaths.guestImage),
               backgroundColor: Theme.of(context).colorScheme.surface,
             ),
             const SizedBox(height: 24),

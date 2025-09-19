@@ -5,9 +5,8 @@
 import 'package:get/get.dart';
 // import 'package:intl/intl.dart';
 // import 'package:krishi_link/features/product/controllers/product_controller.dart';
-// import 'package:krishi_link/core/components/bottom_sheet/app_bottom_sheet.dart';
-// import 'package:krishi_link/core/components/material_ui/popup.dart';
-// import 'package:krishi_link/core/utils/api_constants.dart';
+// import 'package:krishi_link/src/core/components/bottom_sheet/app_bottom_sheet.dart';
+//  // import 'package:krishi_link/core/utils/api_constants.dart';
 // import 'package:krishi_link/features/cart/models/cart_item.dart';
 // import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 // import 'package:krishi_link/features/auth/controller/auth_controller_new.dart';
@@ -511,7 +510,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:krishi_link/features/product/controllers/product_controller.dart';
-import 'package:krishi_link/core/components/bottom_sheet/app_bottom_sheet.dart';
+import 'package:krishi_link/src/core/components/bottom_sheet/app_bottom_sheet.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';

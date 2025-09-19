@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/widgets/language_switcher.dart';
 import 'package:krishi_link/src/features/notification/presentation/controllers/notification_controller.dart';
 
@@ -34,7 +34,6 @@ class _CustomAppBarState extends State<CustomAppBar>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  bool _showSearchBar = false;
 
   @override
   void initState() {
@@ -157,7 +156,7 @@ class _CustomAppBarState extends State<CustomAppBar>
     final profileImage =
         imageUrl.isNotEmpty
             ? NetworkImage(imageUrl)
-            : AssetImage(guestImage) as ImageProvider;
+            : AssetImage(AssetPaths.guestImage) as ImageProvider;
 
     return GestureDetector(
       onTap: () => Get.to(() => ProfileScreen()),
@@ -483,54 +482,6 @@ class _CustomAppBarState extends State<CustomAppBar>
                 color: theme.colorScheme.onPrimary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(ThemeData theme) {
-    return FadeIn(
-      duration: const Duration(milliseconds: 300),
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            Icon(
-              Icons.search,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'search_products'.tr,
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                onSubmitted: (value) {
-                  // Handle search
-                  setState(() => _showSearchBar = false);
-                },
-              ),
-            ),
-            IconButton(
-              onPressed: () => setState(() => _showSearchBar = false),
-              icon: Icon(
-                Icons.close,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],

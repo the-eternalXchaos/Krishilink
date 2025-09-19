@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
-import 'package:krishi_link/core/components/product/management/unified_product_api_services.dart';
-import 'package:krishi_link/core/components/product/management/unified_product_controller.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_api_services.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_analytics_controler.dart';
 import 'package:krishi_link/features/admin/controllers/admin_category_controller.dart';
 import 'package:krishi_link/features/admin/controllers/admin_order_controller.dart';
@@ -18,8 +18,8 @@ import 'package:krishi_link/features/admin/controllers/admin_settings_controller
 class AdminBinding extends Bindings {
   @override
   void dependencies() {
-    // Page-specific controllers for admin dashboard
-    Get.create<ProductController>(() => ProductController());
+    // Product controller: lazy singleton with fenix to recreate after disposal
+    Get.lazyPut<ProductController>(() => ProductController(), fenix: true);
 
     // Admin-specific controllers with fenix for recreation after disposal
     Get.lazyPut(() => AdminUserController(), fenix: true);

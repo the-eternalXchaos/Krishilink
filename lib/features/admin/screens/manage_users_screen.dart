@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:krishi_link/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/features/admin/controllers/admin_user_controller.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
 

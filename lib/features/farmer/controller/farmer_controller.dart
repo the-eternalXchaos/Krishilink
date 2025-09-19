@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
+import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/admin/models/notification_model.dart';
 import 'package:krishi_link/features/admin/models/order_model.dart';
@@ -13,7 +13,7 @@ import 'package:krishi_link/src/features/farmer/data/farmer_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tutorial_model.dart';
 import '../models/crop_model.dart';
-import 'package:krishi_link/core/components/product/product_form_data.dart';
+import 'package:krishi_link/src/core/components/product/product_form_data.dart';
 
 class FarmerController extends GetxController {
   final FarmerApiService apiServices =

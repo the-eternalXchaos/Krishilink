@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
-import 'package:krishi_link/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
@@ -35,14 +35,23 @@ class CropDetailScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.camera_alt, color: colorScheme.onPrimary),
             onPressed: () async {
-              final res = await Get.toNamed('/disease-detection', arguments: {'returnResult': true, 'cropId': crop.id});
+              final res = await Get.toNamed(
+                '/disease-detection',
+                arguments: {'returnResult': true, 'cropId': crop.id},
+              );
               if (res is Map<String, dynamic>) {
                 final status = res['status'] as String?;
                 final disease = res['disease'] as String?;
                 final care = res['careInstructions'] as String?;
                 final suggestion = res['suggestions'] as String?;
                 if (status != null && status.isNotEmpty) {
-                  await controller.updateCropHealth(crop.id, status: status, disease: disease, careInstructions: care, suggestions: suggestion);
+                  await controller.updateCropHealth(
+                    crop.id,
+                    status: status,
+                    disease: disease,
+                    careInstructions: care,
+                    suggestions: suggestion,
+                  );
                 }
               }
             },
@@ -65,16 +74,24 @@ class CropDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Obx(() {
-  final live = controller.crops.firstWhere((c) => c.id == crop.id, orElse: () => crop);
-  final status = live.status ?? 'Unknown';
-  final color = status == 'Healthy' ? colorScheme.primary : status == 'At Risk' ? colorScheme.secondary : colorScheme.error;
-  return _buildDetailRow(
-    context,
-    icon: Icons.tag,
-    label: 'Status'.tr,
-    value: status.tr,
-    valueColor: color,
-  );
+                      final live = controller.crops.firstWhere(
+                        (c) => c.id == crop.id,
+                        orElse: () => crop,
+                      );
+                      final status = live.status ?? 'Unknown';
+                      final color =
+                          status == 'Healthy'
+                              ? colorScheme.primary
+                              : status == 'At Risk'
+                              ? colorScheme.secondary
+                              : colorScheme.error;
+                      return _buildDetailRow(
+                        context,
+                        icon: Icons.tag,
+                        label: 'Status'.tr,
+                        value: status.tr,
+                        valueColor: color,
+                      );
                     }),
 
                     _buildDetailRow(
@@ -147,17 +164,26 @@ class CropDetailScreen extends StatelessWidget {
                       text: 'Scan Leaf Again'.tr,
                       icon: Icons.camera_alt,
                       onPressed: () async {
-              final res = await Get.toNamed('/disease-detection', arguments: {'returnResult': true, 'cropId': crop.id});
-              if (res is Map<String, dynamic>) {
-                final status = res['status'] as String?;
-                final disease = res['disease'] as String?;
-                final care = res['careInstructions'] as String?;
-                final suggestion = res['suggestions'] as String?;
-                if (status != null && status.isNotEmpty) {
-                  await controller.updateCropHealth(crop.id, status: status, disease: disease, careInstructions: care, suggestions: suggestion);
-                }
-              }
-            },
+                        final res = await Get.toNamed(
+                          '/disease-detection',
+                          arguments: {'returnResult': true, 'cropId': crop.id},
+                        );
+                        if (res is Map<String, dynamic>) {
+                          final status = res['status'] as String?;
+                          final disease = res['disease'] as String?;
+                          final care = res['careInstructions'] as String?;
+                          final suggestion = res['suggestions'] as String?;
+                          if (status != null && status.isNotEmpty) {
+                            await controller.updateCropHealth(
+                              crop.id,
+                              status: status,
+                              disease: disease,
+                              careInstructions: care,
+                              suggestions: suggestion,
+                            );
+                          }
+                        }
+                      },
                       colorScheme: colorScheme,
                     ),
                   ],

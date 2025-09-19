@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
-import 'package:krishi_link/core/components/material_ui/popup.dart';
+
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/core/utils/constants.dart';
 import 'package:krishi_link/features/ai_chat/ai_chat_screen.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
@@ -178,7 +178,7 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
             child: Obx(() {
               if (productController.isLoading.value) {
                 return Center(
-                  child: Lottie.asset(productLoading, repeat: false),
+                  child: Lottie.asset(AssetPaths.productLoading, repeat: false),
                 );
               }
 

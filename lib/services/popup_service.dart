@@ -1,6 +1,6 @@
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
-// import 'package:krishi_link/core/components/material_ui/popup.dart';
+//
 // import 'package:krishi_link/core/theme/app_theme.dart';
 // import 'package:krishi_link/core/utils/constants.dart';
 // import 'package:lottie/lottie.dart';

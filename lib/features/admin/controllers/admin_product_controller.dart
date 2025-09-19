@@ -6,8 +6,7 @@
 // // import 'package:krishi_link/features/admin/models/product_model.dart';
 // // import 'package:krishi_link/services/token_service.dart';
 // // import 'package:krishi_link/services/popup_service.dart';
-// // import 'package:krishi_link/core/components/material_ui/popup.dart';
-
+// //  
 // // // class AdminProductController extends GetxController {
 // // // //   final products = <Product>[].obs;
 // // // //   final isLoading = false.obs;
@@ -98,8 +97,7 @@
 // // // import 'package:krishi_link/features/admin/models/product_model.dart';
 // // // import 'package:krishi_link/services/token_service.dart';
 // // // import 'package:krishi_link/services/popup_service.dart';
-// // // import 'package:krishi_link/core/components/material_ui/popup.dart';
-
+// // //  
 // // // class AdminProductController extends GetxController {
 // // //   final products = <Product>[].obs;
 // // //   final isLoading = false.obs;
@@ -292,8 +290,7 @@
 // import 'package:krishi_link/core/utils/api_constants.dart';
 // import 'package:krishi_link/features/admin/models/product_model.dart';
 // import 'package:krishi_link/services/popup_service.dart';
-// import 'package:krishi_link/core/components/material_ui/popup.dart';
-// import 'package:krishi_link/services/token_service.dart';
+//  // import 'package:krishi_link/services/token_service.dart';
 // import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 
 // class AdminProductController extends GetxController {

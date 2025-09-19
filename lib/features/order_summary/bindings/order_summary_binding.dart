@@ -4,7 +4,10 @@ import 'package:krishi_link/features/order_summary/controllers/order_summary_con
 class OrderSummaryBinding extends Bindings {
   @override
   void dependencies() {
-    // Ephemeral: destroyed when page is popped
-    Get.create<OrderSummaryController>(() => OrderSummaryController());
+    // Lazy singleton with fenix; recreated if disposed after navigation
+    Get.lazyPut<OrderSummaryController>(
+      () => OrderSummaryController(),
+      fenix: true,
+    );
   }
 }

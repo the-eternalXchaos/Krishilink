@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/components/confirm%20box/custom_confirm_dialog.dart';
-import 'package:krishi_link/core/constants/constants.dart';
+import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
-
-import '../../../core/components/product/management/unified_product_management.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_management.dart';
 
 class FarmerMenu extends StatelessWidget {
   const FarmerMenu({super.key});
@@ -19,7 +19,7 @@ class FarmerMenu extends StatelessWidget {
       backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
-          padding: padding,
+          padding: AppSpacing.mediumPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -41,7 +41,7 @@ class FarmerMenu extends StatelessWidget {
                 () => Future.delayed(const Duration(milliseconds: 10), () {
                   Get.to(() => BuyerHomePage(isGuest: false));
                 }),
-              ),  
+              ),
               _buildMenuItem(
                 Icons.precision_manufacturing_outlined,
                 'product_management'.tr,

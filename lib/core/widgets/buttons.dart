@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/app_spacing.dart';
+import '../../src/core/constants/app_spacing.dart';
 
 /// Button components for consistent styling
 class Buttons {
@@ -15,12 +15,15 @@ class Buttons {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withValues(alpha: 0.8),
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

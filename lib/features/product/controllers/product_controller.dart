@@ -7,8 +7,8 @@ import 'package:get/get.dart' hide Response;
 import 'package:http/http.dart' as http;
 // Avoid hard dependency to prevent DI cycles; only use type and resolve lazily when needed.
 import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
-import 'package:krishi_link/core/components/material_ui/popup.dart';
-import 'package:krishi_link/core/lottie/popup.dart';
+
+import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
@@ -16,6 +16,7 @@ import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/models/review_model.dart';
 import 'package:krishi_link/services/api_services/api_service.dart';
+import 'package:krishi_link/src/core/networking/dio_provider.dart';
 import 'package:krishi_link/services/token_service.dart';
 
 class ProductController extends GetxController {
@@ -48,6 +49,8 @@ class ProductController extends GetxController {
   DateTime? lastSuccessfulFetch;
   static const Duration _minFetchInterval = Duration(seconds: 2);
   bool _isFetching = false;
+  bool _initialFetchCompleted =
+      false; // Track whether first attempt finished (success or fail)
 
   // Filter state tracking
   final RxMap<String, dynamic> lastFilters = <String, dynamic>{}.obs;
@@ -57,7 +60,7 @@ class ProductController extends GetxController {
   // Dependencies (FilterController resolved lazily to avoid cycles)
   late final ApiService _apiService;
   late final AuthController _authController;
-  late final Dio _dioClient;
+  late Dio _dioClient;
 
   // Getters
   AuthController get authController {
@@ -98,8 +101,11 @@ class ProductController extends GetxController {
       '✅ [ProductController] AuthController initialized - User logged in: ${_authController.isLoggedIn}',
     );
 
-    _dioClient = Dio();
-    debugPrint('✅ [ProductController] Dio client initialized');
+    // Use central DioProvider (lazy singleton with fenix). This prevents stale
+    // instances while still allowing rebuild via provider.rebuild().
+    final dioProvider = Get.find<DioProvider>();
+    _dioClient = dioProvider.client;
+    debugPrint('✅ [ProductController] Dio client obtained from DioProvider');
 
     debugPrint(
       '🎯 [ProductController] All dependencies initialized successfully',
@@ -198,11 +204,46 @@ class ProductController extends GetxController {
         '[ProductController] 🔐 Request options headers: ${options.headers}',
       );
 
-      final response = await _dioClient.get(
-        ApiConstants.getAllProductsEndpoint,
-        queryParameters: queryParams,
-        options: options,
-      );
+      Response response;
+      try {
+        response = await _dioClient.get(
+          ApiConstants.getAllProductsEndpoint,
+          queryParameters: queryParams,
+          options: options,
+        );
+      } on DioException catch (dioErr) {
+        // Handle specific closed-connection scenario: rebuild Dio then retry once.
+        final msg = dioErr.message ?? '';
+        final isClosedConn =
+            msg.contains(
+              "can't establish a new connection after it was closed",
+            ) ||
+            msg.toLowerCase().contains('connection was disposed') ||
+            msg.toLowerCase().contains('client is closed');
+        if (isClosedConn) {
+          debugPrint(
+            '[ProductController] 🔄 Detected closed Dio adapter – rebuilding and retrying once',
+          );
+          try {
+            final provider = Get.find<DioProvider>();
+            provider.rebuild(forceClose: true);
+            _dioClient = provider.client;
+            response = await _dioClient.get(
+              ApiConstants.getAllProductsEndpoint,
+              queryParameters: queryParams,
+              options: options,
+            );
+          } catch (retryErr, st) {
+            debugPrint(
+              '[ProductController] ❌ Retry after rebuild failed: $retryErr',
+            );
+            debugPrint('[ProductController] Retry stack: $st');
+            rethrow; // Bubble to outer catch
+          }
+        } else {
+          rethrow; // Not a closed-connection case; let outer catch handle it.
+        }
+      }
 
       debugPrint(
         '[ProductController] 📥 Response received with status: ${response.statusCode}',
@@ -212,10 +253,14 @@ class ProductController extends GetxController {
       );
 
       await _handleProductResponse(response, reset, page, pageSizeParam);
+      // Mark last fetch time only on success so failed attempts can be retried quickly
+      _lastFetchTime = DateTime.now();
+      _initialFetchCompleted = true;
     } catch (e, stackTrace) {
       debugPrint('[ProductController] ❌ Exception in fetchProducts: $e');
       debugPrint('[ProductController] 📚 Exception type: ${e.runtimeType}');
       _handleFetchError(e, stackTrace);
+      _initialFetchCompleted = true; // attempt finished even if failed
     } finally {
       _finalizeFetch();
       debugPrint('[ProductController] 🏁 fetchProducts completed');
@@ -235,12 +280,22 @@ class ProductController extends GetxController {
       return false;
     }
 
-    if (_lastFetchTime != null &&
-        now.difference(_lastFetchTime!) < _minFetchInterval) {
-      debugPrint(
-        '[ProductController] ⏱️ Rate limit: too soon since last fetch (${now.difference(_lastFetchTime!).inMilliseconds}ms ago, min: ${_minFetchInterval.inMilliseconds}ms)',
-      );
-      return false;
+    if (_lastFetchTime != null) {
+      final since = now.difference(_lastFetchTime!);
+      if (since < _minFetchInterval) {
+        final hasError = errorMessage.value.isNotEmpty;
+        final noData = products.isEmpty;
+        if (hasError && noData) {
+          debugPrint(
+            '[ProductController] ⚡ Bypassing rate limit after failure (elapsed ${since.inMilliseconds}ms)',
+          );
+        } else {
+          debugPrint(
+            '[ProductController] ⏱️ Rate limit: ${since.inMilliseconds}ms < ${_minFetchInterval.inMilliseconds}ms',
+          );
+          return false;
+        }
+      }
     }
 
     if (isLoading.value || isLoadingMore.value) {
@@ -251,6 +306,9 @@ class ProductController extends GetxController {
     debugPrint('[ProductController] ✅ Can fetch - all checks passed');
     return true;
   }
+
+  // Public helper for UI to know if we attempted at least one load
+  bool get hasCompletedInitialFetch => _initialFetchCompleted;
 
   void _prepareFetch(bool reset, int? page) {
     _isFetching = true;

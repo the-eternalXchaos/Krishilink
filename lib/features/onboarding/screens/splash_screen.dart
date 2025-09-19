@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/constants/constants.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'dart:math' as math;
 
@@ -200,7 +200,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ),
                               child: Image(
-                                image: AssetImage(krishilinkLogo),
+                                image: AssetImage(AssetPaths.krishilinkLogo),
                                 height: 120,
                                 width: 120,
                                 fit: BoxFit.contain,

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:krishi_link/core/components/confirm%20box/custom_confirm_dialog.dart';
-import 'package:krishi_link/core/utils/constants.dart';
+import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
 
 class BuyerMenuPage extends StatefulWidget {
   const BuyerMenuPage({super.key});
@@ -203,13 +203,15 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
                           placeholder:
                               (_, __) => const CircularProgressIndicator(),
                           errorWidget:
-                              (_, __, ___) =>
-                                  Image.asset(guestImage, fit: BoxFit.cover),
+                              (_, __, ___) => Image.asset(
+                                AssetPaths.guestImage,
+                                fit: BoxFit.cover,
+                              ),
                           fit: BoxFit.cover,
                           width: 56,
                           height: 56,
                         )
-                        : Image.asset(guestImage, fit: BoxFit.cover),
+                        : Image.asset(AssetPaths.guestImage, fit: BoxFit.cover),
               ),
             ),
           ),

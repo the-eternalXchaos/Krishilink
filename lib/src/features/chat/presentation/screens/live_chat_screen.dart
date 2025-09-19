@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/core/components/app_text_input_field.dart';
+import 'package:krishi_link/src/core/components/app_text_input_field.dart';
 import 'package:krishi_link/src/features/chat/presentation/controllers/live_chat_controller.dart';
 
 class LiveChatScreen extends StatelessWidget {
