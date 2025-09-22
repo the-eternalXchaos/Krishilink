@@ -1,55 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
-import 'package:krishi_link/core/theme/app_theme.dart';
-import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 
 class PopupService {
   /// Show loading popup with custom Lottie animation
-  /// Displays a loading dialog with a Lottie animation and a message.
-  ///
-  /// The dialog is centered on the screen and contains a loading animation
-  /// along with a "Please wait..." message. The dialog can be configured
-  /// to be dismissible by tapping outside of it.
-  ///
-  /// Parameters:
-  /// - [barrierDismissible]: A boolean value that determines whether the
-  ///   dialog can be dismissed by tapping on the barrier (the area outside
-  ///   the dialog). Defaults to false.
   static void lottieLoading({bool barrierDismissible = false}) {
-    // final themeColor  = Theme.of(context).colorScheme.surface;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.isDialogOpen != true) {
+        final size = Get.size;
         Get.dialog(
-          Container(
-            width: 150,
-            height: 250,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.shade100,
-              borderRadius: BorderRadius.circular(20),
+          Center(
+            child: Container(
+              width: size.width * 0.4,
+              height: size.height * 0.25,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Lottie.asset(
+                    'assets/lottie/loading.json',
+                    width: 100,
+                    height: 100,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Please wait...',
+                    style: TextStyle(color: Colors.green.shade900),
+                  ),
+                ],
+              ),
             ),
           ),
+          barrierDismissible: barrierDismissible,
+          barrierColor: Colors.black.withValues(alpha: 0.3),
         );
       }
     });
   }
 
-  /// Close the popup
+  /// Close the popup or dialog
   static void close() {
     if (Get.isDialogOpen ?? false) {
       Get.back();
     }
   }
 
+  /// Show a custom popup
   static void show({
     required PopupType type,
     required String title,
     required String message,
     bool autoDismiss = false,
     Duration? duration,
-    bool repeat = true,
   }) {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (Get.isDialogOpen != true) {
@@ -59,21 +66,20 @@ class PopupService {
             title: title,
             message: message,
             autoDismiss: autoDismiss,
-            // duration: duration,
           ),
           barrierDismissible: true,
         );
+
+        if (autoDismiss) {
+          Future.delayed(duration ?? const Duration(seconds: 3), () {
+            close();
+          });
+        }
       }
     });
   }
 
-  /// 🎯 UNIFIED FEEDBACK SYSTEM
-  /// Intelligently decides between popup and snackbar based on message type and urgency
-  ///
-  /// Usage Examples:
-  /// - handleFeedback(title: 'Success', message: 'Product added to cart', type: PopupType.addedToCart)
-  /// - handleFeedback(title: 'Error', message: 'Failed to place order', type: PopupType.error)
-  /// - handleFeedback(title: 'Info', message: 'Order processing in background', type: PopupType.info)
+  /// Unified feedback: decides between popup and snackbar
   static void handleFeedback({
     required String title,
     required String message,
@@ -82,7 +88,6 @@ class PopupService {
     Duration? duration,
     required bool autoDismiss,
   }) {
-    // 🎭 Decide: use popup or snackbar?
     final popupTypes = {
       PopupType.success,
       PopupType.error,
@@ -94,7 +99,6 @@ class PopupService {
     final shouldShowPopup = forcePopup || popupTypes.contains(type);
 
     if (shouldShowPopup) {
-      // 🎪 Show popup for critical or visual types
       show(
         type: type,
         title: title,
@@ -103,7 +107,6 @@ class PopupService {
         duration: duration,
       );
     } else {
-      // 🍿 Show snackbar for lightweight ones like info, addedToCart
       showSnackbar(
         title: title,
         message: message,
@@ -113,7 +116,7 @@ class PopupService {
     }
   }
 
-  /// 🍿 Enhanced Snackbar with consistent styling
+  /// Show styled snackbar
   static void showSnackbar({
     required String title,
     required String message,
@@ -121,6 +124,8 @@ class PopupService {
     Duration? duration,
     SnackPosition position = SnackPosition.TOP,
   }) {
+    if (Get.isSnackbarOpen) Get.closeAllSnackbars();
+
     Color bgColor;
     IconData icon;
 
@@ -167,100 +172,76 @@ class PopupService {
       colorText: Colors.white,
       duration: duration ?? Duration(seconds: type == PopupType.error ? 5 : 3),
       icon: Icon(icon, color: Colors.white),
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       borderRadius: 8,
       dismissDirection: DismissDirection.horizontal,
     );
   }
 
-  /// 🚀 QUICK FEEDBACK METHODS for common use cases
+  /// Quick feedback shortcuts
+  static void success(String message, {String title = 'Success'}) =>
+      handleFeedback(
+        title: title,
+        message: message,
+        type: PopupType.success,
+        autoDismiss: true,
+      );
 
-  /// Success feedback
-  static void success(String message, {String title = 'Success'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.success,
-      autoDismiss: true,
-    );
-  }
+  static void error(String message, {String title = 'Error'}) => handleFeedback(
+    title: title,
+    message: message,
+    type: PopupType.error,
+    autoDismiss: true,
+  );
 
-  /// Error feedback
-  static void error(String message, {String title = 'Error'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.error,
-      autoDismiss: true,
-    );
-  }
+  static void warning(String message, {String title = 'Warning'}) =>
+      handleFeedback(
+        title: title,
+        message: message,
+        type: PopupType.warning,
+        autoDismiss: true,
+      );
 
-  /// Warning feedback
-  static void warning(String message, {String title = 'Warning'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.warning,
-      autoDismiss: true,
-    );
-  }
+  static void info(String message, {String title = 'Info'}) => handleFeedback(
+    title: title,
+    message: message,
+    type: PopupType.info,
+    autoDismiss: true,
+  );
 
-  /// Info feedback
-  static void info(String message, {String title = 'Info'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.info,
-      autoDismiss: true,
-    );
-  }
+  static void addedToCart(String message, {String title = 'Added to Cart'}) =>
+      handleFeedback(
+        title: title,
+        message: message,
+        type: PopupType.addedToCart,
+        autoDismiss: true,
+      );
 
-  /// Added to cart feedback
-  static void addedToCart(String message, {String title = 'Added to Cart'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.addedToCart,
-      autoDismiss: true,
-    );
-  }
+  static void orderPlaced(String message, {String title = 'Order Placed'}) =>
+      handleFeedback(
+        title: title,
+        message: message,
+        type: PopupType.orderPlaced,
+        autoDismiss: true,
+      );
 
-  /// Order placed feedback
-  static void orderPlaced(String message, {String title = 'Order Placed'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.orderPlaced,
-      autoDismiss: true,
-    );
-  }
+  static void party(String message, {String title = 'Congratulations'}) =>
+      handleFeedback(
+        title: title,
+        message: message,
+        type: PopupType.party,
+        autoDismiss: true,
+      );
 
-  /// Party/celebration feedback
-  static void party(String message, {String title = 'Congratulations'}) {
-    handleFeedback(
-      title: title,
-      message: message,
-      type: PopupType.party,
-      autoDismiss: true,
-    );
-  }
-
-  /// 🎯 NATURAL LANGUAGE FEEDBACK  (AI-friendly)
-  /// Parse natural language and show appropriate feedback
+  /// AI-friendly natural language feedback
   static void showFeedback(String naturalText) {
     final text = naturalText.toLowerCase();
 
-    if (text.contains('success') ||
-        text.contains('successfully') ||
-        text.contains('done')) {
+    if (text.contains('success') || text.contains('done')) {
       success(naturalText);
-    } else if (text.contains('error') ||
-        text.contains('failed') ||
-        text.contains('wrong')) {
+    } else if (text.contains('error') || text.contains('failed')) {
       error(naturalText);
-    } else if (text.contains('warning') ||
-        text.contains('attention') ||
-        text.contains('careful')) {
+    } else if (text.contains('warning') || text.contains('attention')) {
       warning(naturalText);
     } else if (text.contains('cart') || text.contains('added')) {
       addedToCart(naturalText);
@@ -268,9 +249,7 @@ class PopupService {
         text.contains('placed') ||
         text.contains('confirmed')) {
       orderPlaced(naturalText);
-    } else if (text.contains('congratulations') ||
-        text.contains('celebration') ||
-        text.contains('party')) {
+    } else if (text.contains('congratulations') || text.contains('party')) {
       party(naturalText);
     } else {
       info(naturalText);
