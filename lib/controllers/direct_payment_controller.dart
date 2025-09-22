@@ -98,7 +98,8 @@ class DirectPaymentController extends GetxController {
     double amount,
   ) async {
     try {
-      // This is just an example - you can implement your own local storage
+      //  local storage
+
       debugPrint('[Payment] Saving order locally...');
 
       final orderData = {
@@ -111,7 +112,7 @@ class DirectPaymentController extends GetxController {
                     'name': item.name,
                     'price': item.price,
                     'quantity': item.quantity,
-                    'imageUrl': item.imageUrl,
+                    'imageUrl': item.image, // Use CartItem.image for image URL
                   },
                 )
                 .toList(),
@@ -140,42 +141,5 @@ class DirectPaymentController extends GetxController {
   /// Verify a payment
   Future<Map<String, dynamic>?> verifyPayment(String pidx) async {
     return await _paymentService.verifyPayment(pidx);
-  }
-
-  /// Example method to create sample cart items for testing
-  List<CartItem> createSampleCartItems() {
-    return [
-      CartItem(
-        id: '1',
-        name: 'Fresh Tomatoes',
-        price: '150.0',
-        quantity: 2,
-        imageUrl: 'https://example.com/tomato.jpg',
-      ),
-      CartItem(
-        id: '2',
-        name: 'Organic Rice',
-        price: '1200.0',
-        quantity: 1,
-        imageUrl: 'https://example.com/rice.jpg',
-      ),
-    ];
-  }
-
-  /// Example method to test payment
-  Future<void> testPayment() async {
-    final sampleItems = createSampleCartItems();
-    final totalAmount = sampleItems.fold<double>(
-      0.0,
-      (sum, item) => sum + (double.parse(item.price) * item.quantity),
-    );
-
-    await processDirectPayment(
-      cartItems: sampleItems,
-      totalAmount: totalAmount,
-      customerName: 'Test Customer',
-      customerPhone: '9800000000',
-      customerEmail: 'test@example.com',
-    );
   }
 }
