@@ -2,7 +2,7 @@
 export 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
 import 'dart:async';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/product/controllers/product_controller.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 
 class FilterController extends GetxController {
   final RxList<String> categories = <String>[].obs;
