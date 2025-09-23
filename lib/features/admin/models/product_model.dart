@@ -1,26 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 
-class Product {
+@HiveType(typeId: 5)
+class Product extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String productName;
+
+  @HiveField(2)
   final String description;
+
+  @HiveField(3)
   final double rate;
+
+  @HiveField(4)
   final String unit;
+
+  @HiveField(5)
   final double latitude;
+
+  @HiveField(6)
   final double longitude;
+
+  @HiveField(7)
   final String? location;
+
+  @HiveField(8)
   final String? address;
+
+  @HiveField(9)
   final String image;
+
+  @HiveField(10)
   final double? soldedQuantity;
+
+  @HiveField(11)
   final double availableQuantity;
+
+  @HiveField(12)
   final String category;
+
+  @HiveField(13)
   final String? farmerId;
+
+  @HiveField(14)
   final DateTime? createdAt;
+
+  @HiveField(15)
   final DateTime? updatedAt;
+
+  @HiveField(16)
   final String? farmerPhone;
+
+  @HiveField(17)
   final String? farmerName;
+
+  @HiveField(18)
   final bool isActive;
+
+  @HiveField(19)
   final double? distance;
 
   Product({
