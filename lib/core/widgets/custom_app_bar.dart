@@ -5,6 +5,7 @@ import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/widgets/language_switcher.dart';
 import 'package:krishi_link/src/features/notification/presentation/controllers/notification_controller.dart';
@@ -476,12 +477,15 @@ class _CustomAppBarState extends State<CustomAppBar>
           children: [
             Icon(Icons.login, size: 18, color: theme.colorScheme.onPrimary),
             const SizedBox(width: 6),
-            Text(
-              'login'.tr,
-              style: TextStyle(
-                color: theme.colorScheme.onPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+            Padding(
+              padding: AppSpacing.mediumPadding,
+              child: Text(
+                'login'.tr,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
