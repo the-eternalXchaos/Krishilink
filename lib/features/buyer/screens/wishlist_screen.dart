@@ -237,8 +237,9 @@ class WishlistScreen extends StatelessWidget {
                               id: item.id,
                               name: item.name,
                               price: item.price,
-                              imageUrl: item.imageUrl,
                               quantity: 1,
+                              productId: item.id,
+                              image: item.imageUrl,
                             );
                             cartController.addToCart(cartItem);
                           },

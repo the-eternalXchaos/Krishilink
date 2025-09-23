@@ -315,18 +315,21 @@ class _BuyerHomePageState extends State<BuyerHomePage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    FloatingActionButton(
-                      heroTag: 'chat_ai',
-                      backgroundColor: Colors.deepPurple,
-                      tooltip: 'Chat with AI',
-                      child: const Icon(Icons.smart_toy, color: Colors.white),
-                      onPressed:
-                          () => Get.to(
-                            () => AiChatScreen(
-                              name: authController.currentUser.value!.fullName,
+                    if (authController.currentUser.value?.role.toLowerCase() ==
+                        'farmer'.toLowerCase())
+                      FloatingActionButton(
+                        heroTag: 'chat_ai',
+                        backgroundColor: Colors.deepPurple,
+                        tooltip: 'Chat with AI',
+                        child: const Icon(Icons.smart_toy, color: Colors.white),
+                        onPressed:
+                            () => Get.to(
+                              () => AiChatScreen(
+                                name:
+                                    authController.currentUser.value!.fullName,
+                              ),
                             ),
-                          ),
-                    ),
+                      ),
                   ],
                 ),
               ),

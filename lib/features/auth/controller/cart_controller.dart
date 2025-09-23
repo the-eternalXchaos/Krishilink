@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
+import 'package:get/get.dart' hide Response;
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
@@ -10,14 +9,16 @@ import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/services/api_services/api_service.dart';
 import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 
 class CartController extends GetxController {
   final _cartItems = <CartItem>[].obs;
   final isLoading = false.obs;
-  final isImageLoading = <String, bool>{}.obs; // Track image loading state
+  final isImageLoading = <String, bool>{}.obs;
+  final _imageCache = <String, String>{}.obs; // Cache for product images
+
   List<CartItem> get cartItems => _cartItems;
 
-  // Use centralized ApiService with interceptors (adds Authorization header)
   late final ApiService _api =
       Get.isRegistered<ApiService>() ? Get.find<ApiService>() : ApiService();
 
@@ -26,214 +27,130 @@ class CartController extends GetxController {
     (sum, item) => sum + double.parse(item.price) * item.quantity,
   );
 
+  int get totalItems => _cartItems.fold(0, (sum, item) => sum + item.quantity);
+
   @override
   void onInit() {
     super.onInit();
     debugPrint('🛒 [CartController] Controller initialized');
-    debugPrint('🛒 [CartController] Current cart items: ${_cartItems.length}');
-    Future.delayed(Duration.zero, () {
-      debugPrint('🛒 [CartController] Starting initial fetchCartItems...');
-      fetchCartItems();
-    });
+    Future.delayed(Duration.zero, fetchCartItems);
   }
 
-  /// Fetches cart items and their images from the API
+  /// Optimized cart fetching with better error handling and caching
   Future<void> fetchCartItems() async {
+    if (isLoading.value) return; // Prevent concurrent calls
+
     try {
       debugPrint('🛒 [CartController] 🚀 Starting fetchCartItems...');
       isLoading.value = true;
 
-      debugPrint(
-        '🛒 [CartController] 📡 Making API call to: ${ApiConstants.getCartEndpoint}',
-      );
       final response = await _api.dio.get(ApiConstants.getCartEndpoint);
-
-      debugPrint(
-        '🛒 [CartController] 📥 Response received - Status: ${response.statusCode}',
-      );
-      debugPrint(
-        '🛒 [CartController] 📄 Response data type: ${response.data.runtimeType}',
-      );
-      debugPrint('🛒 [CartController] 📄 Response data: ${response.data}');
+      debugPrint('🛒 [CartController] 📥 Response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data =
-            response.data is String ? jsonDecode(response.data) : response.data;
-        debugPrint('🛒 [CartController] 📊 Parsed data: $data');
-        debugPrint('🛒 [CartController] ✅ Success flag: ${data['success']}');
-
-        if (data['success'] == true && data['data'] is List) {
-          final cartDataList = data['data'] as List;
-          debugPrint(
-            '🛒 [CartController] 📦 Cart data list length: ${cartDataList.length}',
-          );
-
-          if (cartDataList.isNotEmpty && cartDataList[0]['items'] != null) {
-            final itemsList = cartDataList[0]['items'] as List;
-            debugPrint(
-              '🛒 [CartController] 🎯 Items list length: ${itemsList.length}',
-            );
-            debugPrint('🛒 [CartController] 🛍️ Items data: $itemsList');
-
-            final items = <CartItem>[];
-            for (var item in itemsList) {
-              final productId = item['productId'] ?? '';
-              final productName = item['productName'] ?? '';
-              final price = (item['price'] ?? item['rate'] ?? 0).toString();
-              final quantity = item['quantity'] ?? 1;
-
-              // Fetch image from getImageEndpoint
-              String imageUrl = '';
-              if (productId.isNotEmpty) {
-                isImageLoading[productId] = true;
-                imageUrl = await _fetchProductImage(productId);
-                isImageLoading[productId] = false;
-              }
-
-              debugPrint(
-                '🛒 [CartController] 🖼️ Processing item: $productName',
-              );
-              debugPrint(
-                '🛒 [CartController] 🖼️ Cart Item ID: "${item['id']}"',
-              );
-              debugPrint(
-                '🛒 [CartController] 🖼️ Product ID (for image): "$productId"',
-              );
-              debugPrint(
-                '🛒 [CartController] 🖼️ Fetched imageUrl: "$imageUrl"',
-              );
-
-              items.add(
-                CartItem(
-                  id: productId,
-                  name: productName,
-                  price: price,
-                  imageUrl: imageUrl,
-                  quantity: quantity,
-                ),
-              );
-            }
-            _cartItems.assignAll(items);
-            debugPrint(
-              '🛒 [CartController] ✅ Cart items assigned: ${_cartItems.length} items',
-            );
-
-            for (int i = 0; i < _cartItems.length; i++) {
-              final item = _cartItems[i];
-              debugPrint(
-                '🛒 [CartController] 📋 Item $i: ${item.name} (${item.id}) - ₹${item.price} x ${item.quantity}',
-              );
-              debugPrint(
-                '🛒 [CartController] 🖼️ Item $i image: "${item.imageUrl}" (${item.imageUrl.isEmpty ? "EMPTY" : "NOT EMPTY"})',
-              );
-            }
-          } else {
-            debugPrint('🛒 [CartController] 📭 No items found in cart data');
-            _cartItems.clear();
-          }
-        } else {
-          debugPrint(
-            '🛒 [CartController] ❌ API response not successful or invalid format',
-          );
-          _cartItems.clear();
-        }
+        await _processCartResponse(response.data);
       } else {
-        debugPrint('🛒 [CartController] ❌ HTTP error: ${response.statusCode}');
         throw Exception('Failed to fetch cart: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      debugPrint(
-        '🛒 [CartController] ❌ DioException in fetchCartItems: ${e.type}',
-      );
-      debugPrint('🛒 [CartController] ❌ Error message: ${e.message}');
-      debugPrint(
-        '🛒 [CartController] ❌ Request: ${e.requestOptions.method} ${e.requestOptions.uri}',
-      );
-      debugPrint('🛒 [CartController] ❌ Response: ${e.response?.data}');
-      PopupService.error('Failed to load cart: ${e.message}', title: 'Error');
+      _handleDioError(e, 'fetch cart');
     } catch (e) {
-      debugPrint(
-        '🛒 [CartController] ❌ General exception in fetchCartItems: $e',
-      );
-      PopupService.error('Failed to load cart: $e', title: 'Error');
+      debugPrint('🛒 [CartController] ❌ Error: $e');
+      PopupService.error('Failed to load cart', title: 'Error');
     } finally {
       isLoading.value = false;
-      debugPrint(
-        '🛒 [CartController] 🏁 fetchCartItems completed. Final cart count: ${_cartItems.length}',
-      );
-      debugPrint(
-        '🛒 [CartController] 💰 Total price: ₹${totalPrice.toStringAsFixed(2)}',
-      );
     }
   }
 
-  /// Fetches product image from getImageEndpoint
-  Future<String> _fetchProductImage(String productId) async {
+  /// Process cart response data with optimized image loading
+  Future<void> _processCartResponse(dynamic responseData) async {
     try {
-      final endpoint = '${ApiConstants.getProductImageEndpoint}/$productId';
-      debugPrint('🛒 [CartController] 📸 Fetching image from: $endpoint');
-      final response = await _api.dio.get(endpoint);
-      if (response.statusCode == 200) {
-        final data =
-            response.data is String ? jsonDecode(response.data) : response.data;
-        debugPrint('🛒 [CartController] 📸 Full image response data: $data');
-        final imageUrl = data['imageUrl'] ?? '';
-        debugPrint('🛒 [CartController] 📸 Image URL fetched: $imageUrl');
-        return imageUrl;
-      } else {
-        debugPrint(
-          '🛒 [CartController] ❌ Failed to fetch image: ${response.statusCode}',
-        );
-        return '';
-      }
-    } catch (e) {
-      debugPrint('🛒 [CartController] ❌ Error fetching image: $e');
-      return '';
-    }
-  }
+      final data =
+          responseData is String ? jsonDecode(responseData) : responseData;
 
-  Future<void> addToCart(CartItem item) async {
-    try {
-      isLoading.value = true;
-      final token = await TokenService.getAccessToken();
-      if (token == null || token.isEmpty) {
-        PopupService.warning(
-          'Please login to add items to cart',
-          title: 'Login Required',
-        );
-        Get.to('/login');
+      if (data['success'] != true || data['data'] is! List) {
+        _cartItems.clear();
         return;
       }
 
-      final requestBody = {
-        'items': [
-          {'productId': item.id, 'quantity': item.quantity},
-        ],
-      };
+      final cartDataList = data['data'] as List;
+      if (cartDataList.isEmpty || cartDataList[0]['items'] == null) {
+        _cartItems.clear();
+        return;
+      }
 
-      debugPrint('🛒 [Cart] addToCart -> ${ApiConstants.addToCartEndpoint}');
-      debugPrint('🛒 [Cart] payload: $requestBody');
+      final itemsList = cartDataList[0]['items'] as List;
+      debugPrint('🛒 [CartController] Processing ${itemsList.length} items');
+
+      // Use CartItem.fromJson directly for each item
+      final items = itemsList.map((item) => CartItem.fromJson(item)).toList();
+      _cartItems.assignAll(items);
+      debugPrint('🛒 [CartController] ✅ Loaded ${_cartItems.length} items');
+    } catch (e) {
+      debugPrint('🛒 [CartController] ❌ Error processing cart response: $e');
+      _cartItems.clear();
+    }
+  }
+
+  // ...existing code...
+
+  /// Add item to cart with optimized flow
+  Future<void> addToCart(CartItem item) async {
+    if (isLoading.value) return;
+
+    try {
+      isLoading.value = true;
+
+      // Check authentication
+      final token = await TokenService.getAccessToken();
+      if (token == null || token.isEmpty) {
+        _showLoginRequired();
+        return;
+      }
+
+      // Check if item already exists and update quantity instead
+      final existingIndex = _cartItems.indexWhere(
+        (cartItem) => cartItem.id == item.id,
+      );
+      if (existingIndex != -1) {
+        final existingItem = _cartItems[existingIndex];
+        await _updateCartItemQuantity(
+          item.id,
+          existingItem.quantity + item.quantity,
+        );
+        return;
+      }
+
+      await _performAddToCartAPI(item);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Perform the actual add to cart API call
+  Future<void> _performAddToCartAPI(CartItem item) async {
+    final requestBody = {
+      'items': [
+        {'productId': item.id, 'quantity': item.quantity},
+      ],
+    };
+
+    try {
       final response = await _api.dio.post(
         ApiConstants.addToCartEndpoint,
         data: requestBody,
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
-      debugPrint('🛒 [Cart] status: ${response.statusCode}');
-      debugPrint('🛒 [Cart] response: ${response.data}');
-      if (response.statusCode != null &&
-          response.statusCode! >= 200 &&
-          response.statusCode! < 300) {
+      if (_isSuccessResponse(response)) {
         final data =
             response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
+          // Update local cart instead of full refresh for better UX
+          await _updateLocalCart(item, isAdd: true);
+          _showSuccessMessage('${item.name} added to cart');
+          // Always refresh cart from backend after add
           await fetchCartItems();
-          PopupService.show(
-            message: '${item.name} added to cart',
-            autoDismiss: true,
-            type: PopupType.addedToCart,
-            title: 'Success',
-          );
         } else {
           throw Exception(data['message'] ?? 'Failed to add to cart');
         }
@@ -241,33 +158,104 @@ class CartController extends GetxController {
         throw Exception('Failed to add to cart: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      debugPrint('❌ [Cart] DioException addToCart: ${e.type} ${e.message}');
-      debugPrint(
-        '❌ [Cart] request: ${e.requestOptions.method} ${e.requestOptions.uri}',
+      _handleDioError(e, 'add to cart');
+    }
+  }
+
+  /// Update local cart optimistically
+  Future<void> _updateLocalCart(CartItem item, {required bool isAdd}) async {
+    if (isAdd) {
+      final existingIndex = _cartItems.indexWhere(
+        (cartItem) => cartItem.id == item.id,
       );
-      debugPrint('❌ [Cart] data: ${e.response?.data}');
-      PopupService.error('Failed to add to cart: ${e.message}', title: 'Error');
+      if (existingIndex != -1) {
+        // Update existing item quantity
+        final existingItem = _cartItems[existingIndex];
+        _cartItems[existingIndex] = existingItem.copyWith(
+          quantity: existingItem.quantity + item.quantity,
+        );
+      } else {
+        // Add new item
+        _cartItems.add(item);
+      }
+    }
+
+    // Trigger UI update
+    _cartItems.refresh();
+  }
+
+  // /// Update item quantity with optimized API calls
+  // Future<void> updateQuantity(String productId, int newQuantity) async {
+  //   if (newQuantity <= 0) {
+  //     await removeFromCart(productId);
+  //     return;
+  //   }
+
+  //   await _updateCartItemQuantity(productId, newQuantity);
+  // }
+
+  /// Internal method to update cart item quantity
+  Future<void> _updateCartItemQuantity(
+    String productId,
+    int newQuantity,
+  ) async {
+    final index = _cartItems.indexWhere((item) => item.id == productId);
+    if (index == -1) return;
+
+    final item = _cartItems[index];
+
+    try {
+      isLoading.value = true;
+
+      // Optimistic update
+      _cartItems[index] = item.copyWith(quantity: newQuantity);
+
+      // Remove and re-add with new quantity (as per existing API)
+      await _performRemoveFromCartAPI(productId, showMessage: false);
+      await _performAddToCartAPI(item.copyWith(quantity: newQuantity));
+    } catch (e) {
+      // Revert optimistic update on error
+      _cartItems[index] = item;
+      rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
+  /// Remove item from cart with better error handling
   Future<void> removeFromCart(String productId) async {
+    if (isLoading.value) return;
+
     try {
       isLoading.value = true;
+      await _performRemoveFromCartAPI(productId);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Perform remove from cart API call
+  Future<void> _performRemoveFromCartAPI(
+    String productId, {
+    bool showMessage = true,
+  }) async {
+    try {
       final response = await _api.dio.delete(
         ApiConstants.removeFromCartEndpoint,
         queryParameters: {'productId': productId},
       );
 
-      if (response.statusCode != null &&
-          response.statusCode! >= 200 &&
-          response.statusCode! < 300) {
+      if (_isSuccessResponse(response)) {
         final data =
             response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
+          // Remove from local cart
+          _cartItems.removeWhere((item) => item.id == productId);
+          if (showMessage) {
+            _showSuccessMessage('Item removed from cart');
+          }
+          // Always refresh cart from backend after remove
           await fetchCartItems();
-          PopupService.success('Item removed from cart', title: 'Success');
         } else {
           throw Exception(data['message'] ?? 'Failed to remove from cart');
         }
@@ -275,28 +263,25 @@ class CartController extends GetxController {
         throw Exception('Failed to remove from cart: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      PopupService.error(
-        'Failed to remove from cart: ${e.message}',
-        title: 'Error',
-      );
-    } finally {
-      isLoading.value = false;
+      _handleDioError(e, 'remove from cart');
     }
   }
 
+  /// Clear entire cart
   Future<void> clearCart() async {
+    if (isLoading.value || _cartItems.isEmpty) return;
+
     try {
       isLoading.value = true;
       final response = await _api.dio.delete(ApiConstants.clearCartEndpoint);
 
-      if (response.statusCode != null &&
-          response.statusCode! >= 200 &&
-          response.statusCode! < 300) {
+      if (_isSuccessResponse(response)) {
         final data =
             response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
           _cartItems.clear();
-          PopupService.success('Cart cleared successfully', title: 'Success');
+          _imageCache.clear(); // Clear image cache
+          _showSuccessMessage('Cart cleared successfully');
         } else {
           throw Exception(data['message'] ?? 'Failed to clear cart');
         }
@@ -304,98 +289,110 @@ class CartController extends GetxController {
         throw Exception('Failed to clear cart: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      PopupService.error('Failed to clear cart: ${e.message}', title: 'Error');
+      _handleDioError(e, 'clear cart');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> addProductToCart(
-    String productId,
-    String productName,
-    String price,
-    String imageUrl, {
-    int quantity = 1,
-  }) async {
-    debugPrint('🛒 [CartController] 🚀 addProductToCart called with:');
-    debugPrint('🛒 [CartController]   - Product ID: $productId');
-    debugPrint('🛒 [CartController]   - Product Name: $productName');
-    debugPrint('🛒 [CartController]   - Price: ₹$price');
-    debugPrint(
-      '🛒 [CartController]   - Image URL: "$imageUrl" (${imageUrl.isEmpty ? "EMPTY" : "NOT EMPTY"})',
-    );
-    debugPrint('🛒 [CartController]   - Quantity: $quantity');
-
-    final cartItem = CartItem(
-      id: productId,
-      name: productName,
-      price: price,
-      imageUrl: imageUrl,
-      quantity: quantity,
-    );
-
-    debugPrint(
-      '🛒 [CartController] 📦 CartItem created: ${cartItem.toString()}',
-    );
-    debugPrint('🛒 [CartController] 🔄 Calling addToCart method...');
-
-    await addToCart(cartItem);
-
-    debugPrint('🛒 [CartController] ✅ addProductToCart completed');
-    debugPrint(
-      '🛒 [CartController] 🛍️ Current cart items count: ${_cartItems.length}',
-    );
+  /// Add product to cart (legacy method - maintained for compatibility)
+  Future<void> addProductToCart(String productId) async {
+    debugPrint('🛒 [CartController] 🚀 addProductToCart (refactored)');
+    // Try to get product details from cache or cart
+    Product? product;
+    // Check if product is in cart
+    final existingItem = getCartItem(productId);
+    if (existingItem?.product != null) {
+      product = existingItem!.product;
+    } else {
+      // Try to get from image cache (if you have a product cache, use that)
+      // Otherwise, fallback to legacy
+      // You may want to implement a proper product cache for best UX
+    }
+    if (product != null) {
+      await addProductWithReference(product);
+    } else {
+      // Fallback: legacy, but try to use details from existing cart item if possible
+      final cartItem = CartItem(
+        id: productId,
+        productId: productId,
+        name: existingItem?.name ?? '',
+        price: existingItem?.price ?? '0',
+        image: existingItem?.image ?? '',
+        quantity: 1,
+        product: existingItem?.product,
+      );
+      await addToCart(cartItem);
+    }
   }
 
-  /// Enhanced method that accepts full Product reference for better image handling
+  /// Add product with full Product reference (recommended method)
   Future<void> addProductWithReference(
     Product product, {
     int quantity = 1,
   }) async {
-    debugPrint('🛒 [CartController] 🚀 addProductWithReference called with:');
-    debugPrint('🛒 [CartController]   - Product ID: ${product.id}');
-    debugPrint('🛒 [CartController]   - Product Name: ${product.productName}');
-    debugPrint('🛒 [CartController]   - Price: ₹${product.rate}');
-    debugPrint(
-      '🛒 [CartController]   - Product Image: "${product.image}" (${product.image.isEmpty ? "EMPTY" : "NOT EMPTY"})',
-    );
-    debugPrint('🛒 [CartController]   - Quantity: $quantity');
-    debugPrint(
-      '🛒 [CartController]   - Full Product Reference: Available for proper image handling',
-    );
+    debugPrint('🛒 [CartController] 🚀 addProductWithReference');
+
+    // Cache the product image immediately
+    if (product.image.isNotEmpty) {
+      _imageCache[product.id] = product.image;
+    }
 
     final cartItem = CartItem.fromProduct(product, quantity: quantity);
-
-    debugPrint(
-      '🛒 [CartController] 📦 CartItem created with Product reference: ${cartItem.toString()}',
-    );
-    debugPrint('🛒 [CartController] 🔄 Calling addToCart method...');
-
     await addToCart(cartItem);
-
-    debugPrint('🛒 [CartController] ✅ addProductWithReference completed');
-    debugPrint(
-      '🛒 [CartController] 🛍️ Current cart items count: ${_cartItems.length}',
-    );
   }
 
-  Future<void> updateQuantity(String productId, int newQuantity) async {
-    if (newQuantity <= 0) {
-      await removeFromCart(productId);
-      return;
-    }
+  /// Check if product is in cart
+  bool isProductInCart(String productId) {
+    return _cartItems.any((item) => item.id == productId);
+  }
 
-    final index = _cartItems.indexWhere((item) => item.id == productId);
-    if (index != -1) {
-      final item = _cartItems[index];
-      final updatedItem = item.copyWith(quantity: newQuantity);
-      try {
-        isLoading.value = true;
-        await removeFromCart(productId);
-        await addToCart(updatedItem);
-      } finally {
-        isLoading.value = false;
-      }
-    }
+  /// Get quantity of specific product in cart
+  int getProductQuantity(String productId) {
+    final item = _cartItems.firstWhereOrNull((item) => item.id == productId);
+    return item?.quantity ?? 0;
+  }
+
+  /// Get cart item by product ID
+  CartItem? getCartItem(String productId) {
+    return _cartItems.firstWhereOrNull((item) => item.id == productId);
+  }
+
+  // Helper methods
+  bool _isSuccessResponse(Response response) {
+    return response.statusCode != null &&
+        response.statusCode! >= 200 &&
+        response.statusCode! < 300;
+  }
+
+  void _handleDioError(DioException e, String operation) {
+    debugPrint(
+      '❌ [CartController] DioException $operation: ${e.type} ${e.message}',
+    );
+    PopupService.error('Failed to $operation: ${e.message}', title: 'Error');
+  }
+
+  void _showLoginRequired() {
+    PopupService.warning(
+      'Please login to add items to cart',
+      title: 'Login Required',
+    );
+    Get.toNamed('/login');
+  }
+
+  void _showSuccessMessage(String message) {
+    PopupService.showSnackbar(
+      message: message,
+      type: PopupType.success,
+      title: 'Success',
+    );
+
+    fetchCartItems(); // Refresh cart after addition
+  }
+
+  @override
+  void onClose() {
+    _imageCache.clear();
+    super.onClose();
   }
 }
