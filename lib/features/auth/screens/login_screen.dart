@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/widgets/social_iconbutton.dart';
-import 'package:krishi_link/services/device_service.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,9 +26,6 @@ class _LoginScreenState extends State<LoginScreen>
   late TabController _tabController;
 
   final AuthController authController = Get.put(AuthController());
-  late final SharedPreferences prefs;
-
-  String get deviceId => prefs.getString('deviceId') as String;
 
   @override
   void initState() {
@@ -88,18 +83,24 @@ class _LoginScreenState extends State<LoginScreen>
 
     final identifier = _identifierController.text.trim();
     final password = _passwordController.text;
-    final prefs = await SharedPreferences.getInstance();
-    final deviceId =
-        prefs.getString('deviceId') ?? (await DeviceService().getDeviceId());
+
+    debugPrint('[LoginScreen] Starting password login');
+    debugPrint('[LoginScreen] identifier: $identifier');
+    debugPrint('[LoginScreen] password: $password');
+
+    final requestBody = {'EmailorPhone': identifier, 'Password': password};
+    debugPrint('[LoginScreen] Request body: $requestBody');
 
     try {
-      await authController.passwordLogin(identifier, password, deviceId);
-      if (authController.currentUser.value != null) {
-        _navigateBasedOnRole(authController.currentUser.value!.role);
-      }
+      debugPrint('[LoginScreen] Calling authController.passwordLogin...');
+      await authController.passwordLogin(identifier, password);
+      debugPrint('[LoginScreen] passwordLogin call finished');
+      debugPrint(
+        '[LoginScreen] currentUser: ${authController.currentUser.value}',
+      );
     } catch (e) {
-      debugPrint('Login error: $e');
-      PopupService.show(
+      debugPrint('[LoginScreen] Login error: $e');
+      PopupService.showSnackbar(
         type: PopupType.error,
         message: 'some_error_occurred_try_again'.tr,
         title: 'error'.tr,
@@ -107,13 +108,21 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  bool _isValidEmail(String input) {
-    return GetUtils.isEmail(input);
+  void _navigateBasedOnRole(String role) {
+    // 🔹 TODO: Implement role-based navigation properly
+    if (role == 'admin') {
+      Get.offAllNamed('/admin-dashboard');
+    } else if (role == 'farmer') {
+      Get.offAllNamed('/farmer-dashboard');
+    } else {
+      Get.offAllNamed('/buyer-dashboard');
+    }
   }
 
-  bool _isValidNepaliPhone(String input) {
-    return RegExp(r'^(?:\+977|977)?9[678]\d{8}$').hasMatch(input);
-  }
+  bool _isValidEmail(String input) => GetUtils.isEmail(input);
+
+  bool _isValidNepaliPhone(String input) =>
+      RegExp(r'^(?:\+977|977)?9[678]\d{8}$').hasMatch(input);
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +179,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  // --- UI SECTIONS BELOW ---
   Widget _buildHeaderSection(bool isTablet) {
     return Column(
       children: [
@@ -299,26 +309,11 @@ class _LoginScreenState extends State<LoginScreen>
           TextFormField(
             controller: _identifierController,
             style: TextStyle(fontSize: isTablet ? 16 : 14),
-            decoration: InputDecoration(
-              labelText: 'email_or_phone_number'.tr,
-              labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
-              prefixIcon: Icon(
-                Icons.alternate_email,
-                color: Theme.of(context).colorScheme.primary,
-                size: isTablet ? 24 : 20,
-              ),
-              hintText: 'example_email_or_phone'.tr,
-              hintStyle: TextStyle(fontSize: isTablet ? 14 : 12),
-              border: _inputBorder(),
-              enabledBorder: _inputBorder(),
-              focusedBorder: _inputBorder(focused: true),
-              errorBorder: _inputBorder(error: true),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 20 : 16,
-                vertical: isTablet ? 20 : 16,
-              ),
+            decoration: _inputDecoration(
+              label: 'email_or_phone_number'.tr,
+              hint: 'example_email_or_phone'.tr,
+              icon: Icons.alternate_email,
+              isTablet: isTablet,
             ),
             keyboardType: TextInputType.emailAddress,
             autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -332,8 +327,8 @@ class _LoginScreenState extends State<LoginScreen>
               return null;
             },
           ),
-          // SizedBox(height: isTablet ? 24 : 20),
           Container(
+            margin: EdgeInsets.only(top: isTablet ? 16 : 12),
             padding: EdgeInsets.all(isTablet ? 16 : 12),
             decoration: BoxDecoration(
               color: Theme.of(
@@ -374,26 +369,11 @@ class _LoginScreenState extends State<LoginScreen>
           TextFormField(
             controller: _identifierController,
             style: TextStyle(fontSize: isTablet ? 16 : 14),
-            decoration: InputDecoration(
-              labelText: 'email_phone'.tr,
-              labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
-              prefixIcon: Icon(
-                Icons.person_outline,
-                color: Theme.of(context).colorScheme.primary,
-                size: isTablet ? 24 : 20,
-              ),
-              hintText: 'enter_email_or_phone'.tr,
-              hintStyle: TextStyle(fontSize: isTablet ? 14 : 12),
-              border: _inputBorder(),
-              enabledBorder: _inputBorder(),
-              focusedBorder: _inputBorder(focused: true),
-              errorBorder: _inputBorder(error: true),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 20 : 16,
-                vertical: isTablet ? 20 : 16,
-              ),
+            decoration: _inputDecoration(
+              label: 'email_phone'.tr,
+              hint: 'enter_email_or_phone'.tr,
+              icon: Icons.person_outline,
+              isTablet: isTablet,
             ),
             autovalidateMode: AutovalidateMode.onUserInteraction,
             keyboardType: TextInputType.emailAddress,
@@ -409,15 +389,12 @@ class _LoginScreenState extends State<LoginScreen>
             controller: _passwordController,
             obscureText: _obscureText,
             style: TextStyle(fontSize: isTablet ? 16 : 14),
-            decoration: InputDecoration(
-              labelText: 'password'.tr,
-              labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
-              prefixIcon: Icon(
-                Icons.lock_outline,
-                color: Theme.of(context).colorScheme.primary,
-                size: isTablet ? 24 : 20,
-              ),
-              suffixIcon: IconButton(
+            decoration: _inputDecoration(
+              label: 'password'.tr,
+              hint: 'enter_password'.tr,
+              icon: Icons.lock_outline,
+              isTablet: isTablet,
+              suffix: IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
                   color: Theme.of(context).colorScheme.primary,
@@ -425,24 +402,10 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 onPressed: () => setState(() => _obscureText = !_obscureText),
               ),
-              border: _inputBorder(),
-              enabledBorder: _inputBorder(),
-              focusedBorder: _inputBorder(focused: true),
-              errorBorder: _inputBorder(error: true),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 20 : 16,
-                vertical: isTablet ? 20 : 16,
-              ),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'password_required'.tr;
-              }
-              if (value.length < 8) {
-                return 'password_min_8'.tr;
-              }
+              if (value == null || value.isEmpty) return 'password_required'.tr;
+              if (value.length < 8) return 'password_min_8'.tr;
               if (!RegExp(r'[A-Z]').hasMatch(value)) {
                 return 'password_one_upper'.tr;
               }
@@ -461,6 +424,37 @@ class _LoginScreenState extends State<LoginScreen>
             },
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required bool isTablet,
+    Widget? suffix,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(fontSize: isTablet ? 16 : 14),
+      prefixIcon: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+        size: isTablet ? 24 : 20,
+      ),
+      suffixIcon: suffix,
+      hintText: hint,
+      hintStyle: TextStyle(fontSize: isTablet ? 14 : 12),
+      border: _inputBorder(),
+      enabledBorder: _inputBorder(),
+      focusedBorder: _inputBorder(focused: true),
+      errorBorder: _inputBorder(error: true),
+      filled: true,
+      fillColor: Theme.of(context).colorScheme.surface,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 20 : 16,
+        vertical: isTablet ? 20 : 16,
       ),
     );
   }
@@ -562,7 +556,6 @@ class _LoginScreenState extends State<LoginScreen>
                 'or_continue_with'.tr,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: isTablet ? 16 : 14,
                 ),
               ),
             ),
@@ -575,111 +568,84 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ],
         ),
-        SizedBox(height: isTablet ? 24 : 20),
+        SizedBox(height: isTablet ? 20 : 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSocialButton(AssetPaths.googleLogo, 'Google', isTablet),
-            _buildSocialButton(AssetPaths.facebookLogo, 'Facebook', isTablet),
-            _buildSocialButton(AssetPaths.appleLogo, 'Apple', isTablet),
+            SocialIconButton(
+              iconPath: AssetPaths.googleLogo,
+              onTap: () => _handleSocialLogin('google'),
+            ),
+            SizedBox(width: isTablet ? 24 : 16),
+            SocialIconButton(
+              iconPath: AssetPaths.facebookLogo,
+              onTap: () => _handleSocialLogin('facebook'),
+            ),
+            if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+              SizedBox(width: isTablet ? 24 : 16),
+              SocialIconButton(
+                onTap: () => _handleSocialLogin('apple'),
+                iconPath: AssetPaths.appleLogo,
+              ),
+            ],
           ],
         ),
       ],
     );
   }
 
-  Widget _buildSocialButton(String iconPath, String provider, bool isTablet) {
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 4),
-        child: OutlinedButton(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.onSurface,
-            side: BorderSide(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.5),
-            ),
-            padding: EdgeInsets.symmetric(
-              vertical: isTablet ? 16 : 12,
-              horizontal: isTablet ? 16 : 8,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          onPressed: () => _handleSocialLogin(provider),
-          child: Image.asset(
-            iconPath,
-            width: isTablet ? 28 : 24,
-            height: isTablet ? 28 : 24,
-            fit: BoxFit.contain,
-          ),
-        ),
-      ),
-    );
+  Future<void> _handleSocialLogin(String provider) async {
+    try {
+      switch (provider.toLowerCase()) {
+        case 'google':
+          await authController.signInWithGoogle();
+          break;
+        case 'facebook':
+          await authController.signInWithFacebook();
+          break;
+        case 'apple':
+          await authController.signInWithApple();
+          break;
+        default:
+          throw Exception('Unsupported provider: $provider');
+      }
+
+      if (authController.currentUser.value != null) {
+        _navigateBasedOnRole(authController.currentUser.value!.role);
+      }
+    } catch (e) {
+      debugPrint('Social login error: $e');
+      PopupService.show(
+        type: PopupType.error,
+        title: 'login_failed'.tr,
+        message: 'failed_social_login'.tr,
+      );
+    }
   }
 
   Widget _buildRegistrationLink() {
     final size = MediaQuery.of(context).size;
     final isTablet = size.shortestSide >= 600;
 
-    return GestureDetector(
-      onTap: () => Get.offAllNamed('/register'),
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          text: 'new_to_krishilink'.tr,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: isTablet ? 16 : 14,
-          ),
-          children: [
-            TextSpan(
-              text: 'create_account'.tr,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                decoration: TextDecoration.underline,
-                decorationColor: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'dont_have_account'.tr,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
-      ),
+        TextButton(
+          onPressed: () => Get.toNamed('/register'),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+            textStyle: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: isTablet ? 16 : 14,
+            ),
+          ),
+          child: Text('register_here'.tr),
+        ),
+      ],
     );
-  }
-
-  void _handleSocialLogin(String provider) {
-    switch (provider.toLowerCase()) {
-      case 'google':
-        authController.loginWithGoogle();
-        break;
-      case 'facebook':
-        authController.loginWithFacebook();
-        break;
-      case 'apple':
-        authController.loginWithApple();
-        break;
-    }
-  }
-
-  @override
-  void dispose() {
-    _identifierController.dispose();
-    _passwordController.dispose();
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _navigateBasedOnRole(String role) {
-    final route = switch (role.toLowerCase()) {
-      'admin' => '/admin-dashboard',
-      'farmer' => '/farmer-dashboard',
-      'buyer' => '/buyer-dashboard',
-      _ => '/welcome',
-    };
-
-    Get.offAllNamed(route);
   }
 }
