@@ -1,8 +1,8 @@
-import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/src/core/constants/constants.dart';
-import 'package:lottie/lottie.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
+import 'package:lottie/lottie.dart';
 
 enum PopupType {
   success,
@@ -12,15 +12,16 @@ enum PopupType {
   addedToCart,
   orderPlaced,
   userLoading,
+  party,
 }
 
-class PopUp extends StatefulWidget {
+class Popup extends StatefulWidget {
   final PopupType type;
   final String title;
   final String message;
   final bool autoDismiss;
 
-  const PopUp({
+  const Popup({
     super.key,
     required this.type,
     required this.title,
@@ -29,10 +30,10 @@ class PopUp extends StatefulWidget {
   });
 
   @override
-  State<PopUp> createState() => _PopUpState();
+  State<Popup> createState() => _PopupState();
 }
 
-class _PopUpState extends State<PopUp> with SingleTickerProviderStateMixin {
+class _PopupState extends State<Popup> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -72,20 +73,21 @@ class _PopUpState extends State<PopUp> with SingleTickerProviderStateMixin {
   String _getLottieAsset() {
     switch (widget.type) {
       case PopupType.success:
-        return 'lib/core/components/lottie/Success.json';
+        return LottieAssets.success;
       case PopupType.error:
-        return 'lib/core/components/lottie/Error.json';
+        return LottieAssets.error;
       case PopupType.warning:
-        return 'lib/core/components/lottie/warning.json';
-
+        return LottieAssets.warning;
       case PopupType.info:
-        return 'lib/core/components/lottie/emptyCart.json';
+        return LottieAssets.loading;
       case PopupType.addedToCart:
-        return 'lib/core/components/lottie/added_to_cart.json';
+        return LottieAssets.addedToCart;
       case PopupType.orderPlaced:
-        return 'lib/core/components/lottie/order_placed.json';
+        return LottieAssets.orderPlaced;
       case PopupType.userLoading:
-        return AssetPaths.profileLoading;
+        return LottieAssets.userLoading;
+      case PopupType.party:
+        return LottieAssets.party;
     }
   }
 
@@ -105,6 +107,8 @@ class _PopUpState extends State<PopUp> with SingleTickerProviderStateMixin {
         return Colors.deepPurple;
       case PopupType.userLoading:
         return Colors.green;
+      case PopupType.party:
+        return Colors.purple;
     }
   }
 

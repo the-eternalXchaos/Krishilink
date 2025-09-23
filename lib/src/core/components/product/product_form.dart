@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/core/lottie/pop_up.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:krishi_link/src/core/components/product/product_form_data.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';

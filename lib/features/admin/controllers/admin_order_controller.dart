@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/order_model.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 

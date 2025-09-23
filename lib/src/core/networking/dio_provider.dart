@@ -2,14 +2,9 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 
-/// Centralized Dio provider registered with Get.lazyPut(fenix: true)
-/// Ensures:
-///  - Single logical instance (recreated if disposed)
-///  - Dynamic token attachment through an interceptor
-///  - Rebuild capability when base URL / global config changes
 class DioProvider {
   DioProvider() {
     _dio = _createDio();

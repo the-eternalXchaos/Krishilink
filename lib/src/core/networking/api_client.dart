@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response, FormData;
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/core/errors/api_exception.dart';
 
 /// Core API client for all network requests

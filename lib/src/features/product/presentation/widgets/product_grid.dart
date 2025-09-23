@@ -4,8 +4,7 @@ import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:lottie/lottie.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/product_card.dart';
-import 'package:krishi_link/src/core/components/material_ui/pop_up.dart'
-    hide PopupType;
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 

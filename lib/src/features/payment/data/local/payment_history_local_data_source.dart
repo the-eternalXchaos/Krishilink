@@ -1,25 +1,28 @@
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:krishi_link/src/features/payment/models/payment_history.dart';
 
-/// Simple in-memory data source placeholder during migration.
 class PaymentHistoryLocalDataSource {
   static final PaymentHistoryLocalDataSource instance =
       PaymentHistoryLocalDataSource._();
   PaymentHistoryLocalDataSource._();
 
-  final List<PaymentHistory> _cache = [];
+  late Box<PaymentHistory> _box;
 
-  List<PaymentHistory> getAll() => List.unmodifiable(_cache);
+  Future<void> init() async {
+    _box = await Hive.openBox<PaymentHistory>('payment_history');
+  }
+
+  List<PaymentHistory> getAll() => _box.values.toList();
 
   Future<void> add(PaymentHistory history) async {
-    _cache.removeWhere((h) => h.id == history.id);
-    _cache.add(history);
+    await _box.put(history.id, history);
   }
 
   Future<List<PaymentHistory>> getAllSortedDesc() async {
-    final list = List<PaymentHistory>.from(_cache);
+    final list = _box.values.toList();
     list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return list;
   }
 
-  void clear() => _cache.clear();
+  Future<void> clear() async => await _box.clear();
 }

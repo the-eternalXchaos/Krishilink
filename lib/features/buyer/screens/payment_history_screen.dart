@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:krishi_link/models/payment_history.dart';
+import 'package:krishi_link/src/features/payment/models/payment_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:krishi_link/features/buyer/screens/payment_details_screen.dart';

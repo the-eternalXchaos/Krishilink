@@ -3,7 +3,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
-import 'package:krishi_link/services/api_services/api_service.dart';
+import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 

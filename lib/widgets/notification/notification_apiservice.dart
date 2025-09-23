@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/admin/models/notification_model.dart';
-import 'package:krishi_link/services/api_services/api_service.dart';
+import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/features/notification/controllers/notification_controller.dart';
 
 class NotificationApiservice extends ApiService {

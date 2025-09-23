@@ -7,7 +7,7 @@ import 'package:get/get.dart' hide FormData, MultipartFile;
 
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:path/path.dart';
 
 class AiChatController extends GetxController {

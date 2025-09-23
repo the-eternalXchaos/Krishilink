@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/features/disease_detection/controller/disease_controller.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';

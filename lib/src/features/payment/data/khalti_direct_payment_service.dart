@@ -5,12 +5,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
+import 'package:krishi_link/src/features/payment/models/payment_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
 
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/payment/models/payment_history.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/src/core/config/payment_config.dart';
 
@@ -28,8 +28,8 @@ class KhaltiDirectPaymentService {
   Map<String, dynamic>? _pendingContext;
 
   KhaltiDirectPaymentService({String? khaltiPublicKey, String? khaltiSecretKey})
-    : _khaltiPublicKey = khaltiPublicKey ?? _khaltiPublicKeyTest,
-      _khaltiSecretKey = khaltiSecretKey ?? _khaltiSecretKeyTest {
+      : _khaltiPublicKey = khaltiPublicKey ?? _khaltiPublicKeyTest,
+        _khaltiSecretKey = khaltiSecretKey ?? _khaltiSecretKeyTest {
     // Create a separate Dio client for Khalti API (no backend auth)
     _dioClient = Dio(
       BaseOptions(
@@ -84,20 +84,18 @@ class KhaltiDirectPaymentService {
           if (customerEmail != null) 'email': customerEmail,
           'phone': customerPhone,
         },
-        'product_details':
-            items
-                .map(
-                  (item) => {
-                    'identity': item.id,
-                    'name': item.name,
-                    'total_price':
-                        (double.parse(item.price) * item.quantity * 100)
-                            .round(),
-                    'quantity': item.quantity,
-                    'unit_price': (double.parse(item.price) * 100).round(),
-                  },
-                )
-                .toList(),
+        'product_details': items
+            .map(
+              (item) => {
+                'identity': item.id,
+                'name': item.name,
+                'total_price':
+                    (double.parse(item.price) * item.quantity * 100).round(),
+                'quantity': item.quantity,
+                'unit_price': (double.parse(item.price) * 100).round(),
+              },
+            )
+            .toList(),
       };
 
       debugPrint('[Khalti] Payment request: ${jsonEncode(paymentRequest)}');
@@ -134,8 +132,7 @@ class KhaltiDirectPaymentService {
         // Launch payment UI
         await _launchKhaltiPayment(
           pidx: pidx,
-          onSuccess:
-              onSuccess ??
+          onSuccess: onSuccess ??
               (transactionId) {
                 PopupService.success('Payment successful!');
                 try {
@@ -145,13 +142,11 @@ class KhaltiDirectPaymentService {
                 } catch (_) {}
                 PaymentConfig.navigateAfterSuccess();
               },
-          onFailure:
-              onFailure ??
+          onFailure: onFailure ??
               (error) {
                 PopupService.error('Payment failed: $error');
               },
-          onCancel:
-              onCancel ??
+          onCancel: onCancel ??
               () {
                 PopupService.info('Payment cancelled by user');
               },
@@ -163,7 +158,7 @@ class KhaltiDirectPaymentService {
           throw Exception(
             'Khalti returned 401 Invalid token. Please provide valid test keys '
             '(public/secret) from your merchant sandbox and pass them via '
-            "--dart-define=KHALTI_PUBLIC_KEY=... --dart-define=KHALTI_SECRET_KEY=...",
+            '"--dart-define=KHALTI_PUBLIC_KEY=... --dart-define=KHALTI_SECRET_KEY=..."',
           );
         }
         throw Exception(
@@ -184,6 +179,7 @@ class KhaltiDirectPaymentService {
           }
         }
         errorMessage += ' (${e.response?.statusCode ?? 'Unknown'})';
+  
       }
 
       // Help the developer quickly when keys are missing/invalid
@@ -297,7 +293,6 @@ class KhaltiDirectPaymentService {
   /// Store payment record locally in the format used by PaymentHistoryScreen
   Future<void> _storePaymentRecord(dynamic payload) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final ctx = _pendingContext ?? const {};
       final items = (ctx['items'] as List<CartItem>?) ?? <CartItem>[];
       // Support both object payload and map payload
@@ -308,46 +303,38 @@ class KhaltiDirectPaymentService {
           (dynamicTotalAmount is num ? (dynamicTotalAmount / 100.0) : 0.0);
 
       final history = PaymentHistory(
-        id:
-            (payload is Map)
-                ? (payload['pidx'] ??
-                        payload['transactionId'] ??
-                        UniqueKey().toString())
-                    .toString()
-                : (payload.pidx ??
-                        payload.transactionId ??
-                        UniqueKey().toString())
-                    .toString(),
-        transactionId:
-            (payload is Map)
-                ? (payload['transactionId'] ?? '').toString()
-                : (payload.transactionId ?? '').toString(),
-        pidx:
-            (payload is Map)
-                ? (payload['pidx'] ?? '').toString()
-                : (payload.pidx ?? '').toString(),
+        id: (payload is Map)
+            ? (payload['pidx'] ??
+                    payload['transactionId'] ??
+                    UniqueKey().toString())
+                .toString()
+            : (payload.pidx ??
+                    payload.transactionId ??
+                    UniqueKey().toString())
+                .toString(),
+        transactionId: (payload is Map)
+            ? (payload['transactionId'] ?? '').toString()
+            : (payload.transactionId ?? '').toString(),
+        pidx: (payload is Map)
+            ? (payload['pidx'] ?? '').toString()
+            : (payload.pidx ?? '').toString(),
         totalAmount: totalAmount,
-        status:
-            (payload is Map)
-                ? (payload['status'] ?? 'Completed').toString()
-                : (payload.status ?? 'Completed').toString(),
+        status: (payload is Map)
+            ? (payload['status'] ?? 'Completed').toString()
+            : (payload.status ?? 'Completed').toString(),
         timestamp: DateTime.now(),
-        fee:
-            (payload is Map)
-                ? ((payload['fee'] is num) ? (payload['fee'] / 100.0) : 0.0)
-                : ((payload.fee is num) ? (payload.fee / 100.0) : 0.0),
-        refunded:
-            (payload is Map)
-                ? (payload['refunded'] == true)
-                : payload.refunded == true,
-        purchaseOrderId:
-            (payload is Map)
-                ? payload['purchaseOrderId']?.toString()
-                : payload.purchaseOrderId?.toString(),
-        purchaseOrderName:
-            (payload is Map)
-                ? payload['purchaseOrderName']?.toString()
-                : payload.purchaseOrderName?.toString(),
+        fee: (payload is Map)
+            ? ((payload['fee'] is num) ? (payload['fee'] / 100.0) : 0.0)
+            : ((payload.fee is num) ? (payload.fee / 100.0) : 0.0),
+        refunded: (payload is Map)
+            ? (payload['refunded'] == true)
+            : payload.refunded == true,
+        purchaseOrderId: (payload is Map)
+            ? payload['purchaseOrderId']?.toString()
+            : payload.purchaseOrderId?.toString(),
+        purchaseOrderName: (payload is Map)
+            ? payload['purchaseOrderName']?.toString()
+            : payload.purchaseOrderName?.toString(),
         items: items,
         customerName: (ctx['customerName'] as String?) ?? '',
         customerPhone: (ctx['customerPhone'] as String?) ?? '',
@@ -358,6 +345,7 @@ class KhaltiDirectPaymentService {
       );
 
       // Write to canonical JSON array key
+      final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString('payment_history');
       final List<dynamic> list =
           jsonString != null && jsonString.isNotEmpty

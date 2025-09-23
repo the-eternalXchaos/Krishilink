@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:krishi_link/models/payment_history.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:krishi_link/src/features/payment/models/payment_history.dart';
+import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
 import 'package:krishi_link/features/buyer/screens/payment_details_screen.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
@@ -27,27 +26,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     setState(() => isLoading = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString('payment_history');
-      if (jsonString == null || jsonString.isEmpty) {
-        setState(() {
-          paymentHistory.clear();
-          isLoading = false;
-        });
-        return;
-      }
-
-      final List<dynamic> data = List<dynamic>.from(
-        (await Future.value(() => json.decode(jsonString))) as List<dynamic>,
-      );
-
-      final list =
-          data
-              .whereType<Map<String, dynamic>>()
-              .map((e) => PaymentHistory.fromJson(e))
-              .toList();
-
-      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final list = await PaymentHistoryLocalDataSource.instance.getAllSortedDesc();
 
       setState(() {
         paymentHistory
@@ -77,10 +56,9 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           ),
         ],
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : paymentHistory.isEmpty
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : paymentHistory.isEmpty
               ? _buildEmptyState(colorScheme, textTheme)
               : _buildPaymentList(colorScheme, textTheme),
     );
@@ -169,10 +147,9 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color:
-                          isCompleted
-                              ? Colors.green.withValues(alpha: 0.1)
-                              : Colors.orange.withValues(alpha: 0.1),
+                      color: isCompleted
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isCompleted ? Colors.green : Colors.orange,

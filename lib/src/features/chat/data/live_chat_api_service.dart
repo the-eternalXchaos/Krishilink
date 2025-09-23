@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart' show Options;
 import 'package:krishi_link/src/core/networking/base_service.dart';
 import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 
 class LiveChatApiService extends BaseService {
   Future<List<Map<String, dynamic>>> getMyCustomersForChat() async {

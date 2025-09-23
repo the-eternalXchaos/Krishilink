@@ -6,7 +6,7 @@ import 'package:krishi_link/src/features/chat/presentation/screens/live_chat_scr
 import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 
 class FarmerChatScreen extends StatefulWidget {
   final String productId;

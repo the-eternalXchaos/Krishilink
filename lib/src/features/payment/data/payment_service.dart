@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
+import 'package:krishi_link/src/features/payment/models/payment_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,7 +15,6 @@ import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
-import 'package:krishi_link/features/payment/models/payment_history.dart';
 import 'package:krishi_link/src/core/config/payment_config.dart';
 
 // DTOs and Models
@@ -38,14 +38,14 @@ class PaymentInitiateRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'return_url': returnUrl,
-    'website_url': websiteUrl,
-    'amount': amount,
-    'purchase_order_id': purchaseOrderId,
-    'purchase_order_name': purchaseOrderName,
-    'customer_info': customerInfo,
-    'product_details': productDetails,
-  };
+        'return_url': returnUrl,
+        'website_url': websiteUrl,
+        'amount': amount,
+        'purchase_order_id': purchaseOrderId,
+        'purchase_order_name': purchaseOrderName,
+        'customer_info': customerInfo,
+        'product_details': productDetails,
+      };
 }
 
 class PaymentInitiateResponse {
@@ -92,8 +92,8 @@ class PaymentService extends BaseService {
     String? khaltiPublicKey,
     String? khaltiSecretKey,
     this.clientOnlySandbox = true,
-  }) : _khaltiPublicKey = khaltiPublicKey ?? _khaltiPublicKeyTest,
-       _khaltiSecretKey = khaltiSecretKey ?? _khaltiSecretKeyTest;
+  })  : _khaltiPublicKey = khaltiPublicKey ?? _khaltiPublicKeyTest,
+        _khaltiSecretKey = khaltiSecretKey ?? _khaltiSecretKeyTest;
 
   /// Initiate payment with Khalti
   Future<PaymentInitiateResponse> initiatePayment({
@@ -112,7 +112,8 @@ class PaymentService extends BaseService {
           'KL-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(9999)}';
 
       final fake = PaymentInitiateResponse(
-        pidx: 'MOCK-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(9999)}',
+        pidx:
+            'MOCK-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(9999)}',
         paymentUrl: 'about:blank',
         expiresAt: DateTime.now().add(const Duration(minutes: 15)),
         expiresIn: 900,
@@ -129,7 +130,9 @@ class PaymentService extends BaseService {
         'longitude': longitude ?? 0.0,
         'purchaseOrderId': purchaseOrderId,
       };
-      debugPrint('[Payment] Client-only sandbox initiate: pidx=${fake.pidx}, amount=$amountPaisa');
+      debugPrint(
+        '[Payment] Client-only sandbox initiate: pidx=${fake.pidx}, amount=$amountPaisa',
+      );
       return fake;
     }
 
@@ -149,19 +152,18 @@ class PaymentService extends BaseService {
           if (customerEmail != null) 'email': customerEmail,
           'phone': customerPhone,
         },
-        productDetails:
-            items
-                .map(
-                  (e) => {
-                    'identity': e.id,
-                    'name': e.name,
-                    'total_price':
-                        (double.parse(e.price) * e.quantity * 100).round(),
-                    'quantity': e.quantity,
-                    'unit_price': (double.parse(e.price) * 100).round(),
-                  },
-                )
-                .toList(),
+        productDetails: items
+            .map(
+              (e) => {
+                'identity': e.id,
+                'name': e.name,
+                'total_price':
+                    (double.parse(e.price) * e.quantity * 100).round(),
+                'quantity': e.quantity,
+                'unit_price': (double.parse(e.price) * 100).round(),
+              },
+            )
+            .toList(),
       );
 
       final response = await apiClient.post(
@@ -289,20 +291,25 @@ class PaymentService extends BaseService {
   /// Store payment record locally (for PaymentHistory screen)
   Future<void> _storePaymentRecord(dynamic payload) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       // Build a PaymentHistory entry using payload + pending context
       final ctx = _pendingContext ?? const {};
       final items = (ctx['items'] as List<CartItem>?) ?? <CartItem>[];
-      final dynamicTotalAmount = (payload is Map)
-          ? payload['totalAmount']
-          : payload.totalAmount;
-      final totalAmount = (ctx['amount'] as double?) ??
+      final dynamicTotalAmount =
+          (payload is Map) ? payload['totalAmount'] : payload.totalAmount;
+      final totalAmount =
+          (ctx['amount'] as double?) ??
           (dynamicTotalAmount is num ? (dynamicTotalAmount / 100.0) : 0.0);
 
       final history = PaymentHistory(
         id: (payload is Map)
-            ? (payload['pidx'] ?? payload['transactionId'] ?? UniqueKey().toString()).toString()
-            : (payload.pidx ?? payload.transactionId ?? UniqueKey().toString()).toString(),
+            ? (payload['pidx'] ??
+                    payload['transactionId'] ??
+                    UniqueKey().toString())
+                .toString()
+            : (payload.pidx ??
+                    payload.transactionId ??
+                    UniqueKey().toString())
+                .toString(),
         transactionId: (payload is Map)
             ? (payload['transactionId'] ?? '').toString()
             : (payload.transactionId ?? '').toString(),
@@ -335,35 +342,12 @@ class PaymentService extends BaseService {
         longitude: (ctx['longitude'] as double?) ?? 0.0,
       );
 
-      // Append to existing payment_history (JSON array as string)
-      final jsonString = prefs.getString('payment_history');
-      final List<dynamic> list =
-          jsonString != null && jsonString.isNotEmpty
-              ? (json.decode(jsonString) as List<dynamic>)
-              : <dynamic>[];
-      list.add(history.toJson());
-      await prefs.setString('payment_history', json.encode(list));
       // Also write to Hive for robust local storage
       try {
         await PaymentHistoryLocalDataSource.instance.add(history);
       } catch (e) {
         debugPrint('[Payment] Hive store failed: $e');
       }
-
-      // Also keep legacy list in sync for compatibility
-      final legacy = prefs.getStringList('khalti_payment_records') ?? [];
-      legacy.add(json.encode({
-        'transactionId': history.transactionId,
-        'pidx': history.pidx,
-        'totalAmount': (history.totalAmount * 100).round(),
-        'status': history.status,
-        'fee': (history.fee * 100).round(),
-        'refunded': history.refunded,
-        'purchaseOrderId': history.purchaseOrderId,
-        'purchaseOrderName': history.purchaseOrderName,
-        'timestamp': history.timestamp.toIso8601String(),
-      }));
-      await prefs.setStringList('khalti_payment_records', legacy);
 
       // Clear pending context once stored
       _pendingContext = null;
@@ -378,16 +362,7 @@ class PaymentService extends BaseService {
       // Prefer Hive-backed history
       final hiveList =
           await PaymentHistoryLocalDataSource.instance.getAllSortedDesc();
-      if (hiveList.isNotEmpty) {
-        return hiveList.map((e) => e.toJson()).toList();
-      }
-
-      // Fallback to legacy SharedPreferences JSON
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString('payment_history');
-      if (jsonString == null || jsonString.isEmpty) return [];
-      final list = json.decode(jsonString) as List<dynamic>;
-      return list.whereType<Map<String, dynamic>>().toList().reversed.toList();
+      return hiveList.map((e) => e.toJson()).toList();
     } catch (e) {
       debugPrint('[Payment] Failed to get payment history: $e');
       return [];
@@ -400,7 +375,8 @@ class PaymentService extends BaseService {
       return {
         'pidx': pidx,
         'status': 'Completed',
-        'total_amount': ((_pendingContext?['amount'] as double? ?? 0.0) * 100).round(),
+        'total_amount':
+            ((_pendingContext?['amount'] as double? ?? 0.0) * 100).round(),
       };
     }
     return executeApiCall(() async {

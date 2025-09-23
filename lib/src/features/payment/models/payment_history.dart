@@ -1,25 +1,60 @@
+import 'package:hive/hive.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 
-class PaymentHistory {
+@HiveType(typeId: 3)
+class PaymentHistory extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   final String transactionId;
+
+  @HiveField(2)
   final String pidx;
+
+  @HiveField(3)
   final double totalAmount;
+
+  @HiveField(4)
   final String status;
+
+  @HiveField(5)
   final DateTime timestamp;
+
+  @HiveField(6)
   final double fee;
+
+  @HiveField(7)
   final bool refunded;
+
+  @HiveField(8)
   final String? purchaseOrderId;
+
+  @HiveField(9)
   final String? purchaseOrderName;
+
+  @HiveField(10)
   final List<CartItem> items;
+
+  @HiveField(11)
   final String customerName;
+
+  @HiveField(12)
   final String customerPhone;
+
+  @HiveField(13)
   final String? customerEmail;
+
+  @HiveField(14)
   final String deliveryAddress;
+
+  @HiveField(15)
   final double latitude;
+
+  @HiveField(16)
   final double longitude;
 
-  const PaymentHistory({
+  PaymentHistory({
     required this.id,
     required this.transactionId,
     required this.pidx,
@@ -130,6 +165,7 @@ class PaymentHistory {
   @override
   bool operator ==(Object other) =>
       identical(this, other) || (other is PaymentHistory && other.id == id);
+
   @override
   int get hashCode => id.hashCode;
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/components/product/management/unified_product_api_services.dart';
 import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:path_provider/path_provider.dart';

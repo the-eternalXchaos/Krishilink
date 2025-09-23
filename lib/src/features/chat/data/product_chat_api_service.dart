@@ -3,7 +3,7 @@ import 'package:krishi_link/src/core/networking/base_service.dart';
 import 'package:krishi_link/src/features/chat/models/simple_chat_room.dart';
 import 'package:krishi_link/src/features/chat/models/simple_message.dart';
 import 'package:krishi_link/src/core/storage/token_storage.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 
 class ProductChatApiService extends BaseService {
   Future<String?> getFarmerIdByProductId(String productId) async {

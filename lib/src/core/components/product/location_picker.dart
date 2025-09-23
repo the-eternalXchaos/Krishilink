@@ -5,6 +5,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart'; // Import PopupService
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LocationPicker extends StatefulWidget {
@@ -141,7 +142,11 @@ class _LocationPickerState extends State<LocationPicker>
               : 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
 
       _updateLocation(position.latitude, position.longitude, address);
-      PopupService.success('current_location_fetched'.tr);
+      PopupService.showSnackbar(
+        title: 'location_fetched'.tr,
+        type: PopupType.success,
+        message: 'current_location_fetched'.tr,
+      );
     } catch (e) {
       PopupService.showSnackbar(
         type: PopupType.error,

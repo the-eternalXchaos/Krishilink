@@ -1,12 +1,13 @@
 import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
 
-/// Canonical CartItem model (migrated to src/features/cart/models)
 class CartItem {
   final String id;
   final String name;
   final String price; // stored as string in existing API responses
-  final String imageUrl;
+  final String productId;
   final int quantity;
+  final String image; // Image URL or path, constructed like Product model
   final Product?
   product; // Optional Product reference for better image handling
 
@@ -14,8 +15,9 @@ class CartItem {
     required this.id,
     required this.name,
     required this.price,
-    required this.imageUrl,
+    required this.productId,
     required this.quantity,
+    required this.image,
     this.product,
   });
 
@@ -23,31 +25,42 @@ class CartItem {
     String? id,
     String? name,
     String? price,
-    String? imageUrl,
+    String? productId,
     int? quantity,
+    String? image,
     Product? product,
   }) => CartItem(
     id: id ?? this.id,
     name: name ?? this.name,
     price: price ?? this.price,
-    imageUrl: imageUrl ?? this.imageUrl,
+    productId: productId ?? this.productId,
     quantity: quantity ?? this.quantity,
+    image: image ?? this.image,
     product: product ?? this.product,
   );
 
   factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    price: json['price'] as String,
-    imageUrl: json['imageUrl'] as String,
-    quantity: json['quantity'] as int,
+    id: json['id']?.toString() ?? '',
+    name: json['productName']?.toString() ?? json['name']?.toString() ?? '',
+    price: json['price']?.toString() ?? json['rate']?.toString() ?? '',
+    productId: json['productId']?.toString() ?? '',
+    quantity:
+        json['quantity'] is int
+            ? json['quantity']
+            : int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
+    image:
+        (json['productImageCode'] != null
+            ? '${ApiConstants.getProductImageEndpoint}/${json['productImageCode']}?t=${DateTime.now().millisecondsSinceEpoch}'
+            : ''),
+    product: null,
   );
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'price': price,
-    'imageUrl': imageUrl,
+    'productId': productId,
+    'image': image,
     'quantity': quantity,
   };
 
@@ -56,18 +69,19 @@ class CartItem {
         id: product.id,
         name: product.productName,
         price: product.rate.toString(),
-        imageUrl: product.image,
+        productId: product.id,
+        image: product.image,
         quantity: quantity,
         product: product, // Store the product reference
       );
 
-  /// Get the proper image URL - uses Product model's image if available, falls back to stored imageUrl
-  String get properImageUrl => product?.image ?? imageUrl;
+  /// Get the image URL for the cart item
+  String get properImageUrl => image;
 
   /// Check if we have a Product reference for better image handling
   bool get hasProductReference => product != null;
 
   @override
   String toString() =>
-      'CartItem(id: $id, name: $name, price: ₹$price, quantity: $quantity, hasProduct: $hasProductReference)';
+      'CartItem(id: $id, name: $name, price: ₹$price, quantity: $quantity, productId: $productId, image: $image, hasProduct: $hasProductReference)';
 }

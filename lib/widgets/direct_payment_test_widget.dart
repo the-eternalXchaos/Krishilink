@@ -50,34 +50,7 @@ class DirectPaymentTestWidget extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Sample Payment Button
-            Obx(
-              () => ElevatedButton.icon(
-                onPressed:
-                    controller.isProcessingPayment.value
-                        ? null
-                        : () => controller.testPayment(),
-                icon:
-                    controller.isProcessingPayment.value
-                        ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.payment),
-                label: Text(
-                  controller.isProcessingPayment.value
-                      ? 'Processing...'
-                      : 'Test Payment (Rs. 1500)',
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
+            // ...existing code...
 
             // Custom Payment Button
             ElevatedButton.icon(
@@ -231,7 +204,7 @@ class DirectPaymentTestWidget extends StatelessWidget {
               if (amount > 0) {
                 Get.back();
                 controller.processDirectPayment(
-                  cartItems: controller.createSampleCartItems(),
+                  cartItems: [], // cart items can be empty for custom payment
                   totalAmount: amount,
                   customerName: nameController.text,
                   customerPhone: phoneController.text,

@@ -242,7 +242,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/product/controllers/product_controller.dart';
+import '../controllers/product_controller.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
@@ -917,18 +917,6 @@ class _ProductCardState extends State<ProductCard>
     if (authController.isLoggedIn) {
       cartController.addToCart(
         CartItem.fromProduct(widget.product, quantity: 1),
-      );
-
-      // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${'added_to_cart'.tr}: ${widget.product.productName}'),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
       );
     } else {
       PopupService.info(

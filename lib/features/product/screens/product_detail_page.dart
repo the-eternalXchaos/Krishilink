@@ -1,3 +1,4 @@
+import 'package:krishi_link/src/core/components/custom_drawer/custom_drawer.dart';
 // import 'package:cached_network_image/cached_network_image.dart';
 // import 'package:dio/dio.dart';
 // import 'package:flutter/foundation.dart';
@@ -498,6 +499,7 @@ import 'package:get/get.dart';
 // }
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:krishi_link/src/features/product/presentation/widgets/buy_product_dialog.dart';
 import 'package:krishi_link/widgets/safe_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -509,14 +511,13 @@ import 'package:krishi_link/features/product/widgets/related_products_widget.dar
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:krishi_link/features/product/controllers/product_controller.dart';
 import 'package:krishi_link/src/core/components/bottom_sheet/app_bottom_sheet.dart';
 import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/admin/models/product_model.dart';
 import 'package:krishi_link/services/popup_service.dart';
-import 'package:krishi_link/features/product/widgets/buy_product_dialog.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 
 import 'package:krishi_link/src/features/chat/presentation/screens/product_chat_screen.dart';
 
@@ -590,7 +591,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       // quick path: no image or invalid URL
       if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
         await Share.share(text, subject: 'KrishiLink | $name');
-        PopupService.success('product_shared_successfully'.tr);
+        PopupService.showSnackbar(
+          title: 'product_shared_successfully'.tr,
+          message: 'check_your_share_options'.tr,
+          position: SnackPosition.BOTTOM,
+        );
         return;
       }
 
@@ -619,7 +624,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         subject: 'KrishiLink | $name',
       );
 
-      PopupService.success('product_shared_successfully'.tr);
+      PopupService.showSnackbar(
+        title: 'success'.tr,
+        message: 'product_shared_successfully'.tr,
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('❌ Share failed: $e\n$st');
@@ -641,7 +649,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ? Get.find<CartController>()
             : Get.put(CartController());
     cartController.addToCart(CartItem.fromProduct(widget.product, quantity: 1));
-    PopupService.success('added_to_cart'.tr);
   }
 
   void _buyNow() {
@@ -700,7 +707,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         username: authController.currentUser.value?.fullName ?? 'anonymous'.tr,
       );
       reviewController.clear();
-      PopupService.success('review_submitted'.tr);
+      PopupService.showSnackbar(
+        title: 'review_submitted'.tr,
+        message: 'thank_you_for_your_feedback'.tr,
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('❌ submitReview failed: $e\n$st');
@@ -843,7 +853,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
 
                   const SizedBox(height: 24),
-                  RelatedProductsWidget(productId: widget.product.id),
+                  _productController.relatedProducts.isNotEmpty
+                      ? RelatedProductsWidget(productId: widget.product.id)
+                      : const SizedBox.shrink(),
 
                   const SizedBox(height: 24),
                   Text(

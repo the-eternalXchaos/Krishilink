@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:krishi_link/models/payment_history.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:krishi_link/src/features/payment/models/payment_history.dart';
 
 class PaymentDetailsScreen extends StatelessWidget {
   final PaymentHistory payment;

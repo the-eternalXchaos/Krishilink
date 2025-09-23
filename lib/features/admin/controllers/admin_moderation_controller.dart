@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 
 class AdminModerationController extends GetxController {

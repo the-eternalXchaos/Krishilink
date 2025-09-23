@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/services/token_service.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 
 class ProductChatController extends GetxController {
   final String productId;

@@ -1,5 +1,4 @@
-// import 'package:krishi_link/services/api_services/api_service.dart';
-
+// import 'package:krishi_link/src/core/networking/api_service.dart';
 // class AiApiService extends ApiService {
 
 
