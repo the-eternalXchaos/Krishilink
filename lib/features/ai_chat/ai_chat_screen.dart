@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 
 import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/src/core/constants/lottie_assets.dart';
