@@ -272,13 +272,11 @@ class AuthController extends GetxController {
     });
   }
 
-  Future<void> passwordLogin(
-    String emailOrPhone,
-    String password,
-    String deviceId,
-  ) async {
+  Future<void> passwordLogin(String emailOrPhone, String password) async {
     try {
       isLoading(true);
+
+      final deviceId = await DeviceService().getDeviceId(); // ✅ Only once
       debugPrint("🔐 Attempting password login");
       debugPrint(
         "   Email/Phone: $emailOrPhone , Password: $password, Device Id: $deviceId",
@@ -289,7 +287,10 @@ class AuthController extends GetxController {
 
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
         body: {
           'EmailorPhone': emailOrPhone,
           'Password': password,
@@ -323,48 +324,13 @@ class AuthController extends GetxController {
           token: data['token'] ?? '',
           refreshToken: data['refreshToken'] ?? '',
           expiration: data['expiration'] ?? '',
-          deviceId: data['deviceId'] ?? '',
+          deviceId: deviceId,
         );
 
-        await saveAuthData(user); // ✅ Model instead of raw Map
-        navigateBasedOnRole(); // ✅ Redirect properly
-      } else if (response.statusCode == 400) {
-        final error = jsonDecode(response.body);
-        String errorMessage = 'Invalid credentials';
-
-        // Try to extract specific error message from the response
-        if (error['errors'] != null && error['errors'] is Map) {
-          final errors = error['errors'] as Map;
-          if (errors['MyError'] != null && errors['MyError'] is List) {
-            final myErrors = errors['MyError'] as List;
-            if (myErrors.isNotEmpty) {
-              errorMessage = myErrors.first.toString();
-            }
-          }
-        } else if (error['message'] != null) {
-          errorMessage = error['message'];
-        }
-
-        throw AppException(errorMessage);
+        await saveAuthData(user);
+        navigateBasedOnRole();
       } else {
-        debugPrint("❌ Error response: ${response.body}");
-        final error = jsonDecode(response.body);
-        String errorMessage = 'Login failed';
-
-        // Try to extract specific error message from the response
-        if (error['errors'] != null && error['errors'] is Map) {
-          final errors = error['errors'] as Map;
-          if (errors['MyError'] != null && errors['MyError'] is List) {
-            final myErrors = errors['MyError'] as List;
-            if (myErrors.isNotEmpty) {
-              errorMessage = myErrors.first.toString();
-            }
-          }
-        } else if (error['message'] != null) {
-          errorMessage = error['message'];
-        }
-
-        throw AppException(errorMessage);
+        _handleErrorResponse(response);
       }
     } on AppException catch (e) {
       _showError(e.message);
@@ -373,6 +339,31 @@ class AuthController extends GetxController {
       _showError('Login failed: $e');
     } finally {
       isLoading(false);
+    }
+  }
+
+  /// ✅ Helper to extract error messages cleanly
+  void _handleErrorResponse(http.Response response) {
+    debugPrint("❌ Error response: ${response.body}");
+    try {
+      final error = jsonDecode(response.body);
+      String errorMessage = 'Login failed';
+
+      if (error['errors'] != null && error['errors'] is Map) {
+        final errors = error['errors'] as Map;
+        if (errors['MyError'] != null && errors['MyError'] is List) {
+          final myErrors = errors['MyError'] as List;
+          if (myErrors.isNotEmpty) {
+            errorMessage = myErrors.first.toString();
+          }
+        }
+      } else if (error['message'] != null) {
+        errorMessage = error['message'];
+      }
+
+      throw AppException(errorMessage);
+    } catch (_) {
+      throw AppException('Unexpected server error');
     }
   }
 
@@ -583,6 +574,12 @@ class AuthController extends GetxController {
     String? gender,
     File? profileImage,
   }) async {}
+
+  Future<void> signInWithGoogle() async {}
+
+  Future<void> signInWithFacebook() async {}
+
+  Future<void> signInWithApple() async {}
 
   // // Farmer Live Status
   // final RxMap<String, bool> _farmerLiveStatus = <String, bool>{}.obs;
