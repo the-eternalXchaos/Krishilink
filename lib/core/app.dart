@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/controllers/settings_controller.dart';
+import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/core/translations/app_translations.dart';
 import 'package:krishi_link/core/utils/translations.dart';
