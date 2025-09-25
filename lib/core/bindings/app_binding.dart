@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/core/controllers/language_controller.dart';
-import 'package:krishi_link/core/controllers/settings_controller.dart';
+import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
+import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:krishi_link/controllers/profile_controller.dart';
 import 'package:krishi_link/src/core/services/connectivity_service.dart';
 
