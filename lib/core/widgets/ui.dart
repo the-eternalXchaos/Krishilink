@@ -146,7 +146,7 @@ class UI {
       'UI.dropdown - Surface: ${colorScheme.surface}, Primary: ${colorScheme.primary}',
     );
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       items:
           items.map((String item) {
             return DropdownMenuItem<String>(
