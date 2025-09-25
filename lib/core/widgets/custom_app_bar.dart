@@ -253,7 +253,7 @@ class _CustomAppBarState extends State<CustomAppBar>
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
         ),
         child: Row(
           children: [
@@ -322,7 +322,7 @@ class _CustomAppBarState extends State<CustomAppBar>
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               child: const LanguageSwitcher(
                 backgroundColor: Colors.transparent,
@@ -355,7 +355,7 @@ class _CustomAppBarState extends State<CustomAppBar>
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -391,7 +391,7 @@ class _CustomAppBarState extends State<CustomAppBar>
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
