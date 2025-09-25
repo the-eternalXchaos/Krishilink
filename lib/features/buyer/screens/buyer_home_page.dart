@@ -15,7 +15,6 @@ import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart'
 import 'package:krishi_link/features/buyer/screens/buyer_menu_page.dart';
 import 'package:krishi_link/features/buyer/screens/cart_screen.dart';
 import 'package:krishi_link/features/chat/screens/chat_list_screen.dart';
-import 'package:krishi_link/services/popup_service.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/product_grid.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/search_bar.dart'
     as custom;
