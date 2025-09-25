@@ -1,7 +1,7 @@
 // lib/features/settings/unified_settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/controllers/settings_controller.dart';
+import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/src/core/constants/app_spacing.dart';
