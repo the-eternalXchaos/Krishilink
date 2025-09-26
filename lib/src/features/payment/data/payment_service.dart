@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:khalti_checkout_flutter/khalti_checkout_flutter.dart';
+import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:krishi_link/src/features/payment/models/payment_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
@@ -13,7 +14,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:krishi_link/src/core/networking/base_service.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/src/core/config/payment_config.dart';
 
@@ -38,14 +38,14 @@ class PaymentInitiateRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'return_url': returnUrl,
-        'website_url': websiteUrl,
-        'amount': amount,
-        'purchase_order_id': purchaseOrderId,
-        'purchase_order_name': purchaseOrderName,
-        'customer_info': customerInfo,
-        'product_details': productDetails,
-      };
+    'return_url': returnUrl,
+    'website_url': websiteUrl,
+    'amount': amount,
+    'purchase_order_id': purchaseOrderId,
+    'purchase_order_name': purchaseOrderName,
+    'customer_info': customerInfo,
+    'product_details': productDetails,
+  };
 }
 
 class PaymentInitiateResponse {
@@ -92,8 +92,8 @@ class PaymentService extends BaseService {
     String? khaltiPublicKey,
     String? khaltiSecretKey,
     this.clientOnlySandbox = true,
-  })  : _khaltiPublicKey = khaltiPublicKey ?? _khaltiPublicKeyTest,
-        _khaltiSecretKey = khaltiSecretKey ?? _khaltiSecretKeyTest;
+  }) : _khaltiPublicKey = khaltiPublicKey ?? _khaltiPublicKeyTest,
+       _khaltiSecretKey = khaltiSecretKey ?? _khaltiSecretKeyTest;
 
   /// Initiate payment with Khalti
   Future<PaymentInitiateResponse> initiatePayment({
@@ -152,18 +152,19 @@ class PaymentService extends BaseService {
           if (customerEmail != null) 'email': customerEmail,
           'phone': customerPhone,
         },
-        productDetails: items
-            .map(
-              (e) => {
-                'identity': e.id,
-                'name': e.name,
-                'total_price':
-                    (double.parse(e.price) * e.quantity * 100).round(),
-                'quantity': e.quantity,
-                'unit_price': (double.parse(e.price) * 100).round(),
-              },
-            )
-            .toList(),
+        productDetails:
+            items
+                .map(
+                  (e) => {
+                    'identity': e.id,
+                    'name': e.name,
+                    'total_price':
+                        (double.parse(e.price) * e.quantity * 100).round(),
+                    'quantity': e.quantity,
+                    'unit_price': (double.parse(e.price) * 100).round(),
+                  },
+                )
+                .toList(),
       );
 
       final response = await apiClient.post(
@@ -301,38 +302,46 @@ class PaymentService extends BaseService {
           (dynamicTotalAmount is num ? (dynamicTotalAmount / 100.0) : 0.0);
 
       final history = PaymentHistory(
-        id: (payload is Map)
-            ? (payload['pidx'] ??
-                    payload['transactionId'] ??
-                    UniqueKey().toString())
-                .toString()
-            : (payload.pidx ??
-                    payload.transactionId ??
-                    UniqueKey().toString())
-                .toString(),
-        transactionId: (payload is Map)
-            ? (payload['transactionId'] ?? '').toString()
-            : (payload.transactionId ?? '').toString(),
-        pidx: (payload is Map)
-            ? (payload['pidx'] ?? '').toString()
-            : (payload.pidx ?? '').toString(),
+        id:
+            (payload is Map)
+                ? (payload['pidx'] ??
+                        payload['transactionId'] ??
+                        UniqueKey().toString())
+                    .toString()
+                : (payload.pidx ??
+                        payload.transactionId ??
+                        UniqueKey().toString())
+                    .toString(),
+        transactionId:
+            (payload is Map)
+                ? (payload['transactionId'] ?? '').toString()
+                : (payload.transactionId ?? '').toString(),
+        pidx:
+            (payload is Map)
+                ? (payload['pidx'] ?? '').toString()
+                : (payload.pidx ?? '').toString(),
         totalAmount: totalAmount,
-        status: (payload is Map)
-            ? (payload['status'] ?? 'Completed').toString()
-            : (payload.status ?? 'Completed').toString(),
+        status:
+            (payload is Map)
+                ? (payload['status'] ?? 'Completed').toString()
+                : (payload.status ?? 'Completed').toString(),
         timestamp: DateTime.now(),
-        fee: (payload is Map)
-            ? ((payload['fee'] is num) ? (payload['fee'] / 100.0) : 0.0)
-            : ((payload.fee is num) ? (payload.fee / 100.0) : 0.0),
-        refunded: (payload is Map)
-            ? (payload['refunded'] == true)
-            : payload.refunded == true,
-        purchaseOrderId: (payload is Map)
-            ? payload['purchaseOrderId']?.toString()
-            : payload.purchaseOrderId?.toString(),
-        purchaseOrderName: (payload is Map)
-            ? payload['purchaseOrderName']?.toString()
-            : payload.purchaseOrderName?.toString(),
+        fee:
+            (payload is Map)
+                ? ((payload['fee'] is num) ? (payload['fee'] / 100.0) : 0.0)
+                : ((payload.fee is num) ? (payload.fee / 100.0) : 0.0),
+        refunded:
+            (payload is Map)
+                ? (payload['refunded'] == true)
+                : payload.refunded == true,
+        purchaseOrderId:
+            (payload is Map)
+                ? payload['purchaseOrderId']?.toString()
+                : payload.purchaseOrderId?.toString(),
+        purchaseOrderName:
+            (payload is Map)
+                ? payload['purchaseOrderName']?.toString()
+                : payload.purchaseOrderName?.toString(),
         items: items,
         customerName: (ctx['customerName'] as String?) ?? '',
         customerPhone: (ctx['customerPhone'] as String?) ?? '',
