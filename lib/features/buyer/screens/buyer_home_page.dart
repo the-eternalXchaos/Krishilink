@@ -7,7 +7,7 @@ import 'package:krishi_link/src/features/product/presentation/controllers/filter
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/ai_chat/ai_chat_screen.dart';
+import 'package:krishi_link/src/features/ai_chat/presentation/screens/ai_chat_screen.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
