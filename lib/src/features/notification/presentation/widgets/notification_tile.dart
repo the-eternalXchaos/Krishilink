@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:krishi_link/features/notification/model/notification_model.dart';
 import 'package:krishi_link/src/core/constants/app_spacing.dart';
-import 'package:krishi_link/features/admin/models/notification_model.dart';
 
 /// Enhanced notification tile with better UI and interactions
 class NotificationTile extends StatelessWidget {
