@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/src/core/components/product/product_form.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/widgets/search_bar.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 
@@ -514,7 +514,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               isToggling
                   ? null
                   : (value) => _handleToggleActive(product, value, toggleKey),
-          activeColor: theme.primaryColor,
+          activeThumbColor: theme.primaryColor,
         ),
       );
     });
