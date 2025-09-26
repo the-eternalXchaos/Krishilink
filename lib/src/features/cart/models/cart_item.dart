@@ -1,4 +1,4 @@
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 
 class CartItem {
