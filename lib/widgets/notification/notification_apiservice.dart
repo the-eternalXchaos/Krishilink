@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/features/admin/models/notification_model.dart';
+import 'package:krishi_link/features/notification/model/notification_model.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/features/notification/controllers/notification_controller.dart';
 
