@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
 
-import 'package:krishi_link/core/controllers/language_controller.dart';
+import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
