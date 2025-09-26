@@ -1,7 +1,7 @@
 // lib/features/admin/screens/content_moderation_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/controllers/admin_moderation_controller.dart';
+import 'package:krishi_link/src/features/admin/presentation/controllers/admin_moderation_controller.dart';
 
 class ContentModerationScreen extends StatelessWidget {
   const ContentModerationScreen({super.key});
