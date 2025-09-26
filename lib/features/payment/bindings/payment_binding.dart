@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:krishi_link/controllers/direct_payment_controller.dart';
+import 'package:krishi_link/src/features/payment/presentation/controllers/direct_payment_controller.dart';
 
 /// Payment page binding
 class PaymentBinding extends Bindings {
