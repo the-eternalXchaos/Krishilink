@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../../features/ai_chat/ai_chat_controller.dart';
+import '../../src/features/ai_chat/presentation/controllers/ai_chat_controller.dart';
 
 class AiChatBinding extends Bindings {
   @override
