@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/controllers/filter_controller.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/filter_sheet.dart';
 
