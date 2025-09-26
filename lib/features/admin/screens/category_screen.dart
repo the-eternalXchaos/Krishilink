@@ -62,7 +62,7 @@
 // lib/features/admin/screens/category_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/controllers/admin_category_controller.dart';
+import 'package:krishi_link/src/features/admin/presentation/controllers/admin_category_controller.dart';
 
 class CategoryScreen extends StatelessWidget {
   const CategoryScreen({super.key});
