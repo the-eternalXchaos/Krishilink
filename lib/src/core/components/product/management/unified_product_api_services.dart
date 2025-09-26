@@ -6,7 +6,7 @@ import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:path/path.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:get/get.dart';
 
