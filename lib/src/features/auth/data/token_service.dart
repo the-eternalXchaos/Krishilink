@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/exceptions/app_exception.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/features/admin/models/user_model.dart';
@@ -183,7 +183,6 @@ class TokenService {
       }
 
       final dioClient = dio.Dio();
-      // Use multipart/form-data as required by backend
       final formData = dio.FormData.fromMap({'refreshToken': refreshToken});
       final response = await dioClient.post(
         ApiConstants.refreshTokenEndpoint,
