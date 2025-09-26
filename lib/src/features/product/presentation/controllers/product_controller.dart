@@ -6,14 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:http/http.dart' as http;
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
+import 'package:krishi_link/src/features/product/data/models/review_model.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
 import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
-import 'package:krishi_link/models/review_model.dart';
+
 import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/src/core/networking/dio_provider.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
@@ -68,7 +69,7 @@ class ProductController extends GetxController {
   void onInit() {
     super.onInit();
     debugPrint(
-      '🔄 [ProductController] onInit called - Controller ID: ${hashCode}',
+      '🔄 [ProductController] onInit called - Controller ID: $hashCode',
     );
     _initializeDependencies();
     debugPrint(
@@ -273,10 +274,12 @@ class ProductController extends GetxController {
     int? page,
     int? pageSizeParam,
   ) async {
-    if (response.statusCode != 200)
+    if (response.statusCode != 200) {
       throw Exception('Server error: ${response.statusCode}');
-    if (response.data == null || response.data['data'] == null)
+    }
+    if (response.data == null || response.data['data'] == null) {
       throw Exception('Invalid response structure');
+    }
 
     final List<dynamic> data = response.data['data'] ?? [];
     final List<Product> fetchedProducts =
