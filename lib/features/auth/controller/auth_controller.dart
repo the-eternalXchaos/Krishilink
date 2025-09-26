@@ -7,8 +7,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/exceptions/app_exception.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/src/features/device/data/device_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
