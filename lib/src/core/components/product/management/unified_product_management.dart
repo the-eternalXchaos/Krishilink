@@ -4,8 +4,8 @@ import 'package:krishi_link/src/core/components/product/management/unified_produ
 import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/src/core/components/product/product_form.dart';
 import 'package:krishi_link/src/core/components/product/product_list_screen.dart';
-import 'package:krishi_link/controllers/filter_controller.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/widgets/search_bar.dart' as custom;
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
