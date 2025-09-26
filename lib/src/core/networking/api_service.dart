@@ -10,13 +10,13 @@ import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 
 // Package-level imports within this app
-import 'package:krishi_link/exceptions/app_exception.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/models/review_model.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
+import 'package:krishi_link/src/features/product/data/models/review_model.dart';
 
 class ApiService {
   final Dio _dio;
