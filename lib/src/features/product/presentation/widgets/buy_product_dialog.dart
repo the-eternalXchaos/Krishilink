@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
-import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
+import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 
 class BuyProductDialog extends StatelessWidget {
   final Product? product;
