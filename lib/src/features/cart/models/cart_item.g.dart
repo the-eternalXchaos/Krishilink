@@ -5,9 +5,10 @@
 // **************************************************************************
 
 import 'package:hive/hive.dart';
-import 'package:krishi_link/features/admin/models/cart_item.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart'
+export 'package:krishi_link/src/features/cart/models/cart_item.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart'
     show Product;
+import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 
 class CartItemAdapter extends TypeAdapter<CartItem> {
   @override
