@@ -101,8 +101,8 @@ class FilterController extends GetxController {
         productController.fetchLocations(silent: true),
       ]);
 
-      final cats = results[0] as List<String>;
-      final locs = results[1] as List<String>;
+      final cats = results[0];
+      final locs = results[1];
 
       initializeCategories(cats, selectedCategories.toSet());
       initializeLocations(locs);
