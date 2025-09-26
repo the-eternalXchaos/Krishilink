@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 
 class ProductListManagement extends StatelessWidget {
   final Product product;
@@ -101,7 +101,7 @@ class ProductListManagement extends StatelessWidget {
                           toggleLoading[toggleKey] == true
                               ? null
                               : onToggleActive,
-                      activeColor: colorScheme.primary,
+                      activeThumbColor: colorScheme.primary,
                       contentPadding: EdgeInsets.zero,
                       dense: true,
                     ),
