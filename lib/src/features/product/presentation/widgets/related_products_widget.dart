@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/product/screens/product_detail_page.dart';
 
 class RelatedProductsWidget extends StatefulWidget {
