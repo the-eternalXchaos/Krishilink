@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/cart/models/cart_item.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:lottie/lottie.dart';
 
 class WishlistScreen extends StatelessWidget {
