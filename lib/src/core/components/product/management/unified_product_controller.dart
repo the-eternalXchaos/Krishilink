@@ -8,7 +8,7 @@ import 'package:krishi_link/src/core/components/product/management/unified_produ
 import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:krishi_link/src/core/components/product/product_form_data.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
