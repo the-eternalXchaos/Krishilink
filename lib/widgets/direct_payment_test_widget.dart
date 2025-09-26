@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/controllers/direct_payment_controller.dart';
+import 'package:krishi_link/src/features/payment/presentation/controllers/direct_payment_controller.dart';
 
 /// Simple test widget for direct Khalti payments
 class DirectPaymentTestWidget extends StatelessWidget {
