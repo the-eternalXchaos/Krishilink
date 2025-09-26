@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/controllers/profile_controller.dart';
+import 'package:krishi_link/src/features/profile/presentation/controllers/profile_controller.dart';
+
 import 'package:krishi_link/src/core/constants/constants.dart';
 
 class ProfileEdit extends StatelessWidget {
