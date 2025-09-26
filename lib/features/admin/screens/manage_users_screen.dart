@@ -5,7 +5,7 @@ import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
 import 'package:krishi_link/src/core/constants/app_spacing.dart';
-import 'package:krishi_link/features/admin/controllers/admin_user_controller.dart';
+import 'package:krishi_link/src/features/admin/presentation/controllers/admin_user_controller.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
 
 class ManageUsersScreen extends StatefulWidget {
