@@ -1,5 +1,5 @@
 import 'package:krishi_link/src/core/networking/base_service.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 
 class ProductsRequest {
   final int page;
