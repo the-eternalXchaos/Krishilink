@@ -3,7 +3,7 @@
 // import 'package:get/get.dart';
 // import 'package:krishi_link/controllers/product_controller.dart';
 // import 'package:krishi_link/core/utils/constants.dart';
-// import 'package:krishi_link/features/admin/models/cart_item.dart';
+// export 'package:krishi_link/src/features/cart/models/cart_item.dart';
 // import 'package:krishi_link/features/admin/models/product_model.dart';
 // import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 // import 'package:krishi_link/features/auth/controller/cart_controller.dart';
@@ -242,8 +242,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/cart/models/cart_item.dart';
-import 'package:krishi_link/features/admin/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
@@ -251,6 +250,7 @@ import 'package:krishi_link/features/chat/live_chat/live_chat_controller.dart';
 import 'package:krishi_link/features/product/screens/product_detail_page.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:krishi_link/widgets/safe_network_image.dart';
 
 class ProductCard extends StatefulWidget {
