@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/models/notification_model.dart';
+import 'package:krishi_link/features/notification/model/notification_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/widgets/notification/notification_apiservice.dart';
 
@@ -273,11 +273,5 @@ class NotificationController extends GetxController {
   void _setError(String message) {
     hasError.value = true;
     errorMessage.value = message;
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
-    // Clean up resources if needed
   }
 }
