@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/admin/models/notification_model.dart';
+import 'package:krishi_link/features/notification/model/notification_model.dart';
 
 class NotificationUtils {
   /// Handle notification tap based on notification type
