@@ -1,8 +1,8 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:hive/hive.dart';
-import 'package:krishi_link/features/admin/models/cart_item.dart';
 import 'package:krishi_link/src/features/payment/models/payment_history.dart';
+import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
