@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:krishi_link/features/order_summary/controllers/order_summary_controller.dart';
+import 'package:krishi_link/src/features/order/controllers/order_summary_controller.dart';
 
 class OrderSummaryBinding extends Bindings {
   @override
