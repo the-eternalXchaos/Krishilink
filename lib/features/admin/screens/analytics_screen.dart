@@ -1,7 +1,7 @@
 // lib/features/admin/screens/analytics_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/controllers/admin_analytics_controler.dart';
+import 'package:krishi_link/src/features/admin/presentation/controllers/admin_analytics_controler.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
