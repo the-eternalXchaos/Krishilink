@@ -1,7 +1,7 @@
 // lib/features/admin/screens/reports_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/admin/controllers/admin_report_controller.dart';
+import 'package:krishi_link/src/features/admin/presentation/controllers/admin_report_controller.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
