@@ -1,25 +1,25 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/core/constants/constants.dart';
-import 'package:krishi_link/src/core/constants/lottie_assets.dart';
-import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
-import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
-
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/src/features/ai_chat/presentation/screens/ai_chat_screen.dart';
+// import 'package:krishi_link/src/core/customappbar/custom_app_bar.dart';
+import 'package:krishi_link/core/widgets/custom_app_bar.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/buyer/controllers/wishlist_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_menu_page.dart';
 import 'package:krishi_link/features/buyer/screens/cart_screen.dart';
-import 'package:krishi_link/features/chat/screens/chat_list_screen.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/features/ai_chat/presentation/screens/ai_chat_screen.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/product_grid.dart';
 import 'package:krishi_link/src/features/product/presentation/widgets/search_bar.dart'
     as custom;
-// import 'package:krishi_link/src/core/customappbar/custom_app_bar.dart';
-import 'package:krishi_link/core/widgets/custom_app_bar.dart';
+// double-back exit is handled globally in MyApp
 
 import 'package:lottie/lottie.dart';
 
