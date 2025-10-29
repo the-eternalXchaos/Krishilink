@@ -1,19 +1,15 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
-import 'package:krishi_link/src/features/admin/presentation/controllers/component_animation_controller.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/profile/profile_screen.dart';
-import 'package:krishi_link/core/widgets/custom_app_bar.dart';
-import 'package:lottie/lottie.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
 import 'package:krishi_link/src/features/admin/presentation/controllers/admin_category_controller.dart';
 import 'package:krishi_link/src/features/admin/presentation/controllers/admin_order_controller.dart';
 import 'package:krishi_link/src/features/admin/presentation/controllers/admin_user_controller.dart';
+import 'package:krishi_link/src/features/admin/presentation/controllers/component_animation_controller.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({super.key});
@@ -92,7 +88,6 @@ class AdminHomePage extends StatelessWidget {
     });
 
     return Scaffold(
-      // appBar: CustomAppBar(isGuest: !isLoggedIn || user.value == null),
       bottomNavigationBar:
           isWideScreen
               ? null
@@ -137,13 +132,9 @@ class AdminHomePage extends StatelessWidget {
                     case 3:
                       Get.toNamed('/admin/orders');
                       break;
-                    // user menu plus
-                    // add  for the message box  , like chat box
-
                     case 4:
                       _showMenuBottomSheet(context);
                       break;
-                    // user menu plus
                   }
                 },
               ),
