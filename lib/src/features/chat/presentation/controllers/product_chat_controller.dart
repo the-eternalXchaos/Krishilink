@@ -1,15 +1,22 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/features/auth/data/token_service.dart';
 
 class ProductChatController extends GetxController {
   final String productId;
   final String productName;
-  ProductChatController({required this.productId, required this.productName});
+  final String? farmerIdParam; // optional direct farmerId from product model
+  ProductChatController({
+    required this.productId,
+    required this.productName,
+    this.farmerIdParam,
+  });
 
   final messages = <Map<String, dynamic>>[].obs;
   final isLoading = true.obs;
@@ -19,10 +26,15 @@ class ProductChatController extends GetxController {
   final inputCtrl = TextEditingController();
   String? farmerId;
   StreamSubscription? _sub;
+  late final AuthController _auth;
 
   @override
   void onInit() {
     super.onInit();
+    _auth =
+        Get.isRegistered<AuthController>()
+            ? Get.find<AuthController>()
+            : Get.put(AuthController());
     _connectToRealtimeChat();
   }
 
@@ -42,8 +54,20 @@ class ProductChatController extends GetxController {
         return;
       }
 
-      farmerId = await chatApi.getFarmerIdByProductId(productId);
-      debugPrint('🌐 Farmer ID: $farmerId');
+      try {
+        farmerId = await chatApi.getFarmerIdByProductId(productId);
+      } catch (e) {
+        debugPrint('⚠️ getFarmerIdByProductId failed: $e');
+        farmerId = null;
+      }
+      // Fallback to provided farmerId from product if API lookup fails
+      farmerId =
+          (farmerId?.trim().isNotEmpty == true)
+              ? farmerId
+              : (farmerIdParam?.trim().isNotEmpty == true
+                  ? farmerIdParam
+                  : null);
+      debugPrint('🌐 Effective Farmer ID: $farmerId');
       if (farmerId == null || farmerId!.isEmpty) {
         throw Exception('No farmer ID found for product $productId');
       }
@@ -86,11 +110,14 @@ class ProductChatController extends GetxController {
       });
 
       final history = await chatApi.getChatHistory(farmerId!);
+      // Ensure ascending order (oldest first) so latest is at the bottom
+      history.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      final myId = _auth.userData?.id ?? _auth.currentUser.value?.id ?? '';
       messages.assignAll(
         history
             .map(
               (m) => {
-                'senderId': m.senderId,
+                'senderId': (m.senderId == myId) ? 'me' : m.senderId,
                 'senderName': m.senderId == farmerId ? 'Farmer' : 'You',
                 'message': m.body,
                 'createdAt': m.createdAt.toIso8601String(),

@@ -1,9 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart'; // Import PopupService
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -89,12 +90,21 @@ class _LocationPickerState extends State<LocationPicker>
   }
 
   Future<void> _getCurrentLocation() async {
+    // Prevent multiple simultaneous calls
+    if (isLoadingLocation.value) {
+      debugPrint('⚠️ Location fetch already in progress, ignoring request');
+      return;
+    }
+
     try {
       isLoadingLocation.value = true;
       _pulseController.repeat(reverse: true);
 
+      debugPrint('📍 Starting location fetch...');
+
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        debugPrint('❌ Location services are disabled');
         PopupService.showSnackbar(
           type: PopupType.error,
           message: 'location_services_disabled'.tr,
@@ -103,10 +113,14 @@ class _LocationPickerState extends State<LocationPicker>
         return;
       }
 
+      debugPrint('✅ Location services enabled, checking permissions...');
+
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        debugPrint('⚠️ Location permission denied, requesting...');
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
+          debugPrint('❌ Location permission denied by user');
           PopupService.showSnackbar(
             type: PopupType.error,
             message: 'location_permission_denied'.tr,
@@ -117,6 +131,7 @@ class _LocationPickerState extends State<LocationPicker>
       }
 
       if (permission == LocationPermission.deniedForever) {
+        debugPrint('❌ Location permission denied forever');
         PopupService.showSnackbar(
           type: PopupType.error,
           message: 'location_permission_denied_forever'.tr,
@@ -126,26 +141,82 @@ class _LocationPickerState extends State<LocationPicker>
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
+      debugPrint('✅ Permissions granted, fetching position...');
 
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      final placemark = placemarks.isNotEmpty ? placemarks.first : null;
-      final address =
-          placemark != null
-              ? '${placemark.locality}, ${placemark.administrativeArea}, ${placemark.country}'
-              : 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+      // Try to get last known position first (faster)
+      Position? position;
+      try {
+        position = await Geolocator.getLastKnownPosition();
+        if (position != null) {
+          debugPrint(
+            '✅ Got last known position: ${position.latitude}, ${position.longitude}',
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Last known position not available: $e');
+      }
+
+      // If no last known position, get current position
+      if (position == null) {
+        try {
+          debugPrint('🔄 Fetching current position with high accuracy...');
+          // First try with high accuracy
+          position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          ).timeout(const Duration(seconds: 15));
+          debugPrint(
+            '✅ Got high accuracy position: ${position.latitude}, ${position.longitude}',
+          );
+        } on TimeoutException {
+          // If high accuracy times out, try with medium accuracy (faster)
+          debugPrint('⏱️ High accuracy timeout, trying medium accuracy...');
+          position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.medium,
+          ).timeout(const Duration(seconds: 15));
+          debugPrint(
+            '✅ Got medium accuracy position: ${position.latitude}, ${position.longitude}',
+          );
+        }
+      }
+
+      // Get address from coordinates with timeout to prevent freezing
+      String address;
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('⚠️ Geocoding timeout, using coordinates as address');
+            return []; // Return empty list on timeout
+          },
+        );
+
+        final placemark = placemarks.isNotEmpty ? placemarks.first : null;
+        address =
+            placemark != null
+                ? '${placemark.locality}, ${placemark.administrativeArea}, ${placemark.country}'
+                : 'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+      } catch (e) {
+        // If geocoding fails, just use coordinates
+        debugPrint('⚠️ Geocoding error: $e, using coordinates');
+        address =
+            'Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}';
+      }
 
       _updateLocation(position.latitude, position.longitude, address);
       PopupService.showSnackbar(
         title: 'location_fetched'.tr,
         type: PopupType.success,
         message: 'current_location_fetched'.tr,
+      );
+    } on TimeoutException {
+      PopupService.showSnackbar(
+        type: PopupType.error,
+        message:
+            'Location request timed out. Please check if GPS is enabled and try again.',
+        title: 'Timeout',
       );
     } catch (e) {
       PopupService.showSnackbar(

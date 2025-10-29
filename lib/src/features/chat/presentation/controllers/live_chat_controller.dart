@@ -1,12 +1,12 @@
 // lib/src/features/chat/presentation/controllers/live_chat_controller.dart
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
-import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 
 class LiveChatController extends GetxController {
   LiveChatController({
@@ -114,11 +114,8 @@ class LiveChatController extends GetxController {
         debugPrint('⚠️ No productId or receiverUserId provided');
       }
 
-      try {
-        await ChatService.I.connect();
-      } catch (e) {
-        debugPrint('Error connecting to SignalR: $e');
-      }
+      // Do not auto-connect to SignalR here. Presence (Go Live) controls connection lifecycle.
+      // The send() path will attempt a quick reconnect if needed.
 
       _sub?.cancel();
       _sub = ChatService.I.messages.listen((raw) {

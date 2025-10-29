@@ -3,68 +3,61 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.g.dart';
-import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
-import 'package:krishi_link/src/core/config/architecture_config.dart';
-import 'package:krishi_link/src/features/admin/presentation/bindings/admin_binding.dart';
-import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
-import 'package:krishi_link/src/features/product/presentation/bindings/guest_product_binding.dart';
-import 'package:krishi_link/src/features/product/presentation/bindings/product_binding.dart';
-import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:krishi_link/core/screens/unified_settings_page.dart';
 import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/core/translations/app_translations.dart';
-import 'package:krishi_link/src/features/auth/data/token_service.dart';
-import 'package:krishi_link/src/core/services/connectivity_service.dart';
 import 'package:krishi_link/features/admin/screens/admin_home_page.dart';
 import 'package:krishi_link/features/admin/screens/analytics_screen.dart';
 import 'package:krishi_link/features/admin/screens/category_screen.dart';
 import 'package:krishi_link/features/admin/screens/content_moderation_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/manage_orders_screen.dart';
-import 'package:krishi_link/features/admin/screens/manage_products_screen.dart';
 import 'package:krishi_link/features/admin/screens/manage_users_screen.dart';
 import 'package:krishi_link/features/admin/screens/reports_screen.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/screens/login_screen.dart';
 import 'package:krishi_link/features/auth/screens/otp_verification_screen.dart';
 import 'package:krishi_link/features/auth/screens/register_screen.dart';
+import 'package:krishi_link/features/buyer/bindings/buyer_binding.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
-import 'package:krishi_link/features/payment/screens/payment_history_screen.dart';
-import 'package:krishi_link/features/payment/screens/payment_webview_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/order_summary_page.dart';
-import 'package:krishi_link/src/features/order/binding/order_summary_binding.dart';
-import 'package:krishi_link/core/bindings/app_binding.dart';
-import 'package:krishi_link/features/buyer/bindings/buyer_binding.dart';
-import 'package:krishi_link/features/product/bindings/product_detail_binding.dart';
-import 'package:krishi_link/features/farmer/bindings/farmer_binding.dart';
-import 'package:krishi_link/features/payment/bindings/payment_binding.dart';
 import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
 import 'package:krishi_link/features/disease_detection/screens/disease_detection_screen.dart';
+import 'package:krishi_link/features/farmer/bindings/farmer_binding.dart';
 import 'package:krishi_link/features/farmer/screens/farmer_home_page.dart';
-import 'package:krishi_link/src/features/order/presentation/farmer_orders_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/order_details_screen.dart';
 import 'package:krishi_link/features/farmer/screens/tutorial_details.dart';
 import 'package:krishi_link/features/farmer/screens/tutorials.dart';
+import 'package:krishi_link/features/notification/screens/notifications.dart';
 import 'package:krishi_link/features/onboarding/screens/splash_screen.dart';
 import 'package:krishi_link/features/onboarding/screens/welcome_page.dart';
-import 'package:krishi_link/features/profile/profile_screen.dart';
-import 'package:krishi_link/src/features/device/data/device_service.dart';
-import 'package:krishi_link/features/notification/screens/notifications.dart';
+import 'package:krishi_link/features/payment/bindings/payment_binding.dart';
+import 'package:krishi_link/features/payment/screens/payment_history_screen.dart';
+import 'package:krishi_link/features/payment/screens/payment_webview_screen.dart';
+import 'package:krishi_link/features/product/bindings/product_detail_binding.dart';
 import 'package:krishi_link/features/product/screens/product_detail_page.dart';
+import 'package:krishi_link/features/profile/profile_screen.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_controller.dart';
+import 'package:krishi_link/src/core/components/product/management/unified_product_management.dart';
+import 'package:krishi_link/src/core/config/architecture_config.dart';
+import 'package:krishi_link/src/core/networking/dio_provider.dart';
+import 'package:krishi_link/src/core/services/connectivity_service.dart';
+import 'package:krishi_link/src/features/admin/presentation/bindings/admin_binding.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.g.dart';
+import 'package:krishi_link/src/features/device/data/device_service.dart';
+import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
+import 'package:krishi_link/src/features/order/binding/order_summary_binding.dart';
+import 'package:krishi_link/src/features/order/presentation/farmer_orders_screen.dart';
+import 'package:krishi_link/src/features/order/presentation/manage_orders_screen.dart';
+import 'package:krishi_link/src/features/order/presentation/order_details_screen.dart';
+import 'package:krishi_link/src/features/order/presentation/order_summary_page.dart';
+import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
 import 'package:krishi_link/src/features/payment/models/payment_history.g.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.g.dart';
+import 'package:krishi_link/src/features/product/presentation/bindings/guest_product_binding.dart';
+import 'package:krishi_link/src/features/product/presentation/bindings/product_binding.dart';
+import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:krishi_link/widgets/connectivity%20Banner/connectivity_banner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:krishi_link/src/core/networking/dio_provider.dart';
-import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
-import 'package:krishi_link/src/features/payment/models/payment_history.dart';
-import 'package:krishi_link/src/features/cart/models/cart_item.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
-
-import 'package:krishi_link/src/core/components/product/management/unified_product_management.dart';
 
 class AuthMiddleware extends GetMiddleware {
   @override
@@ -195,9 +188,16 @@ void _initializeControllers() {
   // ProductBinding and AdminBinding are now handled per-page, not globally
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final String initialRoute;
   const MyApp({super.key, required this.initialRoute});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  DateTime? _lastBackPress;
 
   @override
   Widget build(BuildContext context) {
@@ -208,28 +208,20 @@ class MyApp extends StatelessWidget {
       onPopInvoked: (didPop) async {
         if (didPop) return;
 
-        final shouldExit = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => CustomConfirmDialog(
-                title: 'Are you sure?',
-                content: 'Do you want to exit the App?',
-                confirmText: 'Yes',
-                cancelText: 'No',
-                onConfirm: () {
-                  Navigator.of(context).pop(true); // Return true
-                  SystemNavigator.pop();
-                },
-                onCancel: () {
-                  Navigator.of(context).pop(false); // Return false
-                },
-              ),
-        );
-
-        if (shouldExit == true) {
-          SystemNavigator.pop(); // Pop only if user confirmed
+        // Double-back to exit: first back shows hint, second within 2s exits
+        final now = DateTime.now();
+        if (_lastBackPress == null ||
+            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = now;
+          PopupService.showSnackbar(
+            title: 'exit'.tr,
+            message: 'press_back_again_to_exit'.tr,
+          );
+          return;
         }
+
+        // Second back within the window: exit app
+        SystemNavigator.pop();
       },
       child: GetMaterialApp(
         translations: AppTranslations(),
@@ -241,7 +233,7 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        initialRoute: initialRoute,
+        initialRoute: widget.initialRoute,
         defaultTransition: Transition.fadeIn,
         getPages: [
           GetPage(

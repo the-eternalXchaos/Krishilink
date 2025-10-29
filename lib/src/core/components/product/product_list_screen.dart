@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart' hide SearchBar;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/core/components/product/product_form.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
+import 'package:krishi_link/src/core/components/product/product_form.dart';
 import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/widgets/search_bar.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
 
 class ProductListScreen extends StatefulWidget {
   final RxList<Product> products;

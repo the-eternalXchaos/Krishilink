@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/features/notification/model/notification_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/features/notification/model/notification_model.dart';
 import 'package:krishi_link/widgets/notification/notification_apiservice.dart';
 
 class NotificationController extends GetxController {
@@ -73,7 +73,20 @@ class NotificationController extends GetxController {
       }
     } catch (e, stack) {
       debugPrint('❌ Notification fetch failed: $e\n$stack');
-      _setError('failed_to_fetch_notifications'.tr);
+
+      // Extract user-friendly error message
+      String errorMsg = 'failed_to_fetch_notifications'.tr;
+      if (e.toString().contains('Server is temporarily unavailable')) {
+        errorMsg = 'Server is temporarily unavailable. Please try again later.';
+      } else if (e.toString().contains('No internet connection')) {
+        errorMsg = 'No internet connection. Please check your network.';
+      } else if (e.toString().contains('timeout')) {
+        errorMsg = 'Connection timeout. Please try again.';
+      } else if (e.toString().contains('maintenance')) {
+        errorMsg = 'Service is under maintenance. Please try again later.';
+      }
+
+      _setError(errorMsg);
     } finally {
       isLoading.value = false;
       isRefreshing.value = false;

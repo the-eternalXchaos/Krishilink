@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart' show Options;
 import 'package:krishi_link/src/core/networking/base_service.dart';
-import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
+import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
 
 class LiveChatApiService extends BaseService {
   Future<List<Map<String, dynamic>>> getMyCustomersForChat() async {
@@ -101,17 +101,67 @@ class LiveChatApiService extends BaseService {
       final hasAuth = await TokenService.hasTokens();
       if (!hasAuth) return <LiveChatMessage>[];
       final response = await apiClient.get('/api/Chat/getChatHistory/$userId');
-      final data = response.data['data'] as List<dynamic>? ?? [];
-      return data.map((item) {
-        final map = item as Map<String, dynamic>;
+
+      // Some backends return { success, data: [] }, others return [] directly
+      final raw = response.data;
+      final List<dynamic> list =
+          raw is List
+              ? raw
+              : (raw is Map<String, dynamic>
+                  ? (raw['data'] as List<dynamic>? ?? const [])
+                  : const []);
+
+      DateTime parseTs(Map<String, dynamic> m) {
+        final keys = ['timeStamp', 'timestamp', 'createdAt', 'sentAt', 'date'];
+        for (final k in keys) {
+          final v = m[k]?.toString();
+          if (v != null && v.isNotEmpty) {
+            final dt = DateTime.tryParse(v);
+            if (dt != null) return dt.toLocal();
+          }
+        }
+        return DateTime.now();
+      }
+
+      String parseBody(Map<String, dynamic> m) {
+        final keys = ['message', 'body', 'content', 'text'];
+        for (final k in keys) {
+          final v = m[k]?.toString();
+          if (v != null && v.isNotEmpty) return v;
+        }
+        return '';
+      }
+
+      String pickId(Map<String, dynamic> m, List<String> keys) {
+        for (final k in keys) {
+          final v = m[k]?.toString();
+          if (v != null && v.isNotEmpty) return v;
+        }
+        return '';
+      }
+
+      return list.map((item) {
+        final map = (item as Map).cast<String, dynamic>();
+        final sender = pickId(map, [
+          'senderId',
+          'senderUserId',
+          'fromUserId',
+          'user1Id',
+          'fromId',
+        ]);
+        final receiver = pickId(map, [
+          'receiverId',
+          'receiverUserId',
+          'toUserId',
+          'user2Id',
+          'toId',
+        ]);
         return LiveChatMessage(
           id: map['id']?.toString() ?? '',
-          senderId: map['senderId']?.toString() ?? '',
-          receiverId: map['receiverId']?.toString() ?? '',
-          body: map['message']?.toString() ?? '',
-          createdAt:
-              DateTime.tryParse(map['timeStamp']?.toString() ?? '') ??
-              DateTime.now(),
+          senderId: sender,
+          receiverId: receiver,
+          body: parseBody(map),
+          createdAt: parseTs(map),
         );
       }).toList();
     });

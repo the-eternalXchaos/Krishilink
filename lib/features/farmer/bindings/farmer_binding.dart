@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
 
 /// Farmer dashboard binding
 class FarmerBinding extends Bindings {

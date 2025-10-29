@@ -1,12 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
+import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:krishi_link/src/features/chat/presentation/screens/live_chat_screen.dart';
-import 'package:krishi_link/src/features/chat/data/chat_services.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/features/auth/data/token_service.dart';
 
 class FarmerChatScreen extends StatefulWidget {
   final String productId;
@@ -30,6 +31,8 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   String? statusMessage;
   StreamSubscription<Map<String, dynamic>>? _msgSub;
   Timer? _pollTimer;
+  bool _isChatOpen = false;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -40,6 +43,22 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
             ? Get.find<AuthController>()
             : Get.put(AuthController());
     _load();
+  }
+
+  Future<void> _refresh() async {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+    });
+    try {
+      await _load();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -167,10 +186,60 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
           }
           debugPrint('📋 List updated: ${customers.length} customers');
         });
+
+        // Notify farmer if chat view isn't open
+        if (!_isChatOpen && mounted) {
+          final preview =
+              message.length > 60 ? '${message.substring(0, 57)}...' : message;
+          Get.snackbar(
+            'New message',
+            '${senderName.isNotEmpty ? senderName : 'Buyer'}: $preview',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.black.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+            margin: const EdgeInsets.all(12),
+            borderRadius: 10,
+          );
+        }
       } catch (e) {
         debugPrint('❌ Inbox listener error: $e');
       }
     });
+  }
+
+  Future<void> _goOffline() async {
+    if (!isLive && !isConnecting) return;
+    setState(() {
+      statusMessage = 'disconnecting_from_hub'.tr;
+      isConnecting = true;
+    });
+    try {
+      await ChatService.I.disconnect();
+      _msgSub?.cancel();
+      _msgSub = null;
+      _pollTimer?.cancel();
+      _pollTimer = null;
+      if (!mounted) return;
+      setState(() {
+        isLive = false;
+        isConnecting = false;
+        statusMessage = 'offline'.tr;
+      });
+      Get.snackbar(
+        'Offline',
+        'You are now offline and will not receive live messages',
+        backgroundColor: Colors.orange.withValues(alpha: 0.1),
+        colorText: Colors.orange[700],
+      );
+    } catch (e) {
+      debugPrint('❌ Error disconnecting: $e');
+      if (!mounted) return;
+      setState(() {
+        isConnecting = false;
+        statusMessage = 'Failed to disconnect';
+      });
+    }
   }
 
   Future<void> _connectLive() async {
@@ -307,6 +376,7 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
 
   void _openChat() {
     debugPrint('💬 Opening general chat for product: ${widget.productName}');
+    _isChatOpen = true;
     Get.to(
       () => LiveChatScreen(
         productId: widget.productId,
@@ -314,11 +384,15 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         farmerName: 'Me',
         emailOrPhone: '',
       ),
-    )?.then((_) => _load());
+    )?.then((_) {
+      _isChatOpen = false;
+      _load();
+    });
   }
 
   void _openCustomerChat(Map<String, dynamic> customer) {
     debugPrint('💬 Opening chat with customer: ${customer['name']}');
+    _isChatOpen = true;
     Get.to(
       () => LiveChatScreen(
         productId: widget.productId,
@@ -327,7 +401,10 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         emailOrPhone: customer['contact'],
         receiverUserId: customer['id'],
       ),
-    )?.then((_) => _load());
+    )?.then((_) {
+      _isChatOpen = false;
+      _load();
+    });
   }
 
   @override
@@ -347,6 +424,25 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          // Manual refresh button to reload chat list
+          IconButton(
+            tooltip: 'Refresh list',
+            onPressed: _isRefreshing ? null : _refresh,
+            icon:
+                _isRefreshing
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.refresh),
+          ),
+          if (isLive)
+            IconButton(
+              tooltip: 'Go Offline',
+              onPressed: _goOffline,
+              icon: const Icon(Icons.power_settings_new),
+            ),
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: ElevatedButton.icon(
@@ -450,71 +546,81 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
               ),
             ),
           Expanded(
-            child:
-                customers.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child:
+                  customers.isEmpty
+                      ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 64,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.3,
+                          Padding(
+                            padding: const EdgeInsets.only(top: 64),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.people_outline,
+                                  size: 64,
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'no_customers_yet'.tr,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  isLive
+                                      ? 'youre_live_message'.tr
+                                      : 'go_live_to_receive'.tr,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'no_customers_yet'.tr,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            isLive
-                                ? 'youre_live_message'.tr
-                                : 'go_live_to_receive'.tr,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.5,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
-                      ),
-                    )
-                    : ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: customers.length,
-                      separatorBuilder: (_, __) => const Divider(height: 0),
-                      itemBuilder: (_, i) {
-                        final customer = customers[i];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary
-                                .withValues(alpha: 0.1),
-                            child: Icon(
-                              Icons.person,
-                              color: theme.colorScheme.primary,
+                      )
+                      : ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: customers.length,
+                        separatorBuilder: (_, __) => const Divider(height: 0),
+                        itemBuilder: (_, i) {
+                          final customer = customers[i];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.1),
+                              child: Icon(
+                                Icons.person,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
-                          ),
-                          title: Text(
-                            customer['name'],
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Text(customer['contact']),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
-                          onTap: () => _openCustomerChat(customer),
-                        );
-                      },
-                    ),
+                            title: Text(
+                              customer['name'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(customer['contact']),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                            ),
+                            onTap: () => _openCustomerChat(customer),
+                          );
+                        },
+                      ),
+            ),
           ),
         ],
       ),

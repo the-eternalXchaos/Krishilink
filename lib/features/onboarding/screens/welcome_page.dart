@@ -1,15 +1,14 @@
 // Created by: Sandeep Wagle
 // Enhanced by: Assistant
 
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:animate_do/animate_do.dart';
-
-import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
 import 'package:krishi_link/widgets/language_switcher.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -107,27 +106,27 @@ class _WelcomePageState extends State<WelcomePage>
                     // Language Switcher with enhanced styling
                     _buildLanguageSwitcher(),
 
-                    const SizedBox(height: 40),
+                     const SizedBox(height: 40),
 
                     // Floating animated logo
-                    _buildAnimatedLogo(),
+                    // _buildAnimatedLogo(),
 
-                    const SizedBox(height: 40),
+                    // const SizedBox(height: 40),
 
                     // Welcome content
                     _buildWelcomeContent(theme, isDark),
 
-                    const SizedBox(height: 50),
+                     const SizedBox(height: 50),
 
                     // Action buttons
                     _buildActionButtons(theme, isGuest),
 
-                    const SizedBox(height: 40),
+                     const SizedBox(height: 40),
 
                     // Features showcase
                     _buildFeaturesShowcase(theme, isDark),
 
-                    const SizedBox(height: 30),
+                     const SizedBox(height: 30),
 
                     // Footer tagline
                     _buildFooterTagline(theme),

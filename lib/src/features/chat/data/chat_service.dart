@@ -1,10 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/src/core/constants/api_constants.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:signalr_netcore/signalr_client.dart';
-import 'package:krishi_link/src/core/storage/token_storage.dart';
 
 class ChatService {
   static final ChatService I = ChatService._internal();
@@ -76,7 +77,7 @@ class ChatService {
       }
 
       _conn?.stop();
-      final token = await TokenStorage.getToken();
+      final token = await TokenService.getAccessToken();
       if (token == null) {
         debugPrint('❌ No token found');
         return false;
@@ -89,7 +90,19 @@ class ChatService {
               .withUrl(
                 hubUrl,
                 options: HttpConnectionOptions(
-                  accessTokenFactory: () async => token,
+                  accessTokenFactory: () async {
+                    try {
+                      if (await TokenService.isTokenExpired()) {
+                        debugPrint(
+                          '🔐 accessTokenFactory: token expired → refreshing',
+                        );
+                        await TokenService.refreshAccessToken();
+                      }
+                    } catch (e) {
+                      debugPrint('❌ accessTokenFactory refresh error: $e');
+                    }
+                    return await TokenService.getAccessToken() ?? token;
+                  },
                   logMessageContent: verbose,
                   skipNegotiation: false,
                   transport: HttpTransportType.WebSockets,
@@ -121,8 +134,19 @@ class ChatService {
                 .withUrl(
                   _lastUsedUrl!,
                   options: HttpConnectionOptions(
-                    accessTokenFactory:
-                        () async => await TokenStorage.getToken() ?? '',
+                    accessTokenFactory: () async {
+                      try {
+                        if (await TokenService.isTokenExpired()) {
+                          debugPrint(
+                            '🔐 accessTokenFactory: token expired → refreshing',
+                          );
+                          await TokenService.refreshAccessToken();
+                        }
+                      } catch (e) {
+                        debugPrint('❌ accessTokenFactory refresh error: $e');
+                      }
+                      return await TokenService.getAccessToken() ?? '';
+                    },
                     logMessageContent: verbose,
                     skipNegotiation: false,
                     transport: HttpTransportType.WebSockets,
@@ -149,11 +173,61 @@ class ChatService {
                 .withUrl(
                   _lastUsedUrl ?? hubUrl,
                   options: HttpConnectionOptions(
-                    accessTokenFactory:
-                        () async => await TokenStorage.getToken() ?? '',
+                    accessTokenFactory: () async {
+                      try {
+                        if (await TokenService.isTokenExpired()) {
+                          debugPrint(
+                            '🔐 accessTokenFactory: token expired → refreshing',
+                          );
+                          await TokenService.refreshAccessToken();
+                        }
+                      } catch (e) {
+                        debugPrint('❌ accessTokenFactory refresh error: $e');
+                      }
+                      return await TokenService.getAccessToken() ?? '';
+                    },
                     logMessageContent: verbose,
                     skipNegotiation: false,
                     transport: HttpTransportType.ServerSentEvents,
+                  ),
+                )
+                .withAutomaticReconnect()
+                .build();
+
+        try {
+          _conn!.serverTimeoutInMilliseconds = 60000;
+          _conn!.keepAliveIntervalInMilliseconds = 15000;
+        } catch (_) {}
+
+        _setupCoreHandlers();
+        _stateCtrl.add(HubConnectionState.Connecting);
+        success = await _startWithRetry(maxAttempts: 3);
+      }
+
+      // Final fallback: LongPolling
+      if (!success) {
+        debugPrint('🌐 Retrying with LongPolling transport');
+        _conn =
+            HubConnectionBuilder()
+                .withUrl(
+                  _lastUsedUrl ?? hubUrl,
+                  options: HttpConnectionOptions(
+                    accessTokenFactory: () async {
+                      try {
+                        if (await TokenService.isTokenExpired()) {
+                          debugPrint(
+                            '🔐 accessTokenFactory: token expired → refreshing',
+                          );
+                          await TokenService.refreshAccessToken();
+                        }
+                      } catch (e) {
+                        debugPrint('❌ accessTokenFactory refresh error: $e');
+                      }
+                      return await TokenService.getAccessToken() ?? '';
+                    },
+                    logMessageContent: verbose,
+                    skipNegotiation: false,
+                    transport: HttpTransportType.LongPolling,
                   ),
                 )
                 .withAutomaticReconnect()
@@ -182,6 +256,19 @@ class ChatService {
       _lastError = e.toString();
       _stateCtrl.add(HubConnectionState.Disconnected);
       return false;
+    }
+  }
+
+  Future<void> disconnect() async {
+    try {
+      if (_conn != null) {
+        debugPrint('🔌 Disconnecting SignalR hub');
+        await _conn!.stop();
+      }
+    } catch (e) {
+      debugPrint('❌ Error during disconnect: $e');
+    } finally {
+      _stateCtrl.add(HubConnectionState.Disconnected);
     }
   }
 

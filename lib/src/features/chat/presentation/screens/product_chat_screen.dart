@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/src/features/chat/presentation/controllers/product_chat_controller.dart';
+import 'package:krishi_link/src/features/chat/presentation/widgets/chat_view.dart';
 
 class ProductChatScreen extends StatefulWidget {
   final String productId;
   final String productName;
   final String farmerName;
   final String emailOrPhone;
+  final String? farmerId; // optional direct farmer ID
 
   const ProductChatScreen({
     super.key,
@@ -16,6 +17,7 @@ class ProductChatScreen extends StatefulWidget {
     required this.productName,
     required this.farmerName,
     required this.emailOrPhone,
+    this.farmerId,
   });
 
   @override
@@ -24,8 +26,7 @@ class ProductChatScreen extends StatefulWidget {
 
 class _ProductChatScreenState extends State<ProductChatScreen> {
   late final ProductChatController controller;
-  final TextEditingController messageController = TextEditingController();
-  final ScrollController scrollController = ScrollController();
+  // Using shared ChatView with its own controllers; keep minimal state here.
 
   @override
   void initState() {
@@ -34,27 +35,14 @@ class _ProductChatScreenState extends State<ProductChatScreen> {
       ProductChatController(
         productId: widget.productId,
         productName: widget.productName,
+        farmerIdParam: widget.farmerId,
       ),
     );
-    _scrollToBottom();
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    // Auto-scroll handled by ChatView; no local controller needed.
   }
 
   @override
   void dispose() {
-    messageController.dispose();
-    scrollController.dispose();
     super.dispose();
   }
 
@@ -183,273 +171,39 @@ class _ProductChatScreenState extends State<ProductChatScreen> {
               if (controller.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (controller.messages.isEmpty) {
-                return _buildEmptyState();
-              }
-
-              return ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: controller.messages.length,
-                itemBuilder: (context, index) {
-                  final message = controller.messages[index];
-                  final isLast = index == controller.messages.length - 1;
-                  final showTs = _shouldShowTimestamp(index);
-
-                  return Column(
-                    children: [
-                      if (showTs)
-                        _buildTimestamp(DateTime.parse(message['createdAt'])),
-                      _buildMessageBubble(message, colorScheme),
-                      if (isLast) const SizedBox(height: 8),
-                    ],
-                  );
+              // Force Obx to subscribe to messages by reading length and
+              // pass an immutable snapshot so ChatView sees changes.
+              final msgCount =
+                  controller.messages.length; // ignore: unused_local_variable
+              final msgs = controller.messages.toList(growable: false);
+              return ChatView<Map<String, dynamic>>(
+                messages: msgs,
+                otherDisplayName: widget.farmerName,
+                isSending: controller.isSendingMessage.value,
+                adapter: ChatMessageAdapter<Map<String, dynamic>>(
+                  isFromMe: (m) => m['senderId'] == 'me',
+                  text: (m) => m['message']?.toString() ?? '',
+                  createdAt:
+                      (m) =>
+                          DateTime.tryParse(m['createdAt'] ?? '')?.toLocal() ??
+                          DateTime.now(),
+                  status: (m) => m['status']?.toString(),
+                ),
+                onMessageTap: (m) {
+                  if ((m['status'] as String?) == 'failed') {
+                    _showRetryDialog(m);
+                  }
                 },
+                onSend: (text) async {
+                  await controller.sendMessage(text);
+                },
+                hintText: 'type_a_message_dots'.tr,
               );
             }),
           ),
-          _buildMessageInput(colorScheme),
         ],
       ),
     );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'Start a conversation with ${widget.farmerName}',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Ask questions about ${widget.productName}',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimestamp(DateTime timestamp) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        DateFormat('MMM dd, yyyy • HH:mm').format(timestamp.toLocal()),
-        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(
-    Map<String, dynamic> message,
-    ColorScheme colorScheme,
-  ) {
-    final isFromMe = message['senderId'] == 'me';
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      child: Row(
-        mainAxisAlignment:
-            isFromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isFromMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.primary,
-              child: Text(
-                widget.farmerName.isNotEmpty
-                    ? widget.farmerName[0].toUpperCase()
-                    : 'F',
-                style: TextStyle(
-                  color: colorScheme.onPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: GestureDetector(
-              onTap: () {
-                if (message['status'] == 'failed') {
-                  _showRetryDialog(message);
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      isFromMe
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message['message'],
-                      style: TextStyle(
-                        color:
-                            isFromMe
-                                ? colorScheme.onPrimary
-                                : colorScheme.onSurface,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          DateFormat('HH:mm').format(
-                            DateTime.parse(message['createdAt']).toLocal(),
-                          ),
-                          style: TextStyle(
-                            color: (isFromMe
-                                    ? colorScheme.onPrimary
-                                    : colorScheme.onSurface)
-                                .withValues(alpha: 0.7),
-                            fontSize: 12,
-                          ),
-                        ),
-                        if (isFromMe) ...[
-                          const SizedBox(width: 4),
-                          _buildMessageStatusIcon(
-                            message['status'],
-                            colorScheme,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (isFromMe) const SizedBox(width: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageStatusIcon(String status, ColorScheme colorScheme) {
-    switch (status) {
-      case 'sending':
-        return SizedBox(
-          width: 12,
-          height: 12,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: colorScheme.onPrimary.withValues(alpha: 0.7),
-          ),
-        );
-      case 'sent':
-        return Icon(
-          Icons.check,
-          size: 14,
-          color: colorScheme.onPrimary.withValues(alpha: 0.7),
-        );
-      case 'failed':
-        return const Icon(Icons.error_outline, size: 14, color: Colors.red);
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  Widget _buildMessageInput(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
-        ),
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: messageController,
-                decoration: InputDecoration(
-                  hintText: 'type_a_message_dots'.tr,
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                ),
-                maxLines: null,
-                textCapitalization: TextCapitalization.sentences,
-                onChanged: (value) => controller.messageText.value = value,
-                onSubmitted: (_) => _sendMessage(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Obx(
-              () => FloatingActionButton.small(
-                onPressed:
-                    controller.isSendingMessage.value ? null : _sendMessage,
-                backgroundColor: colorScheme.primary,
-                child:
-                    controller.isSendingMessage.value
-                        ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.onPrimary,
-                          ),
-                        )
-                        : Icon(Icons.send, color: colorScheme.onPrimary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _sendMessage() {
-    final text = messageController.text.trim();
-    if (text.isEmpty) return;
-
-    controller.messageText.value = text;
-    messageController.clear();
-    controller.sendMessage(text);
-    _scrollToBottom();
-  }
-
-  bool _shouldShowTimestamp(int index) {
-    if (index == 0) return true;
-    final current = DateTime.parse(controller.messages[index]['createdAt']);
-    final previous = DateTime.parse(
-      controller.messages[index - 1]['createdAt'],
-    );
-    final diff = current.difference(previous);
-    return diff.inMinutes > 30;
   }
 
   void _showRetryDialog(Map<String, dynamic> message) {

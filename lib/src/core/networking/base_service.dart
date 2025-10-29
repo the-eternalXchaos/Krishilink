@@ -1,5 +1,5 @@
-import 'package:krishi_link/src/core/networking/api_client.dart';
 import 'package:krishi_link/src/core/errors/api_exception.dart';
+import 'package:krishi_link/src/core/networking/api_client.dart';
 
 /// Base service class that provides common API functionality
 abstract class BaseService {

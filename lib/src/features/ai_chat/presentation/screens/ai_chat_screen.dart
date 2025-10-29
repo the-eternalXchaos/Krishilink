@@ -1,19 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
-import 'package:krishi_link/src/core/constants/app_spacing.dart';
-import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
-
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/src/features/ai_chat/presentation/controllers/ai_chat_controller.dart';
 import 'package:krishi_link/features/chat/widgets/typing_indicator.dart';
-import 'package:krishi_link/src/core/components/app_text_input_field.dart';
 import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
 import 'package:krishi_link/src/core/components/custom_drawer/custom_drawer.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
+import 'package:krishi_link/src/features/ai_chat/presentation/controllers/ai_chat_controller.dart';
 
 class AiChatScreen extends StatefulWidget {
   final String name;
@@ -869,46 +866,65 @@ class _InputArea extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: cs.surface,
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        border: Border(
+          top: BorderSide(color: cs.outline.withValues(alpha: 0.2)),
+        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const _ImagePickerButton(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Obx(
-                  () => AppTextInputField(
+          padding: const EdgeInsets.all(16),
+          child: Obx(() {
+            final isBusy = controller.isLoading.value;
+            return Row(
+              children: [
+                // Optional: keep image picker to the left
+                const _ImagePickerButton(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
                     controller: controller.inputController,
                     focusNode: focusNode,
-                    hint: 'type_your_message'.tr,
-                    minLines: 1,
+                    decoration: InputDecoration(
+                      hintText: 'type_your_message'.tr,
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                    ),
                     maxLines: null,
+                    textCapitalization: TextCapitalization.sentences,
                     textInputAction: TextInputAction.newline,
                     keyboardType: TextInputType.multiline,
-                    borderRadius: 22,
-                    fillColor: cs.surfaceContainerHighest,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    showSendButton: !controller.isLoading.value,
-                    onSend: controller.isLoading.value ? null : onSend,
+                    onSubmitted: (_) => isBusy ? null : onSend(),
                     onChanged: (v) => controller.inputText.value = v,
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                FloatingActionButton.small(
+                  heroTag: 'ai_send_btn',
+                  onPressed: isBusy ? null : onSend,
+                  backgroundColor: cs.primary,
+                  child:
+                      isBusy
+                          ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: cs.onPrimary,
+                            ),
+                          )
+                          : Icon(Icons.send, color: cs.onPrimary),
+                ),
+              ],
+            );
+          }),
         ),
       ),
     );

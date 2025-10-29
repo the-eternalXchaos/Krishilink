@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/notification/model/notification_model.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
-import 'package:krishi_link/features/notification/controllers/notification_controller.dart';
 
 class NotificationApiservice extends ApiService {
   NotificationApiservice() : super();
@@ -41,15 +39,43 @@ class NotificationApiservice extends ApiService {
       }
 
       throw Exception('Failed to fetch notifications: ${response.statusCode}');
-    } catch (e) {
-      debugPrint('❌ Error fetching notifications: $e');
-      if (e is DioException) {
-        debugPrint('Dio error details: ${e.response?.data}');
+    } on DioException catch (e) {
+      debugPrint(
+        '❌ Dio error fetching notifications: ${e.response?.statusCode} - ${e.message}',
+      );
+
+      // Handle specific HTTP error codes
+      if (e.response?.statusCode == 502) {
         throw Exception(
-          'Failed: ${e.response?.data['message'] ?? e.message ?? 'Network error'}',
+          'Server is temporarily unavailable. Please try again later.',
         );
+      } else if (e.response?.statusCode == 503) {
+        throw Exception(
+          'Service is under maintenance. Please try again later.',
+        );
+      } else if (e.response?.statusCode == 504) {
+        throw Exception(
+          'Server timeout. Please check your connection and try again.',
+        );
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+          'Connection timeout. Please check your internet and try again.',
+        );
+      } else if (e.type == DioExceptionType.connectionError) {
+        throw Exception('No internet connection. Please check your network.');
       }
-      rethrow;
+
+      // Generic error with server message if available
+      final errorMsg =
+          e.response?.data?['message'] ??
+          e.response?.data?['errors']?['MyError']?.first ??
+          e.message ??
+          'Network error occurred';
+      throw Exception('Failed to fetch notifications: $errorMsg');
+    } catch (e) {
+      debugPrint('❌ Unexpected error fetching notifications: $e');
+      throw Exception('Failed to fetch notifications. Please try again.');
     }
   }
 

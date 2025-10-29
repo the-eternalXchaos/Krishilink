@@ -2,9 +2,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/src/features/ai_chat/presentation/screens/ai_chat_screen.dart';
+import 'package:krishi_link/core/widgets/custom_app_bar.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/features/chat/live_chat/farmer_chat_screen.dart';
 import 'package:krishi_link/features/farmer/controller/farmer_controller.dart';
 import 'package:krishi_link/features/farmer/screens/add_crop_screen.dart';
 import 'package:krishi_link/features/farmer/screens/crop_detail_screen.dart';
@@ -14,8 +13,10 @@ import 'package:krishi_link/features/farmer/widgets/tips_banner.dart';
 import 'package:krishi_link/features/weather/controller/weather_controller.dart';
 import 'package:krishi_link/features/weather/page/weather_details_page.dart';
 import 'package:krishi_link/features/weather/weather_widget.dart';
-import 'package:krishi_link/core/widgets/custom_app_bar.dart';
+import 'package:krishi_link/src/features/ai_chat/presentation/screens/ai_chat_screen.dart';
+import 'package:krishi_link/src/features/chat/presentation/screens/farmer_chat_screen.dart';
 import 'package:krishi_link/src/features/notification/presentation/controllers/notification_controller.dart';
+// double-back exit is handled globally in MyApp
 
 class FarmerHomePage extends StatefulWidget {
   const FarmerHomePage({super.key});
@@ -80,6 +81,24 @@ class FarmerHomePageState extends State<FarmerHomePage> {
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
+            heroTag: 'chat_live',
+            onPressed: () {
+              final user = authController.currentUser.value;
+              if (user != null) {
+                // Open the farmer chat list (live chat)
+                Get.to(
+                  () => const FarmerChatScreen(productId: '', productName: ''),
+                );
+              } else {
+                PopupService.error('User not logged in');
+              }
+            },
+            backgroundColor: Colors.green,
+            tooltip: 'Live Chats',
+            child: const Icon(Icons.chat, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
             heroTag: 'chat_ai',
             onPressed: () {
               final user = authController.currentUser.value;
@@ -93,56 +112,6 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             tooltip: 'chat_ai_tooltip'.tr,
             child: const Icon(Icons.smart_toy, color: Colors.white),
           ),
-          // FloatingActionButton(
-          //   heroTag: 'farmer_go_live',
-          //   onPressed: () {
-          //     final user = authController.currentUser.value;
-          //     if (user != null) {
-          //       // use the dignal r and go to the chat screen for the farmer where they receive the emessage fron the buyer for their prodcut , in that  pga emak aa button for the
-          //       //// for the go live option so that th pressing it will make the uesr know the farmer
-          //       Get.to(
-          //         () => FarmerChatScreen(
-          //           productId: '',
-          //           productName: 'My Customers',
-          //         ),
-          //       );
-          //     } else {
-          //       PopupService.error('User not logged in');
-          //     }
-
-          //     /// working flow for the farmer live chat ,
-          //     /// / baseurl/chathub it is hide becaseu for the signar r
-          //     ///   it helps to conec to the chat hub it is the api of the singal r , for the suatheroiszed usedr so send the toke ,m
-          //     ///  farmer pressed the  go live,  ,=> chathub
-          //     ///  it willupdate the database and say the farmer is live ,
-          //     ///  then buyer see the farmer is online buyer will press chat with farmer ,
-          //     ///  then it will go to the chat hub and it will send the message to the farmer
-          //     ///  / ofr the buyer it is alos need the / chathub  .
-          //     ///  then it will go to the chat hub and it will send the message to the farmer
-          //     ///  then after the buyer sends a message, it will be received by the farmer after they invoke the api get farmer id by product id ,{prodcut id }
-          //     /// then it will go to the chat hub and it will send the message to the farmer
-          //     /// then the farmer will receive the message and they can reply to the buyer
-          //     ///  only if the buyer use that getFarmerIdByProductId method then only the buyer can chat with the farmer
-          //     ///   then the farmer will receive the message and they can reply to the buyer . then theri is the api getmycustomerforchat becaue there are many customers, it
-          //     ///
-          //     ///
-          //     ///  buyer get the farmer id , and for the farmer too ..
-          //     ///  farmer get the buyer id
-          //     ///  only after the farmer press that user then the gethcathistory api load , .
-          //     ///  for the buyer it load fasly becasue it is  talking t o the farme one at the time   {get hcat history is sue for both  , farmer will add the buyer id , and buyer will add the farmer id }
-          //     ///
-          //     ///
-          //     ///
-          //     /// /// hub -> sendMessage this  mehtod i sin the backend  ,  to send the message or chat , toke for th authorization
-          //   },
-          //   backgroundColor: const Color.fromARGB(255, 231, 228, 236),
-          //   tooltip: 'farmer go live'.tr,
-
-          //   child: const Icon(
-          //     Icons.local_convenience_store_sharp,
-          //     color: Colors.black,
-          //   ),
-          // ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -157,10 +126,6 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             icon: Icon(Icons.home, semanticLabel: 'Home'),
             label: 'home'.tr,
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.message, semanticLabel: 'Messages'),
-          //   label: 'message'.tr,
-          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.agriculture, semanticLabel: 'My Crops'),
             label: 'my_crops'.tr,
@@ -169,10 +134,6 @@ class FarmerHomePageState extends State<FarmerHomePage> {
             icon: Icon(Icons.menu, semanticLabel: 'Menu'),
             label: 'menu'.tr,
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.chat, semanticLabel: 'New Message'),
-          //   label: 'new_message'.tr, // New item
-          // ),
         ],
       ),
     );

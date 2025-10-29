@@ -29,7 +29,7 @@ class _SearchBarState extends State<SearchBar>
   final ProductController productController =
       Get.isRegistered<ProductController>()
           ? Get.find<ProductController>()
-          : throw Exception('ProductController must be initialized first');
+          : Get.put(ProductController());
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   final FocusNode _focusNode = FocusNode();

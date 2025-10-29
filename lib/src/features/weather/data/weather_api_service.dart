@@ -4,7 +4,7 @@ import 'package:krishi_link/src/core/networking/base_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/weather/weather_model.dart';
 
-// DTOs for weather requests
+
 class WeatherRequest {
   final double latitude;
   final double longitude;

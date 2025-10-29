@@ -7,14 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
-
+import 'package:krishi_link/features/admin/models/user_model.dart';
 // Package-level imports within this app
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/features/admin/models/user_model.dart';
-import 'package:krishi_link/src/core/errors/app_exception.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/product/data/models/review_model.dart';
 
@@ -344,6 +342,69 @@ class ApiService {
         throw AppException('Failed to submit review');
       }
     } on DioException catch (e) {
+      throw _parseDioError(e);
+    }
+  }
+
+  Future<void> deleteReview(String reviewId) async {
+    try {
+      final response = await _dio.delete(
+        '${ApiConstants.deleteReviewEndpoint}/$reviewId',
+        options: Options(headers: {'accept': '*/*'}),
+      );
+
+      // Check both status code and success flag from response
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        if (responseData is Map && responseData['success'] == true) {
+          debugPrint(
+            '✅ [ApiService] Review deleted: ${responseData['message']}',
+          );
+          return;
+        }
+      }
+
+      throw AppException('Failed to delete review');
+    } on DioException catch (e) {
+      throw _parseDioError(e);
+    }
+  }
+
+  Future<void> updateReview(String reviewId, String newReviewText) async {
+    try {
+      final formData = FormData.fromMap({'newReviewText': newReviewText});
+
+      debugPrint('🔍 [ApiService] Updating review: $reviewId');
+      debugPrint('🔍 [ApiService] New text: $newReviewText');
+
+      final response = await _dio.put(
+        '${ApiConstants.editReviewEndpoint}/$reviewId',
+        data: formData,
+        options: Options(headers: {'accept': '*/*'}),
+      );
+
+      debugPrint(
+        '🔍 [ApiService] Update response status: ${response.statusCode}',
+      );
+      debugPrint('🔍 [ApiService] Update response data: ${response.data}');
+
+      // Check both status code and success flag from response
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        if (responseData is Map && responseData['success'] == true) {
+          debugPrint(
+            '✅ [ApiService] Review updated: ${responseData['message']}',
+          );
+          return;
+        } else {
+          debugPrint('⚠️ [ApiService] Unexpected response: $responseData');
+        }
+      }
+
+      throw AppException('Failed to update review');
+    } on DioException catch (e) {
+      debugPrint('❌ [ApiService] Update error: ${e.message}');
+      debugPrint('❌ [ApiService] Error response: ${e.response?.data}');
       throw _parseDioError(e);
     }
   }

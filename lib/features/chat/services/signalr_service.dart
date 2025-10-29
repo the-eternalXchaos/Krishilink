@@ -1,10 +1,10 @@
-import 'package:signalr_netcore/signalr_client.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
-import '../models/message.dart';
-import '../models/chat_room.dart';
-import '../../../features/auth/controller/auth_controller.dart';
+import 'package:signalr_netcore/signalr_client.dart';
+
 import '../../../core/utils/api_constants.dart';
+import '../../../features/auth/controller/auth_controller.dart';
+import '../models/message.dart';
 
 class SignalRService extends GetxService {
   static const String _hubUrl =
@@ -30,10 +30,9 @@ class SignalRService extends GetxService {
   Function(String)? onUserOffline;
   Function(String)? onMessageRead;
 
-  @override
-  void onInit() {
-    super.onInit();
-    _initializeConnection();
+  // Explicitly start the SignalR connection (opt-in)
+  Future<void> connect() async {
+    await _initializeConnection();
   }
 
   Future<void> _initializeConnection() async {

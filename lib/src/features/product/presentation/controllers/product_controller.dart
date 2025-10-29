@@ -1,23 +1,21 @@
 import 'dart:convert';
-import 'package:api_sdk/api_sdk.dart';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:http/http.dart' as http;
-import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
-import 'package:krishi_link/src/features/product/data/models/review_model.dart';
-import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
-
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/src/core/networking/dio_provider.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
+import 'package:krishi_link/src/features/product/data/models/review_model.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/filter_controller.dart';
 
 class ProductController extends GetxController {
   // Core product data
@@ -586,6 +584,22 @@ class ProductController extends GetxController {
       );
       return;
     }
+
+    // Check if user has already submitted a review for this product
+    final currentUserId = _authController.currentUser.value?.id ?? '';
+    final hasExistingReview = reviewsModel.any(
+      (review) =>
+          review.userId == currentUserId && review.productId == productId,
+    );
+
+    if (hasExistingReview) {
+      PopupService.warning(
+        'you_have_already_reviewed_this_product'.tr,
+        title: 'duplicate_review'.tr,
+      );
+      return;
+    }
+
     if (reviewText.trim().isEmpty) {
       PopupService.error('review_cannot_be_empty'.tr);
       return;
@@ -629,6 +643,78 @@ class ProductController extends GetxController {
     }
     PopupService.error(errorMsg);
     debugPrint('❌ [ProductController] Review submission failed: $e');
+  }
+
+  Future<void> deleteReview(String reviewId) async {
+    if (!_authController.isLoggedIn) {
+      PopupService.info(
+        'please_login_to_delete_review'.tr,
+        title: 'login_required'.tr,
+      );
+      return;
+    }
+
+    try {
+      await _apiService.deleteReview(reviewId);
+      // Remove from local list
+      reviewsModel.removeWhere((review) => review.id == reviewId);
+      PopupService.showSnackbar(
+        title: 'success'.tr,
+        type: PopupType.success,
+        message: 'review_deleted_successfully'.tr,
+      );
+    } catch (e) {
+      PopupService.error('failed_to_delete_review'.tr);
+      debugPrint('❌ [ProductController] Review deletion failed: $e');
+    }
+  }
+
+  Future<void> updateReview(String reviewId, String newReviewText) async {
+    if (!_authController.isLoggedIn) {
+      PopupService.info(
+        'please_login_to_update_review'.tr,
+        title: 'login_required'.tr,
+      );
+      return;
+    }
+
+    if (newReviewText.trim().isEmpty) {
+      PopupService.error('review_cannot_be_empty'.tr);
+      return;
+    }
+
+    if (newReviewText.length > 200) {
+      PopupService.error('review_too_long_max_200_chars'.tr);
+      return;
+    }
+
+    try {
+      await _apiService.updateReview(reviewId, newReviewText);
+
+      // Update in local list
+      final index = reviewsModel.indexWhere((review) => review.id == reviewId);
+      if (index != -1) {
+        final updatedReview = ReviewModel(
+          id: reviewsModel[index].id,
+          productId: reviewsModel[index].productId,
+          userId: reviewsModel[index].userId,
+          username: reviewsModel[index].username,
+          review: newReviewText,
+          timestamp: DateTime.now(),
+          isApproved: reviewsModel[index].isApproved,
+        );
+        reviewsModel[index] = updatedReview;
+      }
+
+      PopupService.showSnackbar(
+        title: 'success'.tr,
+        type: PopupType.success,
+        message: 'review_updated_successfully'.tr,
+      );
+    } catch (e) {
+      PopupService.error('failed_to_update_review'.tr);
+      debugPrint('❌ [ProductController] Review update failed: $e');
+    }
   }
 
   void addToCart(Product product) {
