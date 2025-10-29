@@ -1,16 +1,15 @@
 import 'dart:async';
+
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:krishi_link/core/theme/app_theme.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/src/core/errors/app_exception.dart';
-import 'package:krishi_link/src/features/device/data/device_service.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:lottie/lottie.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
 
 /// A screen for verifying OTP (One Time Password) for a given identifier.
 ///
@@ -144,141 +143,157 @@ class OtpVerificationScreenState extends State<OtpVerificationScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Enter the 6-digit OTP sent to',
-                style: theme.textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.identifier,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              FadeInDown(
-                duration: const Duration(milliseconds: 600),
-                child: Semantics(
-                  label: 'OTP animation',
-                  child: Lottie.asset(
-                    AssetPaths.sending,
-                    height: 200,
-                    repeat: true,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              PinCodeTextField(
-                appContext: context,
-                length: 6,
-                autoFocus: true,
-                textStyle: TextStyle(
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-                keyboardType: TextInputType.number,
-                animationType: AnimationType.fade,
-                cursorColor: theme.colorScheme.primary,
-                pinTheme: PinTheme(
-                  shape: PinCodeFieldShape.box,
-                  borderRadius: BorderRadius.circular(10),
-                  fieldHeight: 50,
-                  fieldWidth: 45,
-                  activeFillColor: theme.colorScheme.surface,
-                  selectedFillColor: theme.colorScheme.surface,
-                  inactiveFillColor: Colors.transparent,
-                  activeColor: theme.colorScheme.primary,
-                  selectedColor: theme.colorScheme.onError,
-                  inactiveColor: Colors.grey,
-                ),
-                animationDuration: const Duration(milliseconds: 300),
-                backgroundColor: Colors.transparent,
-                enableActiveFill: true,
-                onChanged: (value) => currentOtp.value = value,
-                onCompleted: (value) {
-                  currentOtp.value = value;
-                  verifyOtp(); // Call the submit method directly.
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              /// Button to verify the OTP.
-              Obx(() {
-                return SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed:
-                        authController.isLoading.value || isSubmitting.value
-                            ? null // Disable button if loading or submitting.
-                            : () => verifyOtp(),
-
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child:
-                        authController.isLoading.value || isSubmitting.value
-                            ? const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            )
-                            : const Text('Verify OTP'),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed:
-                    () => Get.back(), // Navigate back to change email/phone.
-                child: const Text('Change email or phone number'),
-              ),
-              Obx(
-                () =>
-                    timeLeft.value > 0
-                        ? Text(
-                          'Resend OTP in ${timeLeft.value}s',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey[700],
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+        child: LayoutBuilder(
+          builder:
+              (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            'Enter the 6-digit OTP sent to',
+                            style: theme.textTheme.titleMedium,
+                            textAlign: TextAlign.center,
                           ),
-                        )
-                        : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 12),
-
-              Obx(
-                () =>
-                    timeLeft.value == 0
-                        ? FadeInUp(
-                          duration: const Duration(milliseconds: 600),
-                          delay: const Duration(milliseconds: 700),
-                          child: TextButton(
-                            onPressed: resendOtp, // Button to resend OTP.
-                            child: Text(
-                              'Resend OTP',
-                              style: GoogleFonts.poppins(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w600,
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.identifier,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          FadeInDown(
+                            duration: const Duration(milliseconds: 600),
+                            child: Semantics(
+                              label: 'OTP animation',
+                              child: Lottie.asset(
+                                AssetPaths.sending,
+                                height: 200,
+                                repeat: true,
                               ),
                             ),
                           ),
-                        )
-                        : const SizedBox.shrink(),
+                          const SizedBox(height: 32),
+                          PinCodeTextField(
+                            appContext: context,
+                            length: 6,
+                            autoFocus: true,
+                            textStyle: TextStyle(
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                            keyboardType: TextInputType.number,
+                            animationType: AnimationType.fade,
+                            cursorColor: theme.colorScheme.primary,
+                            pinTheme: PinTheme(
+                              shape: PinCodeFieldShape.box,
+                              borderRadius: BorderRadius.circular(10),
+                              fieldHeight: 50,
+                              fieldWidth: 45,
+                              activeFillColor: theme.colorScheme.surface,
+                              selectedFillColor: theme.colorScheme.surface,
+                              inactiveFillColor: Colors.transparent,
+                              activeColor: theme.colorScheme.primary,
+                              selectedColor: theme.colorScheme.onError,
+                              inactiveColor: Colors.grey,
+                            ),
+                            animationDuration: const Duration(
+                              milliseconds: 300,
+                            ),
+                            backgroundColor: Colors.transparent,
+                            enableActiveFill: true,
+                            onChanged: (value) => currentOtp.value = value,
+                            onCompleted: (value) {
+                              currentOtp.value = value;
+                              verifyOtp(); // Call the submit method directly.
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          Obx(() {
+                            return SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed:
+                                    authController.isLoading.value ||
+                                            isSubmitting.value
+                                        ? null // Disable button if loading or submitting.
+                                        : () => verifyOtp(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child:
+                                    authController.isLoading.value ||
+                                            isSubmitting.value
+                                        ? const CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        )
+                                        : const Text('Verify OTP'),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 16),
+                          TextButton(
+                            onPressed:
+                                () =>
+                                    Get.back(), // Navigate back to change email/phone.
+                            child: const Text('Change email or phone number'),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Obx(
+                            () =>
+                                timeLeft.value > 0
+                                    ? Text(
+                                      'Resend OTP in ${timeLeft.value}s',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey[700],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    )
+                                    : const SizedBox.shrink(),
+                          ),
+                          const SizedBox(height: 12),
+                          Obx(
+                            () =>
+                                timeLeft.value == 0
+                                    ? FadeInUp(
+                                      duration: const Duration(
+                                        milliseconds: 600,
+                                      ),
+                                      delay: const Duration(milliseconds: 700),
+                                      child: TextButton(
+                                        onPressed:
+                                            resendOtp, // Button to resend OTP.
+                                        child: Text(
+                                          'Resend OTP',
+                                          style: GoogleFonts.poppins(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ],
-          ),
         ),
       ),
     );
