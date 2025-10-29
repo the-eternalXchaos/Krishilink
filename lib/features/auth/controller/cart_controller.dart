@@ -1,14 +1,15 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/buyer/screens/cart_screen.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
-import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 
 class CartController extends GetxController {
   final _cartItems = <CartItem>[].obs;
@@ -256,7 +257,7 @@ class CartController extends GetxController {
           // Always refresh cart from backend after remove
           await fetchCartItems();
         } else {
-          throw Exception(data['message'] ?? 'Failed to remove from cart');
+          throw Exception(data['message'] ?? 'Failed to remove fusrom cart');
         }
       } else {
         throw Exception('Failed to remove from cart: ${response.statusCode}');
