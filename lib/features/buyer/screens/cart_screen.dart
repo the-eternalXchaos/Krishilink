@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-export 'package:krishi_link/src/features/cart/models/cart_item.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
-import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:krishi_link/features/product/screens/product_detail_page.dart';
+import 'package:krishi_link/features/auth/controller/cart_controller.dart';
+import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
 import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:krishi_link/widgets/safe_network_image.dart';
 import 'package:lottie/lottie.dart';
-import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
+export 'package:krishi_link/src/features/cart/models/cart_item.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
