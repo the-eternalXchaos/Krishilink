@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
-import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 import 'package:krishi_link/core/lottie/lottie_widget.dart';
-import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/widgets/social_iconbutton.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/src/core/constants/lottie_assets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -292,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen>
     return SizedBox(
       height:
           _tabController.index == 0
-              ? (isTablet ? 140 : 120)
+              ? (isTablet ? 140 : 140)
               : (isTablet ? 200 : 180),
       child: TabBarView(
         controller: _tabController,
@@ -306,26 +305,31 @@ class _LoginScreenState extends State<LoginScreen>
       key: _otpFormKey,
       child: Column(
         children: [
-          TextFormField(
-            controller: _identifierController,
-            style: TextStyle(fontSize: isTablet ? 16 : 14),
-            decoration: _inputDecoration(
-              label: 'email_or_phone_number'.tr,
-              hint: 'example_email_or_phone'.tr,
-              icon: Icons.alternate_email,
-              isTablet: isTablet,
+          Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: TextFormField(
+              controller: _identifierController,
+              style: TextStyle(fontSize: isTablet ? 16 : 14),
+              decoration: _inputDecoration(
+                label: 'email_or_phone_number'.tr,
+                hint: 'example_email_or_phone'.tr,
+                icon: Icons.alternate_email,
+                isTablet: isTablet,
+              ),
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              onFieldSubmitted: (_) => _sendOtpLogin(),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'email_or_phone_required'.tr;
+                }
+                if (!_isValidEmail(value) && !_isValidNepaliPhone(value)) {
+                  return 'enter_valid_email_or_nepali_phone'.tr;
+                }
+                return null;
+              },
             ),
-            keyboardType: TextInputType.emailAddress,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'email_or_phone_required'.tr;
-              }
-              if (!_isValidEmail(value) && !_isValidNepaliPhone(value)) {
-                return 'enter_valid_email_or_nepali_phone'.tr;
-              }
-              return null;
-            },
           ),
           Container(
             margin: EdgeInsets.only(top: isTablet ? 16 : 12),
@@ -364,66 +368,74 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildCredentialForm(bool isTablet) {
     return Form(
       key: _credentialFormKey,
-      child: Column(
-        children: [
-          TextFormField(
-            controller: _identifierController,
-            style: TextStyle(fontSize: isTablet ? 16 : 14),
-            decoration: _inputDecoration(
-              label: 'email_phone'.tr,
-              hint: 'enter_email_or_phone'.tr,
-              icon: Icons.person_outline,
-              isTablet: isTablet,
-            ),
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'email_or_phone_required'.tr;
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: isTablet ? 20 : 16),
-          TextFormField(
-            controller: _passwordController,
-            obscureText: _obscureText,
-            style: TextStyle(fontSize: isTablet ? 16 : 14),
-            decoration: _inputDecoration(
-              label: 'password'.tr,
-              hint: 'enter_password'.tr,
-              icon: Icons.lock_outline,
-              isTablet: isTablet,
-              suffix: IconButton(
-                icon: Icon(
-                  _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: isTablet ? 24 : 20,
-                ),
-                onPressed: () => setState(() => _obscureText = !_obscureText),
+      child: Padding(
+        padding: const EdgeInsets.all(6.0),
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _identifierController,
+              style: TextStyle(fontSize: isTablet ? 16 : 14),
+              decoration: _inputDecoration(
+                label: 'email_phone'.tr,
+                hint: 'enter_email_or_phone'.tr,
+                icon: Icons.person_outline,
+                isTablet: isTablet,
               ),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'email_or_phone_required'.tr;
+                }
+                return null;
+              },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'password_required'.tr;
-              if (value.length < 8) return 'password_min_8'.tr;
-              if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                return 'password_one_upper'.tr;
-              }
-              if (!RegExp(r'[a-z]').hasMatch(value)) {
-                return 'password_one_lower'.tr;
-              }
-              if (!RegExp(r'[0-9]').hasMatch(value)) {
-                return 'password_one_number'.tr;
-              }
-              if (!RegExp(
-                r'[!@#\$&*~%^()_+\-=\[\]{};:"\\|,.<>\/?]',
-              ).hasMatch(value)) {
-                return 'password_one_special'.tr;
-              }
-              return null;
-            },
-          ),
-        ],
+            SizedBox(height: isTablet ? 20 : 16),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: _obscureText,
+              style: TextStyle(fontSize: isTablet ? 16 : 14),
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _passwordLogin(),
+              decoration: _inputDecoration(
+                label: 'password'.tr,
+                hint: 'enter_password'.tr,
+                icon: Icons.lock_outline,
+                isTablet: isTablet,
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscureText ? Icons.visibility_off : Icons.visibility,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: isTablet ? 24 : 20,
+                  ),
+                  onPressed: () => setState(() => _obscureText = !_obscureText),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'password_required'.tr;
+                }
+                if (value.length < 8) return 'password_min_8'.tr;
+                if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                  return 'password_one_upper'.tr;
+                }
+                if (!RegExp(r'[a-z]').hasMatch(value)) {
+                  return 'password_one_lower'.tr;
+                }
+                if (!RegExp(r'[0-9]').hasMatch(value)) {
+                  return 'password_one_number'.tr;
+                }
+                if (!RegExp(
+                  r'[!@#\$&*~%^()_+\-=\[\]{};:"\\|,.<>\/?]',
+                ).hasMatch(value)) {
+                  return 'password_one_special'.tr;
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
