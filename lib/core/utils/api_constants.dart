@@ -76,6 +76,9 @@ class ApiConstants {
       '$baseUrl/api/Review/approveReview'; // + /{reviewId}
   static const String deleteReviewEndpoint =
       '$baseUrl/api/Review/DeleteReview'; // + /{reviewId}
+  static const String editReviewEndpoint =
+      '$baseUrl/api/Review/UpdateReview'; // + /{reviewId}  and message
+
   static const String getMyReviewsEndpoint = '$baseUrl/api/Review/getMyReviews';
 
   // -------------------- USER --------------------
