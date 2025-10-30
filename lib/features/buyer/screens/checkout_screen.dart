@@ -3,12 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/widgets/buttons.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/src/core/components/app_text_input_field.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:krishi_link/src/features/payment/data/payment_service.dart';
+import 'package:krishi_link/src/features/payment/data/backend_payment_service.dart';
+import 'package:krishi_link/src/features/payment/presentation/screens/payment_webview_screen.dart';
 import 'package:krishi_link/src/features/payment/data/khalti_direct_payment_service.dart';
 import 'package:krishi_link/src/features/payment/data/payment_keys.dart';
 import 'package:krishi_link/src/core/config/payment_config.dart';
@@ -41,6 +44,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ? Get.find<CartController>()
           : Get.put(CartController());
   final PaymentService paymentService = Get.put(PaymentService());
+  final BackendPaymentService backendPaymentService =
+      Get.put(BackendPaymentService());
   final KhaltiDirectPaymentService khaltiDirectPaymentService = Get.put(
     PaymentKeys.isConfigured
         ? KhaltiDirectPaymentService(
@@ -176,29 +181,75 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _processCashOnDelivery() async {
-    await Future.delayed(const Duration(seconds: 2));
-    PopupService.success(
-      'your_order_has_been_placed_successfully'.tr,
-      title: 'order_placed'.tr,
-    );
-    if (widget.isFromCart) cartController.clearCart();
-    await _savePaymentHistory(
-      status: 'success',
-      transactionId: DateTime.now().millisecondsSinceEpoch.toString(),
-      pidx: 'cod',
-    );
+    try {
+      // Ensure we have a cart id
+      if (cartController.currentCartId.value.isEmpty) {
+        await cartController.fetchCartItems();
+      }
+      final cartId = cartController.currentCartId.value;
+      if (cartId.isEmpty) {
+        throw Exception('Missing cart id');
+      }
+
+      final res = await backendPaymentService.cashOnDelivery(
+        cartId: cartId,
+        totalPayableAmount: finalTotal,
+      );
+      if (res.statusCode != null && res.statusCode! >= 200 && res.statusCode! < 300) {
+        PopupService.success(
+          'your_order_has_been_placed_successfully'.tr,
+          title: 'order_placed'.tr,
+        );
+        if (widget.isFromCart) cartController.clearCart();
+        await _savePaymentHistory(
+          status: 'success',
+          transactionId: DateTime.now().millisecondsSinceEpoch.toString(),
+          pidx: 'cod',
+        );
+      } else {
+        throw Exception('COD failed: ${res.statusCode}');
+      }
+    } catch (e) {
+      PopupService.error('Failed to place COD order', title: 'error'.tr);
+    }
   }
 
   Future<void> _processEsewaPayment() async {
     try {
-      // Implement your Esewa API integration here
-      final transactionId = 'ES${DateTime.now().millisecondsSinceEpoch}';
-      PopupService.success('esewa_payment_success'.tr, title: 'success'.tr);
-      await _savePaymentHistory(
-        status: 'success',
-        transactionId: transactionId,
-        pidx: 'esewa',
+      // Ensure we have a cart id
+      if (cartController.currentCartId.value.isEmpty) {
+        await cartController.fetchCartItems();
+      }
+      final cartId = cartController.currentCartId.value;
+      if (cartId.isEmpty) {
+        throw Exception('Missing cart id');
+      }
+
+      final response = await backendPaymentService.initiateEsewa(
+        cartId: cartId,
+        totalPayableAmount: finalTotal,
       );
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data as Map);
+        final html = _buildEsewaAutoSubmitHtml(data);
+        // Open payment webview with form auto-submit and success/failure detection
+        await Get.to(
+          () => PaymentWebViewScreen(
+            htmlContent: html,
+            successUrls: const [
+              ApiConstants.esewaSuccessEndpoint,
+              ApiConstants.paymentSuccessEndpoint,
+            ],
+            failureUrls: const [
+              ApiConstants.esewaFailureEndpoint,
+              ApiConstants.paymentFailureEndpoint,
+            ],
+            clearCartOnSuccess: true,
+          ),
+        );
+      } else {
+        throw Exception('Failed to initiate eSewa payment');
+      }
     } catch (e) {
       PopupService.error('esewa_payment_failed'.tr, title: 'error'.tr);
     }
@@ -243,6 +294,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       PopupService.error('khalti_payment_failed'.tr, title: 'error'.tr);
     }
+  }
+
+  String _buildEsewaAutoSubmitHtml(Map<String, dynamic> fields) {
+    // Map fields to a form that posts to eSewa form URL; auto-submit on load
+    final amount = fields['amount']?.toString() ?? '';
+    final taxAmount = fields['tax_amount']?.toString() ?? '';
+    final totalAmount = fields['total_amount']?.toString() ?? '';
+    final transactionUuid = fields['transaction_uuid']?.toString() ?? '';
+    final productCode = fields['product_code']?.toString() ?? '';
+    final pdc = fields['product_delivery_charge']?.toString() ?? '0';
+    final psc = fields['product_service_charge']?.toString() ?? '0';
+    final successUrl = fields['success_url']?.toString() ?? '';
+    final failureUrl = fields['failure_url']?.toString() ?? '';
+    final signedFieldNames = fields['signed_field_names']?.toString() ?? '';
+    final signature = fields['signature']?.toString() ?? '';
+
+    return '''
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>eSewa Payment</title>
+  </head>
+  <body onload="document.forms[0].submit()" style="font-family: sans-serif;">
+    <p>Redirecting to eSewa...</p>
+    <form action="${ApiConstants.esewaFormUrl}" method="POST">
+      <input type="hidden" name="amount" value="$amount" />
+      <input type="hidden" name="tax_amount" value="$taxAmount" />
+      <input type="hidden" name="total_amount" value="$totalAmount" />
+      <input type="hidden" name="transaction_uuid" value="$transactionUuid" />
+      <input type="hidden" name="product_code" value="$productCode" />
+      <input type="hidden" name="product_service_charge" value="$psc" />
+      <input type="hidden" name="product_delivery_charge" value="$pdc" />
+      <input type="hidden" name="success_url" value="$successUrl" />
+      <input type="hidden" name="failure_url" value="$failureUrl" />
+      <input type="hidden" name="signed_field_names" value="$signedFieldNames" />
+      <input type="hidden" name="signature" value="$signature" />
+      <noscript>
+        <button type="submit">Pay with eSewa</button>
+      </noscript>
+    </form>
+  </body>
+ </html>
+''';
   }
 
   @override

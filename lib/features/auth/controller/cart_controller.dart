@@ -16,6 +16,7 @@ class CartController extends GetxController {
   final isLoading = false.obs;
   final isImageLoading = <String, bool>{}.obs;
   final _imageCache = <String, String>{}.obs; // Cache for product images
+  final RxString currentCartId = ''.obs; // Active cart id from backend
 
   List<CartItem> get cartItems => _cartItems;
 
@@ -70,17 +71,31 @@ class CartController extends GetxController {
 
       if (data['success'] != true || data['data'] is! List) {
         _cartItems.clear();
+        currentCartId.value = '';
         return;
       }
 
       final cartDataList = data['data'] as List;
       if (cartDataList.isEmpty || cartDataList[0]['items'] == null) {
         _cartItems.clear();
+        // Try to still capture cart id if present
+        final first = cartDataList.isNotEmpty ? cartDataList[0] : null;
+        if (first is Map) {
+          final cid = (first['id'] ?? first['cartId'] ?? '').toString();
+          currentCartId.value = cid;
+        } else {
+          currentCartId.value = '';
+        }
         return;
       }
 
       final itemsList = cartDataList[0]['items'] as List;
       debugPrint('🛒 [CartController] Processing ${itemsList.length} items');
+
+      // Capture and expose cart id for payment flows
+      final firstCart = cartDataList[0] as Map<String, dynamic>;
+      final cid = (firstCart['id'] ?? firstCart['cartId'] ?? '').toString();
+      currentCartId.value = cid;
 
       // Use CartItem.fromJson directly for each item
       final items = itemsList.map((item) => CartItem.fromJson(item)).toList();
@@ -89,6 +104,7 @@ class CartController extends GetxController {
     } catch (e) {
       debugPrint('🛒 [CartController] ❌ Error processing cart response: $e');
       _cartItems.clear();
+      currentCartId.value = '';
     }
   }
 
@@ -385,8 +401,9 @@ class CartController extends GetxController {
 
   /// Get quantity of specific product in cart
   int getProductQuantity(String productId) {
-    final item =
-        _cartItems.firstWhereOrNull((item) => item.productId == productId);
+    final item = _cartItems.firstWhereOrNull(
+      (item) => item.productId == productId,
+    );
     return item?.quantity ?? 0;
   }
 

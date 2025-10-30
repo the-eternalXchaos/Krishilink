@@ -437,12 +437,19 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
                     )
                     : const Icon(Icons.refresh),
           ),
-          if (isLive)
-            IconButton(
-              tooltip: 'Go Offline',
-              onPressed: _goOffline,
-              icon: const Icon(Icons.power_settings_new),
+          // Power button to disconnect from hub (shown always; disabled if not live)
+          IconButton(
+            tooltip:
+                isLive
+                    ? 'Go Offline'
+                    : (isConnecting ? 'Connecting...' : 'Not live'),
+            onPressed: (isLive && !isConnecting) ? _goOffline : null,
+            icon: Icon(
+              Icons.power_settings_new,
+              color:
+                  isLive ? Colors.redAccent : Theme.of(context).disabledColor,
             ),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: ElevatedButton.icon(

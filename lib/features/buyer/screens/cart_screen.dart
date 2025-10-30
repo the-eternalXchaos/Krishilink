@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
 import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
@@ -451,14 +450,15 @@ class _CartItemCardState extends State<_CartItemCard>
               children: [
                 _buildQuantityButton(
                   icon: Icons.remove,
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          // Decrement quantity or remove when it reaches zero
-                          await widget.cartController.decrementQuantity(
-                            widget.item.productId,
-                          );
-                        },
+                  onPressed:
+                      isLoading
+                          ? null
+                          : () async {
+                            // Decrement quantity or remove when it reaches zero
+                            await widget.cartController.decrementQuantity(
+                              widget.item.productId,
+                            );
+                          },
                 ),
                 Container(
                   width: 50,
@@ -482,24 +482,25 @@ class _CartItemCardState extends State<_CartItemCard>
                 _buildQuantityButton(
                   icon: Icons.add,
                   color: Colors.white,
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          if (widget.item.quantity >= 20) {
-                            PopupService.showSnackbar(
-                              type: PopupType.error,
-                              title: 'maximum_quantity_reached'.tr,
-                              message: 'you_can_only_add_up_to_20_items'.tr,
-                              position: SnackPosition.BOTTOM,
+                  onPressed:
+                      isLoading
+                          ? null
+                          : () async {
+                            if (widget.item.quantity >= 20) {
+                              PopupService.showSnackbar(
+                                type: PopupType.error,
+                                title: 'maximum_quantity_reached'.tr,
+                                message: 'you_can_only_add_up_to_20_items'.tr,
+                                position: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+                            // Prefer a direct quantity increment to reduce extra fetches
+                            await widget.cartController.incrementQuantity(
+                              widget.item.productId,
+                              productRef: widget.item.product,
                             );
-                            return;
-                          }
-                          // Prefer a direct quantity increment to reduce extra fetches
-                          await widget.cartController.incrementQuantity(
-                            widget.item.productId,
-                            productRef: widget.item.product,
-                          );
-                        },
+                          },
                 ),
               ],
             ),

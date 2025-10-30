@@ -64,6 +64,20 @@ class ApiConstants {
   static const String deleteOrderEndpoint =
       '$baseUrl/api/Order/deleteOrder'; // + /{orderId}
 
+  // Item-level and extra order endpoints per docs
+  static const String cancelOrderItemEndpoint =
+      '$baseUrl/api/Order/cancelOrderItem'; // + /{orderId}/{orderItemId}
+  static const String confirmOrderItemEndpoint =
+      '$baseUrl/api/Order/confirmOrderItem'; // + /{orderItemId}
+  static const String shipOrderItemEndpoint =
+      '$baseUrl/api/Order/shipOrderItem'; // + /{orderItemId}
+  static const String deliverOrderItemEndpoint =
+      '$baseUrl/api/Order/deliverOrderItem'; // + /{orderItemId}
+  static const String markAsDeliveryEndpoint =
+      '$baseUrl/api/Order/markAsDelivery'; // + /{orderItemId}
+  static const String getCustomerOrdersEndpoint =
+      '$baseUrl/api/Order/getCustomerOrders';
+
   // -------------------- REVIEW --------------------
   static const String addReviewEndpoint = '$baseUrl/api/Review/AddReview';
   static const String addOffensiveWordEndpoint =
@@ -131,6 +145,24 @@ class ApiConstants {
       '$baseUrl/api/Payment/initiatePayment';
   static const String paymentSuccessEndpoint = '$baseUrl/api/Payment/success';
   static const String paymentFailureEndpoint = '$baseUrl/api/Payment/failure';
+
+  // Specific payment flows
+  static const String initiateEsewaPaymentEndpoint =
+      '$baseUrl/api/Payment/initiatePaymentForEsewa';
+  static const String esewaSuccessEndpoint =
+      '$baseUrl/api/Payment/esewaSuccess';
+  static const String esewaFailureEndpoint = '$baseUrl/api/Payment/failure';
+  // eSewa form action URL (test environment by default)
+  static const String esewaFormUrl =
+      'https://rc-epay.esewa.com.np/api/epay/main/v2/form';
+
+  static const String initiateKhaltiPaymentEndpoint =
+      '$baseUrl/api/Payment/initiatePaymentForKhalti';
+  static const String khaltiResponseEndpoint =
+      '$baseUrl/api/Payment/khaltiResponse';
+
+  static const String cashOnDeliveryEndpoint =
+      '$baseUrl/api/Payment/cashOnDelivery';
 
   // -------------------- CHAT --------------------
   static const String getChatHistoryEndpoint =
