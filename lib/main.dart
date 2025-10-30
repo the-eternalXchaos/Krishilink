@@ -49,6 +49,8 @@ import 'package:krishi_link/src/features/order/binding/order_summary_binding.dar
 import 'package:krishi_link/src/features/order/presentation/farmer_orders_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/manage_orders_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/order_details_screen.dart';
+import 'package:krishi_link/src/features/order/presentation/buyer_orders_screen.dart';
+import 'package:krishi_link/src/features/order/presentation/buyer_order_details_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/order_summary_page.dart';
 import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
 import 'package:krishi_link/src/features/payment/models/payment_history.g.dart';
@@ -341,6 +343,18 @@ class _MyAppState extends State<MyApp> {
             name: '/payment-history',
             page: () => const PaymentHistoryScreen(),
             binding: PaymentBinding(),
+          ),
+          GetPage(
+            name: '/my-orders',
+            page: () => const BuyerOrdersScreen(),
+            middlewares: [AuthMiddleware()],
+            transition: Transition.fadeIn,
+          ),
+          GetPage(
+            name: '/buyer-order-details',
+            page: () => BuyerOrderDetailsScreen(order: Get.arguments),
+            middlewares: [AuthMiddleware()],
+            transition: Transition.cupertino,
           ),
           GetPage(
             name: '/payment-webview',
