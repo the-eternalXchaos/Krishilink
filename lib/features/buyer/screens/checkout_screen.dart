@@ -2,20 +2,20 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/widgets/buttons.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/core/components/app_text_input_field.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
+import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/core/widgets/buttons.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
+import 'package:krishi_link/src/core/components/app_text_input_field.dart';
+import 'package:krishi_link/src/core/components/product/location_picker.dart';
+import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.dart';
-import 'package:krishi_link/src/features/payment/data/payment_service.dart';
 import 'package:krishi_link/src/features/payment/data/backend_payment_service.dart';
-import 'package:krishi_link/src/features/payment/presentation/screens/payment_webview_screen.dart';
 import 'package:krishi_link/src/features/payment/data/khalti_direct_payment_service.dart';
 import 'package:krishi_link/src/features/payment/data/payment_keys.dart';
-import 'package:krishi_link/src/core/config/payment_config.dart';
-import 'package:krishi_link/src/core/components/product/location_picker.dart';
+import 'package:krishi_link/src/features/payment/data/payment_service.dart';
+import 'package:krishi_link/src/features/payment/presentation/screens/payment_webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -44,8 +44,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ? Get.find<CartController>()
           : Get.put(CartController());
   final PaymentService paymentService = Get.put(PaymentService());
-  final BackendPaymentService backendPaymentService =
-      Get.put(BackendPaymentService());
+  final BackendPaymentService backendPaymentService = Get.put(
+    BackendPaymentService(),
+  );
   final KhaltiDirectPaymentService khaltiDirectPaymentService = Get.put(
     PaymentKeys.isConfigured
         ? KhaltiDirectPaymentService(
@@ -76,8 +77,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     (sum, item) => sum + (double.parse(item.price) * item.quantity),
   );
 
-  double get deliveryFee => totalAmount > 500 ? 0 : 50;
-  double get finalTotal => totalAmount + deliveryFee;
+  // Business rule: fixed delivery fee Rs. 100 and 1% tax applied on (subtotal + delivery)
+  static const double _deliveryFeeFixed = 100.0;
+  static const double _taxRate = 0.01; // 1%
+
+  double get deliveryFee => _deliveryFeeFixed;
+  double get taxAmount {
+    final base = totalAmount + deliveryFee;
+    // Round tax to 2 decimals for currency consistency
+    return double.parse((base * _taxRate).toStringAsFixed(2));
+  }
+
+  double get finalTotal {
+    final base = totalAmount + deliveryFee;
+    // Apply tax and round grand total to 2 decimals
+    return double.parse((base * (1 + _taxRate)).toStringAsFixed(2));
+  }
 
   @override
   void initState() {
@@ -147,6 +162,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _processOrder() async {
+    // Require authentication before placing order or initiating payment
+    final hasAuth = await TokenService.hasTokens();
+    if (!hasAuth) {
+      PopupService.error('Please login to continue', title: 'Session Required');
+      Get.offAllNamed('/login');
+      return;
+    }
     if (_addressController.text.trim().isEmpty) {
       PopupService.warning(
         'please_enter_delivery_address'.tr,
@@ -195,7 +217,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         cartId: cartId,
         totalPayableAmount: finalTotal,
       );
-      if (res.statusCode != null && res.statusCode! >= 200 && res.statusCode! < 300) {
+      if (res.statusCode != null &&
+          res.statusCode! >= 200 &&
+          res.statusCode! < 300) {
         PopupService.success(
           'your_order_has_been_placed_successfully'.tr,
           title: 'order_placed'.tr,
@@ -216,11 +240,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _processEsewaPayment() async {
     try {
+      debugPrint('[Checkout][eSewa] Starting payment flow');
       // Ensure we have a cart id
       if (cartController.currentCartId.value.isEmpty) {
+        debugPrint('[Checkout][eSewa] cartId missing; fetching cart...');
         await cartController.fetchCartItems();
       }
       final cartId = cartController.currentCartId.value;
+      debugPrint('[Checkout][eSewa] Using cartId: $cartId');
+      debugPrint(
+        '[Checkout][eSewa] totalPayableAmount: ${finalTotal.toStringAsFixed(2)}',
+      );
       if (cartId.isEmpty) {
         throw Exception('Missing cart id');
       }
@@ -229,9 +259,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         cartId: cartId,
         totalPayableAmount: finalTotal,
       );
+      debugPrint('[Checkout][eSewa] Initiate status: ${response.statusCode}');
+      debugPrint('[Checkout][eSewa] Initiate body: ${response.data}');
       if (response.statusCode == 200 && response.data is Map) {
         final data = Map<String, dynamic>.from(response.data as Map);
+        final missing = <String>[];
+        for (final k in [
+          'amount',
+          'tax_amount',
+          'total_amount',
+          'transaction_uuid',
+          'product_code',
+          'product_service_charge',
+          'product_delivery_charge',
+          'success_url',
+          'failure_url',
+          'signed_field_names',
+          'signature',
+        ]) {
+          if (!data.containsKey(k)) missing.add(k);
+        }
+        if (missing.isNotEmpty) {
+          debugPrint(
+            '[Checkout][eSewa][WARN] Missing fields from backend: $missing',
+          );
+        }
         final html = _buildEsewaAutoSubmitHtml(data);
+        debugPrint(
+          '[Checkout][eSewa] Built eSewa form HTML (first 300 chars):\n${html.substring(0, html.length.clamp(0, 300))}',
+        );
         // Open payment webview with form auto-submit and success/failure detection
         await Get.to(
           () => PaymentWebViewScreen(
@@ -251,6 +307,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         throw Exception('Failed to initiate eSewa payment');
       }
     } catch (e) {
+      debugPrint('[Checkout][eSewa][ERROR] $e');
       PopupService.error('esewa_payment_failed'.tr, title: 'error'.tr);
     }
   }
@@ -359,6 +416,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               checkoutItems: checkoutItems,
               totalAmount: totalAmount,
               deliveryFee: deliveryFee,
+              taxAmount: taxAmount,
               finalTotal: finalTotal,
             ),
             const SizedBox(height: 20),
@@ -422,12 +480,14 @@ class _OrderSummaryCard extends StatelessWidget {
   final List<CartItem> checkoutItems;
   final double totalAmount;
   final double deliveryFee;
+  final double taxAmount;
   final double finalTotal;
 
   const _OrderSummaryCard({
     required this.checkoutItems,
     required this.totalAmount,
     required this.deliveryFee,
+    required this.taxAmount,
     required this.finalTotal,
   });
 
@@ -468,6 +528,7 @@ class _OrderSummaryCard extends StatelessWidget {
             const Divider(),
             _buildRow('subtotal'.tr, totalAmount),
             _buildRow('delivery_fee'.tr, deliveryFee),
+            _buildRow('tax (1%)', taxAmount),
             const SizedBox(height: 8),
             _buildRow(
               'total'.tr,
