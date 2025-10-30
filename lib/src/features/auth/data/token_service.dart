@@ -193,15 +193,28 @@ class TokenService {
         ),
       );
       debugPrint('[TokenService] Refresh response data: ${response.data}');
-      //TODO if the response is offline type or the use is offline dont push the user to the login page
-      if (response.statusCode == 404) {
+      debugPrint('[TokenService] Refresh status code: ${response.statusCode}');
+      
+      // Only clear tokens on 401 (Unauthorized - invalid/expired refresh token)
+      // Don't clear on 404 - could be temporary backend issue
+      if (response.statusCode == 401) {
         debugPrint(
-          '[TokenService] Token refresh failed: ${response.statusCode} (unauthorized or not found)',
+          '[TokenService] Token refresh unauthorized: ${response.statusCode}',
         );
         await clearTokens();
-        debugPrint('[TokenService] Tokens cleared due to 404');
+        debugPrint('[TokenService] Tokens cleared due to 401 Unauthorized');
         return false;
       }
+      
+      if (response.statusCode == 404) {
+        debugPrint(
+          '[TokenService] Token refresh failed: 404 (backend user lookup issue)',
+        );
+        debugPrint('[TokenService] Keeping tokens - may be temporary backend issue');
+        // DON'T clear tokens - 404 could be temporary backend/database issue
+        return false;
+      }
+      
       if (response.statusCode != 200) {
         debugPrint(
           '[TokenService] Token refresh failed: ${response.statusCode}',
@@ -258,7 +271,9 @@ class TokenService {
 
   static bool _isUnauthorizedOrNotFoundError(dio.DioException e) {
     final code = e.response?.statusCode;
-    return code == 404;
+    // Only treat 401 as truly unauthorized (invalid refresh token)
+    // Don't treat 404 as unauthorized - could be temporary backend issue
+    return code == 401;
   }
 
   static Future<Map<String, String>> getAuthHeaders() async {
