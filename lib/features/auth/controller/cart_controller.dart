@@ -145,20 +145,25 @@ class CartController extends GetxController {
 
   /// Perform the actual add to cart API call
   Future<void> _performAddToCartAPI(CartItem item) async {
-    // Preserve legacy payload exactly: server expects product id under `productId`
-    // using the CartItem.id that was historically the product id.
+    // Use productId (not item.id) for the API call
+    final productId = item.productId.isNotEmpty ? item.productId : item.id;
+    
     final requestBody = {
       'items': [
-        {'productId': item.id, 'quantity': item.quantity},
+        {'productId': productId, 'quantity': item.quantity},
       ],
     };
 
     try {
+      debugPrint('🛒 [ADD_API] Request: $requestBody');
+      
       final response = await _api.dio.post(
         ApiConstants.addToCartEndpoint,
         data: requestBody,
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
+
+      debugPrint('🛒 [ADD_API] Response: ${response.statusCode} - ${response.data}');
 
       if (_isSuccessResponse(response)) {
         final data =
@@ -176,6 +181,9 @@ class CartController extends GetxController {
         throw Exception('Failed to add to cart: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      debugPrint('🛒 [ADD_API] ❌ DioException: ${e.type}');
+      debugPrint('🛒 [ADD_API] Response: ${e.response?.data}');
+      debugPrint('🛒 [ADD_API] Status: ${e.response?.statusCode}');
       _handleDioError(e, 'add to cart');
     }
   }
@@ -212,41 +220,131 @@ class CartController extends GetxController {
   //   await _updateCartItemQuantity(productId, newQuantity);
   // }
 
-  /// Public: decrement item quantity by 1 (remove if it reaches 0)
+  /// Public: decrement item quantity by 1 (remove entire item from cart)
   Future<void> decrementQuantity(String productId) async {
     final current = getProductQuantity(productId);
+    
     if (current <= 1) {
       await removeFromCart(productId);
       return;
     }
-    await _updateCartItemQuantity(productId, current - 1);
+
+    // Wait 500ms before calling API (simple debounce)
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Call REMOVE API
+    await _executeRemove(productId);
   }
 
-  /// Public: increment item quantity by 1 (with optional product ref to avoid lookups)
+  /// Public: increment item quantity by 1 (adds 1 to cart)
   Future<void> incrementQuantity(
     String productId, {
     Product? productRef,
   }) async {
     final current = getProductQuantity(productId);
+    
     if (current >= 20) {
-      // Business rule: max 20 enforced at UI too
+      PopupService.warning('Maximum quantity is 20', title: 'Limit Reached');
       return;
     }
-    // If item exists in cart, prefer quantity update path
-    final exists = isProductInCart(productId);
-    if (exists) {
-      await _updateCartItemQuantity(productId, current + 1);
-      return;
-    }
-    // Otherwise add fresh (use product if provided for richer UI fields)
-    if (productRef != null) {
-      await addProductWithReference(productRef, quantity: 1);
-    } else {
-      await addProductToCart(productId);
+
+    // Wait 500ms before calling API (simple debounce)
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Call ADD API with quantity 1
+    await _executeAdd(productId, productRef);
+  }
+
+  /// Execute ADD operation: POST addToCart with quantity: 1
+  Future<void> _executeAdd(String productId, Product? productRef) async {
+    try {
+      // Always use the productId directly
+      final requestBody = {
+        'items': [
+          {'productId': productId, 'quantity': 1},  // Always add 1
+        ],
+      };
+
+      debugPrint('🛒 [ADD] Request body: $requestBody');
+      debugPrint('🛒 [ADD] Endpoint: ${ApiConstants.addToCartEndpoint}');
+
+      final response = await _api.dio.post(
+        ApiConstants.addToCartEndpoint,
+        data: requestBody,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+
+      debugPrint('🛒 [ADD] Response status: ${response.statusCode}');
+      debugPrint('🛒 [ADD] Response data: ${response.data}');
+
+      if (_isSuccessResponse(response)) {
+        final data = response.data is String 
+            ? jsonDecode(response.data) 
+            : response.data;
+        
+        if (data['success'] == true) {
+          debugPrint('🛒 [CartController] ✅ Added 1 to $productId on server');
+          // Refresh to sync with backend
+          await fetchCartItems();
+        } else {
+          final errorMsg = data['message'] ?? 'Failed to add';
+          debugPrint('🛒 [ADD] ❌ Server error: $errorMsg');
+          throw Exception(errorMsg);
+        }
+      } else {
+        throw Exception('Failed to add: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('🛒 [CartController] ❌ Error adding: $e');
+      if (e is DioException) {
+        debugPrint('🛒 [ADD] DioException type: ${e.type}');
+        debugPrint('🛒 [ADD] Status code: ${e.response?.statusCode}');
+        debugPrint('🛒 [ADD] Response data: ${e.response?.data}');
+        debugPrint('🛒 [ADD] Response headers: ${e.response?.headers}');
+        debugPrint('🛒 [ADD] Request data: ${e.requestOptions.data}');
+        
+        // Show detailed error from backend if available
+        final errorMsg = e.response?.data?.toString() ?? e.message ?? 'Failed to update cart';
+        PopupService.error(errorMsg, title: 'Add to Cart Failed');
+      } else {
+        PopupService.error('Failed to update cart', title: 'Error');
+      }
+      await fetchCartItems();
     }
   }
 
-  /// Internal method to update cart item quantity
+  /// Execute REMOVE operation: DELETE removeFromCart
+  Future<void> _executeRemove(String productId) async {
+    try {
+      final response = await _api.dio.delete(
+        ApiConstants.removeFromCartEndpoint,
+        queryParameters: {'productId': productId},
+      );
+
+      if (_isSuccessResponse(response)) {
+        final data = response.data is String 
+            ? jsonDecode(response.data) 
+            : response.data;
+        
+        if (data['success'] == true) {
+          debugPrint('🛒 [CartController] ✅ Removed from cart on server');
+          // Remove from local cart
+          _cartItems.removeWhere((item) => item.productId == productId);
+          _cartItems.refresh();
+          // Refresh to sync with backend
+          await fetchCartItems();
+        } else {
+          throw Exception(data['message'] ?? 'Failed to remove');
+        }
+      }
+    } catch (e) {
+      debugPrint('🛒 [CartController] ❌ Error removing: $e');
+      PopupService.error('Failed to update cart', title: 'Error');
+      await fetchCartItems();
+    }
+  }
+
+  /// Internal method to update cart item quantity (legacy - uses remove + add)
   Future<void> _updateCartItemQuantity(
     String productId,
     int newQuantity,
