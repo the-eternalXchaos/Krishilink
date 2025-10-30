@@ -110,7 +110,7 @@ class CartController extends GetxController {
 
       // Check if item already exists and update quantity instead
       final existingIndex = _cartItems.indexWhere(
-        (cartItem) => cartItem.id == item.id,
+        (cartItem) => cartItem.productId == item.productId,
       );
       if (existingIndex != -1) {
         final existingItem = _cartItems[existingIndex];
@@ -129,6 +129,8 @@ class CartController extends GetxController {
 
   /// Perform the actual add to cart API call
   Future<void> _performAddToCartAPI(CartItem item) async {
+    // Preserve legacy payload exactly: server expects product id under `productId`
+    // using the CartItem.id that was historically the product id.
     final requestBody = {
       'items': [
         {'productId': item.id, 'quantity': item.quantity},
@@ -166,7 +168,7 @@ class CartController extends GetxController {
   Future<void> _updateLocalCart(CartItem item, {required bool isAdd}) async {
     if (isAdd) {
       final existingIndex = _cartItems.indexWhere(
-        (cartItem) => cartItem.id == item.id,
+        (cartItem) => cartItem.productId == item.productId,
       );
       if (existingIndex != -1) {
         // Update existing item quantity
@@ -194,12 +196,46 @@ class CartController extends GetxController {
   //   await _updateCartItemQuantity(productId, newQuantity);
   // }
 
+  /// Public: decrement item quantity by 1 (remove if it reaches 0)
+  Future<void> decrementQuantity(String productId) async {
+    final current = getProductQuantity(productId);
+    if (current <= 1) {
+      await removeFromCart(productId);
+      return;
+    }
+    await _updateCartItemQuantity(productId, current - 1);
+  }
+
+  /// Public: increment item quantity by 1 (with optional product ref to avoid lookups)
+  Future<void> incrementQuantity(
+    String productId, {
+    Product? productRef,
+  }) async {
+    final current = getProductQuantity(productId);
+    if (current >= 20) {
+      // Business rule: max 20 enforced at UI too
+      return;
+    }
+    // If item exists in cart, prefer quantity update path
+    final exists = isProductInCart(productId);
+    if (exists) {
+      await _updateCartItemQuantity(productId, current + 1);
+      return;
+    }
+    // Otherwise add fresh (use product if provided for richer UI fields)
+    if (productRef != null) {
+      await addProductWithReference(productRef, quantity: 1);
+    } else {
+      await addProductToCart(productId);
+    }
+  }
+
   /// Internal method to update cart item quantity
   Future<void> _updateCartItemQuantity(
     String productId,
     int newQuantity,
   ) async {
-    final index = _cartItems.indexWhere((item) => item.id == productId);
+    final index = _cartItems.indexWhere((item) => item.productId == productId);
     if (index == -1) return;
 
     final item = _cartItems[index];
@@ -250,7 +286,7 @@ class CartController extends GetxController {
             response.data is String ? jsonDecode(response.data) : response.data;
         if (data['success'] == true) {
           // Remove from local cart
-          _cartItems.removeWhere((item) => item.id == productId);
+          _cartItems.removeWhere((item) => item.productId == productId);
           if (showMessage) {
             _showSuccessMessage('Item removed from cart');
           }
@@ -344,18 +380,19 @@ class CartController extends GetxController {
 
   /// Check if product is in cart
   bool isProductInCart(String productId) {
-    return _cartItems.any((item) => item.id == productId);
+    return _cartItems.any((item) => item.productId == productId);
   }
 
   /// Get quantity of specific product in cart
   int getProductQuantity(String productId) {
-    final item = _cartItems.firstWhereOrNull((item) => item.id == productId);
+    final item =
+        _cartItems.firstWhereOrNull((item) => item.productId == productId);
     return item?.quantity ?? 0;
   }
 
   /// Get cart item by product ID
   CartItem? getCartItem(String productId) {
-    return _cartItems.firstWhereOrNull((item) => item.id == productId);
+    return _cartItems.firstWhereOrNull((item) => item.productId == productId);
   }
 
   // Helper methods

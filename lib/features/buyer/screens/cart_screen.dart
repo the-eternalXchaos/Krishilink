@@ -19,7 +19,6 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.put(CartController());
-    final AuthController authController = Get.find<AuthController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -452,14 +451,14 @@ class _CartItemCardState extends State<_CartItemCard>
               children: [
                 _buildQuantityButton(
                   icon: Icons.remove,
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () {
-                            widget.cartController.removeFromCart(
-                              widget.item.productId,
-                            );
-                          },
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          // Decrement quantity or remove when it reaches zero
+                          await widget.cartController.decrementQuantity(
+                            widget.item.productId,
+                          );
+                        },
                 ),
                 Container(
                   width: 50,
@@ -483,30 +482,24 @@ class _CartItemCardState extends State<_CartItemCard>
                 _buildQuantityButton(
                   icon: Icons.add,
                   color: Colors.white,
-
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () {
-                            if (widget.item.quantity >= 20) {
-                              PopupService.showSnackbar(
-                                type: PopupType.error,
-                                title: 'maximum_quantity_reached'.tr,
-                                message: 'you_can_only_add_up_to_20_items'.tr,
-                                position: SnackPosition.BOTTOM,
-                              );
-                              return;
-                            }
-                            if (widget.item.product != null) {
-                              widget.cartController.addProductWithReference(
-                                widget.item.product!,
-                              );
-                            } else {
-                              widget.cartController.addProductToCart(
-                                widget.item.productId,
-                              );
-                            }
-                          },
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (widget.item.quantity >= 20) {
+                            PopupService.showSnackbar(
+                              type: PopupType.error,
+                              title: 'maximum_quantity_reached'.tr,
+                              message: 'you_can_only_add_up_to_20_items'.tr,
+                              position: SnackPosition.BOTTOM,
+                            );
+                            return;
+                          }
+                          // Prefer a direct quantity increment to reduce extra fetches
+                          await widget.cartController.incrementQuantity(
+                            widget.item.productId,
+                            productRef: widget.item.product,
+                          );
+                        },
                 ),
               ],
             ),
@@ -567,13 +560,6 @@ class _CartItemCardState extends State<_CartItemCard>
   void _animateRemoval() {
     _animationController.reverse().then((_) {
       widget.cartController.removeFromCart(widget.item.productId);
-    });
-  }
-
-  // animate add use paxi garni
-  void _animateAddition() {
-    _animationController.forward(from: 0).then((_) {
-      widget.cartController.addProductToCart(widget.item.productId);
     });
   }
 }

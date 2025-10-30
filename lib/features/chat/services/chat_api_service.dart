@@ -221,7 +221,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/features/chat/live_chat/live_chat_model.dart';
+import 'package:krishi_link/src/features/chat/models/live_chat_model.dart'  ;
 import '../models/chat_room.dart';
 import '../models/message.dart';
 
