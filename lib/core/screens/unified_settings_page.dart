@@ -1,12 +1,12 @@
 // lib/features/settings/unified_settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/core/widgets/app_widgets.dart';
-import 'package:krishi_link/src/core/constants/app_spacing.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/wishlist_screen.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
+import 'package:krishi_link/src/features/settings/presentation/controllers/settings_controller.dart';
 
 class UnifiedSettingsPage extends StatelessWidget {
   const UnifiedSettingsPage({super.key});
@@ -358,12 +358,20 @@ class UnifiedSettingsPage extends StatelessWidget {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => Get.toNamed('/payment-history'),
             ),
+            _buildSettingTile(
+              leading: const Icon(Icons.shopping_bag),
+              title: Text('manage_orders'.tr),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              // onTap: () => Get.toNamed('/buyer/orders'),
+              onTap: () => Get.toNamed('/customer/orders'),
+            ),
           ] else if (role == 'buyer') ...[
             _buildSettingTile(
               leading: const Icon(Icons.shopping_bag),
               title: Text('my_orders'.tr),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Get.toNamed('/buyer/orders'),
+              // onTap: () => Get.toNamed('/buyer/orders'),
+              onTap: () => Get.toNamed('/my-orders'),
             ),
             _buildSettingTile(
               leading: const Icon(Icons.favorite),
