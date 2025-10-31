@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/features/buyer/screens/cart_screen.dart';
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
