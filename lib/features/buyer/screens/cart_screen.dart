@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
 import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
@@ -18,6 +19,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.put(CartController());
+    final AuthController authController = Get.find<AuthController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -453,9 +455,8 @@ class _CartItemCardState extends State<_CartItemCard>
                   onPressed:
                       isLoading
                           ? null
-                          : () async {
-                            // Decrement quantity or remove when it reaches zero
-                            await widget.cartController.decrementQuantity(
+                          : () {
+                            widget.cartController.removeFromCart(
                               widget.item.productId,
                             );
                           },
@@ -482,10 +483,11 @@ class _CartItemCardState extends State<_CartItemCard>
                 _buildQuantityButton(
                   icon: Icons.add,
                   color: Colors.white,
+
                   onPressed:
                       isLoading
                           ? null
-                          : () async {
+                          : () {
                             if (widget.item.quantity >= 20) {
                               PopupService.showSnackbar(
                                 type: PopupType.error,
@@ -495,11 +497,16 @@ class _CartItemCardState extends State<_CartItemCard>
                               );
                               return;
                             }
-                            // Prefer a direct quantity increment to reduce extra fetches
-                            await widget.cartController.incrementQuantity(
-                              widget.item.productId,
-                              productRef: widget.item.product,
-                            );
+                            if (widget.item.product != null) {
+                              widget.cartController.addProductWithReference(
+                                widget.item.product!,
+                              );
+                            } else {
+                              widget.cartController.addProductToCart(
+                                widget.item.productId,
+                              );
+                            }
+                            widget.cartController.fetchCartItems();
                           },
                 ),
               ],
@@ -561,6 +568,13 @@ class _CartItemCardState extends State<_CartItemCard>
   void _animateRemoval() {
     _animationController.reverse().then((_) {
       widget.cartController.removeFromCart(widget.item.productId);
+    });
+  }
+
+  // animate add use paxi garni
+  void _animateAddition() {
+    _animationController.forward(from: 0).then((_) {
+      widget.cartController.addProductToCart(widget.item.productId);
     });
   }
 }
