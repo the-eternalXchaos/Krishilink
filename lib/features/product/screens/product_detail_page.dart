@@ -13,6 +13,8 @@ import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/product/widgets/related_products_widget.dart';
 import 'package:krishi_link/features/product/widgets/review_card.dart';
 import 'package:krishi_link/src/core/components/bottom_sheet/app_bottom_sheet.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
+import 'package:krishi_link/src/core/networking/dio_provider.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:krishi_link/src/features/chat/presentation/screens/product_chat_screen.dart';
 import 'package:krishi_link/src/features/product/data/models/product_model.dart';
@@ -236,6 +238,448 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
+  Future<void> _showFarmerStats(BuildContext context) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final dioProvider = Get.find<DioProvider>();
+      final response = await dioProvider.client.get(
+        '${ApiConstants.farmerStatEndpoint}/${widget.product.id}',
+      );
+
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading dialog
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'];
+        if (data != null) {
+          _displayFarmerStatsModal(context, data);
+        } else {
+          PopupService.error('No farmer information available');
+        }
+      } else {
+        PopupService.error('Failed to load farmer information');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+      debugPrint('[FarmerStats] Error: $e');
+      PopupService.error('Error loading farmer information: ${e.toString()}');
+    }
+  }
+
+  void _displayFarmerStatsModal(BuildContext context, Map<String, dynamic> data) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) => SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: colorScheme.primary,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data['fullName'] ?? 'Unknown Farmer',
+                              style: textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                data['reputation'] ?? 'New Grower',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Report Status
+                  _buildInfoCard(
+                    context,
+                    icon: Icons.verified_user,
+                    title: 'Record Status',
+                    value: data['report'] ?? 'N/A',
+                    color: (data['report']?.toString().toLowerCase() ?? '').contains('clean')
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Contact Info
+                  if (data['email'] != null || data['address'] != null) ...[
+                    _buildSectionTitle(context, 'Contact Information'),
+                    const SizedBox(height: 12),
+                    if (data['email'] != null)
+                      _buildInfoRow(
+                        context,
+                        Icons.email,
+                        'Email',
+                        data['email'],
+                      ),
+                    if (data['address'] != null)
+                      _buildInfoRow(
+                        context,
+                        Icons.location_on,
+                        'Address',
+                        '${data['address']}, ${data['city'] ?? ''}',
+                      ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Statistics
+                  _buildSectionTitle(context, 'Sales Statistics'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          icon: Icons.inventory_2,
+                          label: 'Total Products',
+                          value: '${data['totalProducts'] ?? 0}',
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          context,
+                          icon: Icons.shopping_cart,
+                          label: 'Items Sold',
+                          value: '${data['totalProductSolded'] ?? 0}',
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatCard(
+                    context,
+                    icon: Icons.trending_up,
+                    label: 'Avg. Quantity Sold',
+                    value: (data['averageSoldedQuantity'] ?? 0.0)
+                        .toStringAsFixed(1),
+                    color: Colors.purple,
+                    isWide: true,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Top and Bottom Products
+                  if (data['maxSoldedProduct'] != null ||
+                      data['minSoldedProduct'] != null) ...[
+                    _buildSectionTitle(context, 'Product Performance'),
+                    const SizedBox(height: 12),
+                    if (data['maxSoldedProduct'] != null)
+                      _buildProductPerformanceCard(
+                        context,
+                        icon: Icons.star,
+                        title: 'Top Seller',
+                        productName:
+                            data['maxSoldedProduct']['productName'] ?? 'N/A',
+                        quantity:
+                            data['maxSoldedProduct']['soldedQuantity'] ?? 0,
+                        color: Colors.amber,
+                      ),
+                    const SizedBox(height: 8),
+                    if (data['minSoldedProduct'] != null)
+                      _buildProductPerformanceCard(
+                        context,
+                        icon: Icons.trending_down,
+                        title: 'Least Sold',
+                        productName:
+                            data['minSoldedProduct']['productName'] ?? 'N/A',
+                        quantity:
+                            data['minSoldedProduct']['soldedQuantity'] ?? 0,
+                        color: Colors.grey,
+                      ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final textTheme = Theme.of(context).textTheme;
+    return Text(
+      title,
+      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildStatCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    bool isWide = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: isWide ? TextAlign.left : TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductPerformanceCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String productName,
+    required num quantity,
+    required Color color,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  productName,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '$quantity sold',
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _shareProduct({
     required String name,
     required String description,
@@ -422,6 +866,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         title: Text(widget.product.productName),
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: CircleAvatar(
+              backgroundColor: colorScheme.onPrimary.withValues(alpha: 0.2),
+              child: IconButton(
+                icon: Icon(Icons.info_outline, color: colorScheme.onPrimary),
+                onPressed: () => _showFarmerStats(context),
+                tooltip: 'Farmer Info',
+              ),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 100),

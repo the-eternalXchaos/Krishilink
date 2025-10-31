@@ -289,6 +289,8 @@ class ApiConstants {
       '$baseUrl/api/User/updateStatus'; // + /{status}
   static const String deleteUserEndpoint =
       '$baseUrl/api/User/Delete'; // + /{userId}
+  static const String farmerStatEndpoint =
+      '$baseUrl/api/User/getFarmerDetails'; // + /{productId}
 
   // -------------------- CART --------------------
   static const String getCartEndpoint = '$baseUrl/api/Cart/getMyCart';
