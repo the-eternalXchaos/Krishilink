@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/features/buyer/screens/checkout_screen.dart';
 import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
@@ -19,7 +18,6 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.put(CartController());
-    final AuthController authController = Get.find<AuthController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -571,10 +569,5 @@ class _CartItemCardState extends State<_CartItemCard>
     });
   }
 
-  // animate add use paxi garni
-  void _animateAddition() {
-    _animationController.forward(from: 0).then((_) {
-      widget.cartController.addProductToCart(widget.item.productId);
-    });
-  }
+  // Note: addition animation helper removed as it was unused
 }

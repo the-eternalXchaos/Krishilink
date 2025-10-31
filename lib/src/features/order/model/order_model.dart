@@ -43,21 +43,41 @@ class OrderModel {
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
-    final orderItemId = json['orderItemId']?.toString() ?? '';
+    // Accept both flattened maps and raw API fragments (orderData + item)
+    final orderItemId = (json['orderItemId'] ?? json['id'] ?? '').toString();
     if (orderItemId.isEmpty) {
       throw Exception('orderItemId is required and cannot be null or empty');
     }
+
+    // Map status fields with normalization
+    String status =
+        (json['orderStatus'] ?? json['itemStatus'] ?? 'pending').toString();
+    status = status.toLowerCase() == 'processing' ? 'pending' : status;
+    status = status.toLowerCase();
+
+    String payment = (json['paymentStatus'] ?? 'cod').toString();
+    payment = payment.toLowerCase();
+
+    // Quantity fallback
+    final quantityNum =
+        json.containsKey('productQuantity')
+            ? json['productQuantity']
+            : json['quantity'];
+
+    // Date fallbacks
+    final created = json['createdAt'] ?? json['orderDate'];
+    final delivered = json['deliveredAt'] ?? json['updatedAt'];
 
     return OrderModel(
       orderId: (json['orderId'] ?? '').toString(),
       orderItemId: orderItemId,
       productId: (json['productId'] ?? '').toString(),
       productName: (json['productName'] ?? 'Unknown Product').toString(),
-      productQuantity: (json['productQuantity'] ?? 0.0).toDouble(),
+      productQuantity: (quantityNum ?? 0.0 as num).toDouble(),
       unit: (json['unit'] ?? 'kg').toString(),
       totalPrice: (json['totalPrice'] ?? 0.0).toDouble(),
-      orderStatus: json['orderStatus']?.toString() ?? 'pending',
-      paymentStatus: json['paymentStatus']?.toString() ?? 'pending',
+      orderStatus: status,
+      paymentStatus: payment,
       refundStatus: json['refundStatus']?.toString(),
       buyerId: json['buyerId']?.toString(),
       buyerName: json['buyerName']?.toString(),
@@ -71,14 +91,9 @@ class OrderModel {
           json['longitude'] != null
               ? (json['longitude'] as num).toDouble()
               : null,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'].toString())
-              : null,
+      createdAt: created != null ? DateTime.tryParse(created.toString()) : null,
       deliveredAt:
-          json['deliveredAt'] != null
-              ? DateTime.tryParse(json['deliveredAt'].toString())
-              : null,
+          delivered != null ? DateTime.tryParse(delivered.toString()) : null,
       deliveryConfirmedByBuyer:
           (json['deliveryConfirmedByBuyer'] ?? false) == true,
     );

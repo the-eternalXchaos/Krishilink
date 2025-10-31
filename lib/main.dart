@@ -45,6 +45,8 @@ import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.g.dart';
 import 'package:krishi_link/src/features/device/data/device_service.dart';
 import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
+import 'package:krishi_link/src/features/order/model/order_model.dart';
+import 'package:krishi_link/src/features/order/presentation/buyer_order_details_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/buyer_orders_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/farmer_order_details_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/farmer_orders_screen.dart';
@@ -301,6 +303,23 @@ class _MyAppState extends State<MyApp> {
           ),
           GetPage(name: '/buyer/orders', page: () => BuyerOrdersScreen()),
           GetPage(name: '/farmer/orders', page: () => FarmerOrdersScreen()),
+          GetPage(
+            name: '/buyer-order-details',
+            page: () {
+              final arg = Get.arguments;
+              if (arg is OrderModel) {
+                return BuyerOrderDetailsScreen(order: arg);
+              }
+              // Gracefully handle missing/invalid arguments to avoid null check crashes
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (Get.isOverlaysOpen == true) Get.back();
+                PopupService.error('Invalid order data for details page');
+              });
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            },
+          ),
           GetPage(
             name: '/admin/products',
             page: () => UnifiedProductManagement(),

@@ -338,7 +338,7 @@ class FarmerController extends GetxController {
           fetchedOrders.add(
             OrderModel(
               orderId: orderData['orderId']?.toString() ?? '',
-              orderItemId: item['orderItemId']?.toString()??'', // ✅ ADD THIS!
+              orderItemId: item['orderItemId']?.toString() ?? '', // ✅ ADD THIS!
               productId: productId,
               productName: productName,
               productQuantity: (item['quantity'] ?? 0).toDouble(),
@@ -346,6 +346,7 @@ class FarmerController extends GetxController {
               totalPrice: (item['totalPrice'] ?? 0.0).toDouble(),
               orderStatus: itemStatus.toLowerCase(),
               paymentStatus: paymentStatus.toLowerCase(),
+              deliveryConfirmedByBuyer: deliveryConfirmedByBuyer,
               buyerId: orderData['buyerId']?.toString(),
               buyerName: orderData['buyerName']?.toString(),
               buyerContact: orderData['buyerContact']?.toString(),

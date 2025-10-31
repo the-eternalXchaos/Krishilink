@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/src/features/order/data/order_service.dart';
 import 'package:krishi_link/src/features/order/model/order_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
+import 'package:krishi_link/src/features/product/presentation/controllers/product_controller.dart';
+import 'package:krishi_link/widgets/safe_network_image.dart';
 
 class BuyerOrdersScreen extends StatefulWidget {
   const BuyerOrdersScreen({super.key});
@@ -17,6 +20,11 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
   bool _loading = true;
   String? _error;
   List<OrderModel> _orders = const [];
+  // Cache product names by productId to avoid repeated network calls
+  final Map<String, String> _productNames = {};
+  final Set<String> _fetchingProductIds = {};
+  // Cache product images by productId
+  final Map<String, String> _productImages = {};
 
   @override
   void initState() {
@@ -88,7 +96,7 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
                 'orderId': orderId,
                 'orderItemId': itemMap['orderItemId'],
                 'productId': itemMap['productId'],
-                'productName': 'Product', // Will be fetched separately
+                'productName': '', // Will be fetched separately
                 'productQuantity': itemMap['quantity'] ?? 0,
                 'unit': 'kg',
                 'totalPrice': (itemMap['totalPrice'] ?? 0).toDouble(),
@@ -124,12 +132,105 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
         _orders = orders.reversed.toList();
         _loading = false;
       });
+
+      // Kick off product name fetches for all unique productIds
+      final uniqueIds = _orders.map((e) => e.productId).toSet();
+      for (final pid in uniqueIds) {
+        _ensureProductName(pid);
+        _ensureProductImage(pid);
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
         _loading = false;
       });
     }
+  }
+
+  Future<void> _ensureProductImage(String productId) async {
+    if (productId.isEmpty) return;
+    if (_productImages.containsKey(productId)) return;
+    if (_fetchingProductIds.contains(productId)) return;
+    _fetchingProductIds.add(productId);
+    try {
+      // Try product from ProductController cache first
+      if (Get.isRegistered<ProductController>()) {
+        final pc = Get.find<ProductController>();
+        Product? cached;
+        for (final p in pc.products) {
+          if (p.id == productId) {
+            cached = p;
+            break;
+          }
+        }
+        if (cached != null && cached.image.isNotEmpty) {
+          setState(() => _productImages[productId] = cached!.image);
+          return;
+        }
+      }
+
+      // Fallback: fetch single product via existing endpoint
+      final res = await _orderService.getProductById(productId);
+      if (res.statusCode == 200 && res.data is Map) {
+        final data = res.data as Map;
+        final inner =
+            (data['data'] as Map<String, dynamic>?) ??
+            data.cast<String, dynamic>();
+        final product = Product.fromJson(inner);
+        if (product.image.isNotEmpty) {
+          setState(() => _productImages[productId] = product.image);
+        }
+      }
+    } catch (_) {
+      // ignore
+    } finally {
+      _fetchingProductIds.remove(productId);
+    }
+  }
+
+  Future<void> _ensureProductName(String productId) async {
+    if (productId.isEmpty) return;
+    if (_productNames.containsKey(productId)) return;
+    if (_fetchingProductIds.contains(productId)) return;
+    _fetchingProductIds.add(productId);
+    try {
+      final res = await _orderService.getProductById(productId);
+      if (res.statusCode == 200 && res.data != null) {
+        final data = res.data;
+        String? name;
+        if (data is Map<String, dynamic>) {
+          final inner = (data['data'] as Map<String, dynamic>?) ?? data;
+          name = (inner['productName'] ?? inner['name'])?.toString();
+        }
+        name ??= 'Product #${_shortId(productId)}';
+
+        // Cache and update any matching orders with empty productName
+        setState(() {
+          _productNames[productId] = name!;
+          _orders =
+              _orders
+                  .map(
+                    (o) =>
+                        o.productId == productId && (o.productName.isEmpty)
+                            ? o.copyWith(productName: name)
+                            : o,
+                  )
+                  .toList();
+        });
+      }
+    } catch (e) {
+      // Cache a fallback to avoid retry loops
+      setState(() {
+        _productNames[productId] = 'Product #${_shortId(productId)}';
+      });
+    } finally {
+      _fetchingProductIds.remove(productId);
+    }
+  }
+
+  String _shortId(String id) {
+    if (id.length <= 8) return id;
+    return '${id.substring(0, 4)}…${id.substring(id.length - 4)}';
   }
 
   @override
@@ -162,8 +263,29 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final o = _orders[index];
+        // Resolve display name (cache > model > short id)
+        final cachedName = _productNames[o.productId];
+        if (cachedName == null) {
+          // Ensure fetch started for this product
+          _ensureProductName(o.productId);
+        }
+        final displayName =
+            cachedName?.isNotEmpty == true
+                ? cachedName!
+                : (o.productName.isNotEmpty
+                    ? o.productName
+                    : 'Product #${_shortId(o.productId)}');
+
+        // Resolve image URL and kick off fetch if missing
+        final imageUrl = _productImages[o.productId];
+        if (imageUrl == null) {
+          _ensureProductImage(o.productId);
+        }
+
         return _OrderTile(
           order: o,
+          displayProductName: displayName,
+          imageUrl: imageUrl,
           onOpen: () async {
             // Log the order payload and navigate to details
             debugPrint('[UI][BuyerOrders] Opening order ${o.orderId}');
@@ -185,8 +307,15 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
 
 class _OrderTile extends StatelessWidget {
   final OrderModel order;
+  final String displayProductName;
+  final String? imageUrl;
   final Future<void> Function() onOpen;
-  const _OrderTile({required this.order, required this.onOpen});
+  const _OrderTile({
+    required this.order,
+    required this.displayProductName,
+    required this.imageUrl,
+    required this.onOpen,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -209,31 +338,34 @@ class _OrderTile extends StatelessWidget {
             children: [
               Stack(
                 children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          cs.primaryContainer,
-                          cs.primary.withValues(alpha: 0.5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: cs.primary.withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.shopping_bag_outlined,
-                      color: cs.primary,
-                      size: 28,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child:
+                          imageUrl != null && imageUrl!.isNotEmpty
+                              ? SafeNetworkImage(
+                                imageUrl: imageUrl!,
+                                fit: BoxFit.cover,
+                              )
+                              : Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      cs.primaryContainer,
+                                      cs.primary.withValues(alpha: 0.5),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: cs.primary,
+                                  size: 28,
+                                ),
+                              ),
                     ),
                   ),
                   if (hasDeliveredItems)
@@ -274,53 +406,61 @@ class _OrderTile extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.shopping_bag_outlined,
-                          size: 14,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          order.productName,
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.payments_outlined,
-                          size: 14,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Rs ${order.totalPrice.toStringAsFixed(2)}',
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                    // Give product name its own larger row (wrap up to 2 lines)
+                    Text(
+                      displayProductName,
+                      style: tt.bodyMedium?.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
+                    // Put date (left) and price (right) on the same row
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 12,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatDate(order.createdAt) ?? '',
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
+                        Expanded(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: cs.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  _formatDate(order.createdAt) ?? '',
+                                  style: tt.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.payments_outlined,
+                              size: 14,
+                              color: cs.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Rs ${order.totalPrice.toStringAsFixed(2)}',
+                              style: tt.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
