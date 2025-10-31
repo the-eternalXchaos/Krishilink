@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/auth/controller/cart_controller.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PaymentWebViewScreen extends StatefulWidget {
@@ -28,27 +28,28 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) => setState(() => _isLoading = true),
-          onPageFinished: (url) => setState(() => _isLoading = false),
-          onNavigationRequest: (req) {
-            final url = req.url;
-            if (url.startsWith(ApiConstants.paymentSuccessEndpoint)) {
-              _handleSuccess();
-              return NavigationDecision.prevent;
-            }
-            if (url.startsWith(ApiConstants.paymentFailureEndpoint)) {
-              _handleFailure();
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.paymentUrl));
+    _controller =
+        WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onPageStarted: (url) => setState(() => _isLoading = true),
+              onPageFinished: (url) => setState(() => _isLoading = false),
+              onNavigationRequest: (req) {
+                final url = req.url;
+                if (url.startsWith(ApiConstants.paymentSuccessEndpoint)) {
+                  _handleSuccess();
+                  return NavigationDecision.prevent;
+                }
+                if (url.startsWith(ApiConstants.paymentFailureEndpoint)) {
+                  _handleFailure();
+                  return NavigationDecision.prevent;
+                }
+                return NavigationDecision.navigate;
+              },
+            ),
+          )
+          ..loadRequest(Uri.parse(widget.paymentUrl));
   }
 
   void _handleSuccess() {
@@ -78,11 +79,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
   }
 }
-
