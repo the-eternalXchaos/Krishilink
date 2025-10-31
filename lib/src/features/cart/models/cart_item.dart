@@ -1,5 +1,5 @@
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/product/data/models/product_model.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 
 class CartItem {
   final String id;

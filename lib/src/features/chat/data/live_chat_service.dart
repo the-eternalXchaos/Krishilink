@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:signalr_netcore/signalr_client.dart';

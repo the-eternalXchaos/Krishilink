@@ -3,7 +3,7 @@
 // import 'package:get/get.dart' hide FormData, MultipartFile;
 // import '../models/chat_room.dart';
 // import '../models/message.dart';
-// import '../../../core/utils/api_constants.dart';
+// import 'package:krishi_link/src/core/constants/api_constants.dart';
 // import '../../../features/auth/controller/auth_controller.dart';
 
 // class ChatApiService {
@@ -220,8 +220,9 @@
 // lib/features/chat/live_chat/live_chat_api_service.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/features/chat/models/live_chat_model.dart'  ;
+import 'package:krishi_link/src/core/constants/api_constants.dart';
+import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
+
 import '../models/chat_room.dart';
 import '../models/message.dart';
 

@@ -1,13 +1,13 @@
 // Legacy shim
-export 'package:krishi_link/src/features/product/presentation/widgets/related_products_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:krishi_link/widgets/safe_network_image.dart';
-import '../../../src/features/product/presentation/controllers/product_controller.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:krishi_link/features/product/screens/product_detail_page.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
+import 'package:krishi_link/widgets/safe_network_image.dart';
+
+import '../../../src/features/product/presentation/controllers/product_controller.dart';
+
+export 'package:krishi_link/src/features/product/presentation/widgets/related_products_widget.dart';
 
 class RelatedProductsWidget extends StatefulWidget {
   final String productId;

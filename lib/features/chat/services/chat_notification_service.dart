@@ -1,16 +1,18 @@
 import 'dart:convert';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart' hide Message;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    hide Message;
 import 'package:get/get.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:http/http.dart' as http;
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:logger/logger.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
 import '../controllers/chat_controller.dart';
 import '../models/message.dart';
-import '../models/chat_room.dart';
-import 'package:http/http.dart' as http;
-import 'package:device_info_plus/device_info_plus.dart';
 
 class ChatNotificationService extends GetxService {
   final Logger _logger = Logger();

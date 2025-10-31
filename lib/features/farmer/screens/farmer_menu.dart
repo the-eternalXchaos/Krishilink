@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
-import 'package:krishi_link/src/core/constants/app_spacing.dart';
-import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/buyer/screens/buyer_home_page.dart';
+import 'package:krishi_link/src/core/components/confirm%20box/custom_confirm_dialog.dart';
 import 'package:krishi_link/src/core/components/product/management/unified_product_management.dart';
+import 'package:krishi_link/src/core/constants/app_spacing.dart';
 
 class FarmerMenu extends StatelessWidget {
   const FarmerMenu({super.key});
@@ -32,8 +31,9 @@ class FarmerMenu extends StatelessWidget {
               const Divider(),
               _buildMenuItem(
                 Icons.shopping_basket,
-                'my_orders'.tr,
-                () => Get.toNamed('/farmer-orders'),
+                'customer_orders'.tr,
+                // () => Get.toNamed('/customer/orders'),
+                () => Get.toNamed('/farmer/orders'),
               ),
               _buildMenuItem(
                 Icons.store,

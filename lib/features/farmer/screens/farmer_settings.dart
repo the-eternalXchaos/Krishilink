@@ -2,7 +2,7 @@
 // import 'package:get/get.dart';
 // import 'package:animate_do/animate_do.dart';
 // import 'package:krishi_link/core/theme/app_theme.dart';
-// import 'package:krishi_link/core/utils/api_constants.dart';
+// import 'package:krishi_link/src/core/constants/api_constants.dart';
 // import 'package:http/http.dart' as http;
 // import 'dart:convert';
 

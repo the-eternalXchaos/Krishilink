@@ -1,15 +1,15 @@
 import 'dart:convert';
+
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/features/admin/models/user_model.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:krishi_link/features/admin/models/user_model.dart';
-import 'package:dio/dio.dart' as dio;
 
 class TokenService {
   // Tracks whether the last refresh attempt failed due to a network error.
@@ -194,7 +194,7 @@ class TokenService {
       );
       debugPrint('[TokenService] Refresh response data: ${response.data}');
       debugPrint('[TokenService] Refresh status code: ${response.statusCode}');
-      
+
       // Only clear tokens on 401 (Unauthorized - invalid/expired refresh token)
       // Don't clear on 404 - could be temporary backend issue
       if (response.statusCode == 401) {
@@ -205,16 +205,18 @@ class TokenService {
         debugPrint('[TokenService] Tokens cleared due to 401 Unauthorized');
         return false;
       }
-      
+
       if (response.statusCode == 404) {
         debugPrint(
           '[TokenService] Token refresh failed: 404 (backend user lookup issue)',
         );
-        debugPrint('[TokenService] Keeping tokens - may be temporary backend issue');
+        debugPrint(
+          '[TokenService] Keeping tokens - may be temporary backend issue',
+        );
         // DON'T clear tokens - 404 could be temporary backend/database issue
         return false;
       }
-      
+
       if (response.statusCode != 200) {
         debugPrint(
           '[TokenService] Token refresh failed: ${response.statusCode}',

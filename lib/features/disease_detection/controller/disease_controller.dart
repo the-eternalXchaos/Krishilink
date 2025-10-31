@@ -1,11 +1,11 @@
-import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
+import 'package:get/get.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
+import 'package:path/path.dart' as p;
 
 class DiseaseController extends GetxController {
   final isLoading = false.obs;

@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
-
-import 'package:krishi_link/src/core/networking/base_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/weather/weather_model.dart';
-
+import 'package:krishi_link/src/core/constants/api_constants.dart';
+import 'package:krishi_link/src/core/networking/base_service.dart';
 
 class WeatherRequest {
   final double latitude;

@@ -45,6 +45,12 @@ abstract class BaseService {
     } on ApiException {
       rethrow; // Re-throw API exceptions as-is
     } catch (e) {
+
+
+
+// ApiException (ApiException: No internet connection. Please check your network. (Code: 0, Error: NO_INTERNET))
+
+
       // Convert unexpected errors to ApiException
       throw ApiException(
         message: 'An unexpected error occurred: ${e.toString()}',

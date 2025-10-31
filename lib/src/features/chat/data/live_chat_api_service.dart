@@ -6,7 +6,7 @@ import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
 class LiveChatApiService extends BaseService {
   Future<List<Map<String, dynamic>>> getMyCustomersForChat() async {
     return executeApiCall(() async {
-      final response = await apiClient.get('/api/Chat/getMyCustomersForChat');
+      final response = await apiClient.get('/api/Chat/getMyCustomersForChat' );
       final data = response.data;
       if (data is! Map<String, dynamic> || !data['success']) {
         throw Exception(data['message'] ?? 'Failed to fetch customers');

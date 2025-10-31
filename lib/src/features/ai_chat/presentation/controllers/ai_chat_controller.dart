@@ -4,12 +4,11 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
-
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:path/path.dart';
-import 'package:krishi_link/src/features/ai_chat/presentation/controllers/ai_chat_controller.dart';
+
 class AiChatController extends GetxController {
   // --- UI state ---
   final inputController = TextEditingController();

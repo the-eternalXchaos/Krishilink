@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/features/notification/model/notification_model.dart';
 
 class NotificationUtils {

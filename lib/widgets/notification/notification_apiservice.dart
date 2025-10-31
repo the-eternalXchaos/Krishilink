@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/notification/model/notification_model.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 
 class NotificationApiservice extends ApiService {

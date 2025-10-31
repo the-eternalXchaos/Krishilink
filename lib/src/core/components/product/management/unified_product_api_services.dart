@@ -1,14 +1,15 @@
 import 'dart:io';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
-import 'package:path/path.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/src/features/product/data/models/product_model.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
-import 'package:get/get.dart';
+import 'package:path/path.dart';
 
 class UnifiedProductApiServices extends ApiService {
   final AuthController _authController = Get.find<AuthController>();

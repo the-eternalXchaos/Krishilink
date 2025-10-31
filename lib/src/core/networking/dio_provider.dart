@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 
 class DioProvider {
   DioProvider() {

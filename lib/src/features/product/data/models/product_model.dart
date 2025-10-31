@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 
 @HiveType(typeId: 5)
 class Product extends HiveObject {

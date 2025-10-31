@@ -1,4 +1,4 @@
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/networking/api_client.dart';
 
 /// Configuration for the new feature-first architecture

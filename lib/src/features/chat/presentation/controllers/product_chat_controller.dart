@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';

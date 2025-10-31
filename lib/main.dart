@@ -45,13 +45,9 @@ import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.g.dart';
 import 'package:krishi_link/src/features/device/data/device_service.dart';
 import 'package:krishi_link/src/features/language/presentation/controllers/language_controller.dart';
-import 'package:krishi_link/src/features/order/binding/order_summary_binding.dart';
-import 'package:krishi_link/src/features/order/presentation/farmer_orders_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/manage_orders_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/order_details_screen.dart';
 import 'package:krishi_link/src/features/order/presentation/buyer_orders_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/buyer_order_details_screen.dart';
-import 'package:krishi_link/src/features/order/presentation/order_summary_page.dart';
+import 'package:krishi_link/src/features/order/presentation/farmer_order_details_screen.dart';
+import 'package:krishi_link/src/features/order/presentation/farmer_orders_screen.dart';
 import 'package:krishi_link/src/features/payment/data/local/payment_history_local_data_source.dart';
 import 'package:krishi_link/src/features/payment/models/payment_history.g.dart';
 import 'package:krishi_link/src/features/product/data/models/product_model.g.dart';
@@ -303,10 +299,8 @@ class _MyAppState extends State<MyApp> {
             name: '/disease-detection',
             page: () => DiseaseDetectionScreen(),
           ),
-          GetPage(
-            name: '/farmer-orders',
-            page: () => const FarmerOrdersScreen(),
-          ),
+          GetPage(name: '/buyer/orders', page: () => BuyerOrdersScreen()),
+          GetPage(name: '/farmer/orders', page: () => FarmerOrdersScreen()),
           GetPage(
             name: '/admin/products',
             page: () => UnifiedProductManagement(),
@@ -322,7 +316,7 @@ class _MyAppState extends State<MyApp> {
           ),
           GetPage(
             name: '/order-details',
-            page: () => OrderDetailsScreen(order: Get.arguments),
+            page: () => FarmerOrderDetailsScreen(order: Get.arguments),
           ),
           GetPage(
             name: '/tutorial-details',
@@ -345,18 +339,6 @@ class _MyAppState extends State<MyApp> {
             binding: PaymentBinding(),
           ),
           GetPage(
-            name: '/my-orders',
-            page: () => const BuyerOrdersScreen(),
-            middlewares: [AuthMiddleware()],
-            transition: Transition.fadeIn,
-          ),
-          GetPage(
-            name: '/buyer-order-details',
-            page: () => BuyerOrderDetailsScreen(order: Get.arguments),
-            middlewares: [AuthMiddleware()],
-            transition: Transition.cupertino,
-          ),
-          GetPage(
             name: '/payment-webview',
             page: () {
               final args = Get.arguments as Map<String, dynamic>?;
@@ -374,13 +356,13 @@ class _MyAppState extends State<MyApp> {
             },
             binding: PaymentBinding(),
           ),
-          GetPage(
-            name: '/orders/summary',
-            page: () => const OrderSummaryPage(),
-            binding: OrderSummaryBinding(),
-            middlewares: [AuthMiddleware()],
-            transition: Transition.fadeIn,
-          ),
+          // GetPage(
+          //   name: '/orders/summary',
+          //   page: () => const OrderSummaryPage(),
+          //   binding: OrderSummaryBinding(),
+          //   middlewares: [AuthMiddleware()],
+          //   transition: Transition.fadeIn,
+          // ),
           GetPage(
             name: '/otp-verify',
             page: () {
@@ -425,11 +407,11 @@ class _MyAppState extends State<MyApp> {
             page: () => UnifiedProductManagement(),
             binding: AdminBinding(),
           ),
-          GetPage(
-            name: '/admin/orders',
-            page: () => const ManageOrdersScreen(),
-            binding: AdminBinding(),
-          ),
+          // GetPage(
+          //   name: '/admin/orders',
+          //   page: () => const ManageOrdersScreen(),
+          //   binding: AdminBinding(),
+          // ),
           GetPage(
             name: '/admin/categories',
             page: () => const CategoryScreen(),

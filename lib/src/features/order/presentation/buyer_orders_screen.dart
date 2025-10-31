@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:krishi_link/src/features/order/data/order_service.dart';
-import 'package:krishi_link/src/features/order/model/buyer_order_models.dart';
+import 'package:krishi_link/src/features/order/model/order_model.dart';
 
 class BuyerOrdersScreen extends StatefulWidget {
   const BuyerOrdersScreen({super.key});
@@ -16,7 +16,7 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
   final OrderService _orderService = Get.put(OrderService());
   bool _loading = true;
   String? _error;
-  List<BuyerOrder> _orders = const [];
+  List<OrderModel> _orders = const [];
 
   @override
   void initState() {
@@ -30,12 +30,11 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       _error = null;
     });
     try {
-    final res = await _orderService.getMyOrders();
-    debugPrint('[UI][BuyerOrders] Fetched orders: status=${res.statusCode}');
-    debugPrint('[UI][BuyerOrders] Raw body (preview): ' +
-      (res.data.toString().length > 1500
-        ? res.data.toString().substring(0, 1500) + '…'
-        : res.data.toString()));
+      final res = await _orderService.getMyOrders();
+      debugPrint('[UI][BuyerOrders] Fetched orders: status=${res.statusCode}');
+      debugPrint(
+        '[UI][BuyerOrders] Raw body (preview): ${res.data.toString().length > 1500 ? '${res.data.toString().substring(0, 1500)}…' : res.data.toString()}',
+      );
       final data = res.data;
       List list;
       if (data is List) {
@@ -60,12 +59,69 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       } else {
         list = const [];
       }
-    final orders = list
-      .whereType<Map>()
-      .map((e) => BuyerOrder.fromJson(e.cast<String, dynamic>()))
-      .toList();
+
+      // Parse buyer orders with orderItems array
+      final orders = <OrderModel>[];
+      for (final item in list.whereType<Map>()) {
+        final orderMap = item.cast<String, dynamic>();
+        final orderId = orderMap['orderId']?.toString() ?? '';
+        final buyerId = orderMap['buyerId']?.toString();
+        final orderDate =
+            orderMap['orderDate'] != null
+                ? DateTime.tryParse(orderMap['orderDate'].toString())
+                : null;
+        final updatedAt =
+            orderMap['updatedAt'] != null
+                ? DateTime.tryParse(orderMap['updatedAt'].toString())
+                : null;
+
+        // Get order items array
+        final orderItems = orderMap['orderItems'];
+        if (orderItems is List && orderItems.isNotEmpty) {
+          // Create an OrderModel for each order item
+          for (final orderItem in orderItems) {
+            if (orderItem is Map) {
+              final itemMap = orderItem.cast<String, dynamic>();
+
+              // Flatten the structure to match OrderModel
+              final flatOrder = {
+                'orderId': orderId,
+                'orderItemId': itemMap['orderItemId'],
+                'productId': itemMap['productId'],
+                'productName': 'Product', // Will be fetched separately
+                'productQuantity': itemMap['quantity'] ?? 0,
+                'unit': 'kg',
+                'totalPrice': (itemMap['totalPrice'] ?? 0).toDouble(),
+                'orderStatus':
+                    itemMap['itemStatus']?.toString().toLowerCase() ??
+                    'pending',
+                'paymentStatus': itemMap['paymentStatus'] ?? 'COD',
+                'refundStatus': itemMap['refundStatus'],
+                'buyerId': buyerId,
+                'buyerName': null,
+                'buyerContact': null,
+                'deliveryAddress': null,
+                'latitude': null,
+                'longitude': null,
+                'createdAt': orderDate?.toIso8601String(),
+                'deliveredAt': updatedAt?.toIso8601String(),
+                'deliveryConfirmedByBuyer':
+                    itemMap['deliveryConfirmedByBuyer'] ?? false,
+              };
+
+              try {
+                orders.add(OrderModel.fromJson(flatOrder));
+              } catch (e) {
+                debugPrint('[UI][BuyerOrders] Error parsing order item: $e');
+              }
+            }
+          }
+        }
+      }
+
+      // Reverse to show latest orders first
       setState(() {
-        _orders = orders;
+        _orders = orders.reversed.toList();
         _loading = false;
       });
     } catch (e) {
@@ -85,10 +141,7 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
         backgroundColor: cs.primary,
         foregroundColor: cs.onPrimary,
       ),
-      body: RefreshIndicator(
-        onRefresh: _fetch,
-        child: _buildBody(context),
-      ),
+      body: RefreshIndicator(onRefresh: _fetch, child: _buildBody(context)),
     );
   }
 
@@ -109,23 +162,29 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final o = _orders[index];
-        return _OrderTile(order: o, onOpen: () async {
-          // Log the order payload and navigate to details
-          debugPrint('[UI][BuyerOrders] Opening order ${o.orderId}');
-          debugPrint('[UI][BuyerOrders] Order payload: ' + o.toString());
-          final result = await Get.toNamed('/buyer-order-details', arguments: o);
-          if (result == true) {
-            // e.g., after cancel, refresh
-            _fetch();
-          }
-        });
+        return _OrderTile(
+          order: o,
+          onOpen: () async {
+            // Log the order payload and navigate to details
+            debugPrint('[UI][BuyerOrders] Opening order ${o.orderId}');
+            debugPrint('[UI][BuyerOrders] Order payload: $o');
+            final result = await Get.toNamed(
+              '/buyer-order-details',
+              arguments: o,
+            );
+            if (result == true) {
+              // e.g., after cancel, refresh
+              _fetch();
+            }
+          },
+        );
       },
     );
   }
 }
 
 class _OrderTile extends StatelessWidget {
-  final BuyerOrder order;
+  final OrderModel order;
   final Future<void> Function() onOpen;
   const _OrderTile({required this.order, required this.onOpen});
 
@@ -133,54 +192,143 @@ class _OrderTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    // Check if buyer confirmed delivery
+    final hasDeliveredItems = order.deliveryConfirmedByBuyer;
+
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-  onTap: onOpen,
+        borderRadius: BorderRadius.circular(16),
+        onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.shopping_bag, color: cs.onPrimaryContainer),
+              Stack(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          cs.primaryContainer,
+                          cs.primary.withValues(alpha: 0.5),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: cs.primary.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.shopping_bag_outlined,
+                      color: cs.primary,
+                      size: 28,
+                    ),
+                  ),
+                  if (hasDeliveredItems)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Order ${_shortId(order.orderId)}',
-                        style: tt.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        )),
-                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        _Chip(label: order.overallStatus.capitalizeFirst ?? order.overallStatus),
-                        const SizedBox(width: 8),
-                        _Chip(label: 'Rs ${order.totalAmount.toStringAsFixed(2)}'),
-                        const SizedBox(width: 8),
-                        _Chip(label: '${order.items.length} item${order.items.length == 1 ? '' : 's'}'),
+                        Expanded(
+                          child: Text(
+                            'Order #${_shortId(order.orderId)}',
+                            style: tt.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        _StatusBadge(status: order.orderStatus),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 14,
+                          color: cs.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          order.productName,
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.payments_outlined,
+                          size: 14,
+                          color: cs.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Rs ${order.totalPrice.toStringAsFixed(2)}',
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      _formatDate(order.orderDate) ?? '',
-                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(order.createdAt) ?? '',
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: cs.primary, size: 24),
             ],
           ),
         ),
@@ -191,7 +339,7 @@ class _OrderTile extends StatelessWidget {
   String? _formatDate(DateTime? dt) {
     if (dt == null) return null;
     // Simple yyyy-MM-dd HH:mm display
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}';
   }
 
@@ -201,19 +349,68 @@ class _OrderTile extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  final String label;
-  const _Chip({required this.label});
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  const _StatusBadge({required this.status});
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
+    Color bgColor;
+    Color textColor;
+    IconData icon;
+
+    switch (status.toLowerCase()) {
+      case 'delivered':
+      case 'completed':
+        bgColor = Colors.green.withValues(alpha: 0.15);
+        textColor = Colors.green.shade700;
+        icon = Icons.check_circle;
+        break;
+      case 'shipped':
+        bgColor = Colors.blue.withValues(alpha: 0.15);
+        textColor = Colors.blue.shade700;
+        icon = Icons.local_shipping;
+        break;
+      case 'confirmed':
+      case 'processing':
+        bgColor = Colors.orange.withValues(alpha: 0.15);
+        textColor = Colors.orange.shade700;
+        icon = Icons.autorenew;
+        break;
+      case 'cancelled':
+        bgColor = Colors.red.withValues(alpha: 0.15);
+        textColor = Colors.red.shade700;
+        icon = Icons.cancel;
+        break;
+      default:
+        bgColor = cs.surfaceContainerHighest;
+        textColor = cs.onSurface;
+        icon = Icons.pending;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: cs.surfaceVariant,
-        borderRadius: BorderRadius.circular(6),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            status.capitalizeFirst ?? status,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -240,7 +437,9 @@ class _EmptyView extends StatelessWidget {
         Center(
           child: Text(
             'Your orders will show up here.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),
         const SizedBox(height: 16),

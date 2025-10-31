@@ -176,6 +176,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen>
                                   onTap: () async {
                                     final updatedOrder = await Get.toNamed(
                                       '/order-details',
+                                      
                                       arguments: order,
                                     );
                                     if (updatedOrder != null) {

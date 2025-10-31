@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile;
-import '../../../core/utils/api_constants.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import '../../../features/auth/controller/auth_controller.dart';
 import '../models/simple_chat_room.dart';
 import '../models/simple_message.dart';

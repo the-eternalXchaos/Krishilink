@@ -1,17 +1,13 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:path/path.dart';
 
-import 'package:krishi_link/src/core/networking/base_service.dart';
-import 'package:krishi_link/core/utils/api_constants.dart';
-import 'package:krishi_link/features/notification/model/notification_model.dart';
-import 'package:krishi_link/src/features/order/model/order_model.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:krishi_link/features/farmer/models/crop_model.dart';
 import 'package:krishi_link/features/farmer/models/tutorial_model.dart';
-import 'package:krishi_link/features/weather/weather_model.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
+import 'package:krishi_link/src/core/networking/base_service.dart';
+import 'package:krishi_link/src/features/order/model/order_model.dart';
+import 'package:path/path.dart';
 
 // DTOs for requests
 class AddCropRequest {

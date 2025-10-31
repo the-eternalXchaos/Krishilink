@@ -234,7 +234,7 @@ class _AiChatScreenState extends State<AiChatScreen>
     final cs = theme.colorScheme;
 
     return Container(
-      height: 160,
+      height: 180,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [cs.primary, cs.primary.withValues(alpha: 0.8)],

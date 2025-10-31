@@ -1,5 +1,6 @@
 class OrderModel {
   final String orderId;
+  final String orderItemId; // Individual order item ID for status updates
   final String productId;
   final String productName;
   final double productQuantity;
@@ -9,14 +10,19 @@ class OrderModel {
   orderStatus; // , pending, confirmed, shipped, delivered, cancelled
   final String paymentStatus; // e.g., pending, completed, failed
   final String? refundStatus; // e.g., requested, approved, rejected
+  final String? buyerId;
   final String? buyerName;
   final String? buyerContact;
   final String? deliveryAddress;
+  final double? latitude;
+  final double? longitude;
   final DateTime? createdAt;
   final DateTime? deliveredAt;
+  final bool deliveryConfirmedByBuyer;
 
   OrderModel({
     required this.orderId,
+    required this.orderItemId,
     required this.productId,
     required this.productName,
     required this.productQuantity,
@@ -25,38 +31,62 @@ class OrderModel {
     required this.orderStatus,
     required this.paymentStatus,
     this.refundStatus,
+    this.buyerId,
     this.buyerName,
     this.buyerContact,
     this.deliveryAddress,
+    this.latitude,
+    this.longitude,
     this.createdAt,
     this.deliveredAt,
+    this.deliveryConfirmedByBuyer = false,
   });
 
-  factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
-    orderId: (json['orderId'] ?? '').toString(),
-    productId: (json['productId'] ?? '').toString(),
-    productName: (json['productName'] ?? 'Unknown Product').toString(),
-    productQuantity: (json['productQuantity'] ?? 0.0).toDouble(),
-    unit: (json['unit'] ?? 'kg').toString(),
-    totalPrice: (json['totalPrice'] ?? 0.0).toDouble(),
-    orderStatus: json['orderStatus']?.toString() ?? 'pending',
-    paymentStatus: json['paymentStatus']?.toString() ?? 'pending',
-    refundStatus: json['refundStatus']?.toString(),
-    buyerName: json['buyerName']?.toString(),
-    buyerContact: json['buyerContact']?.toString(),
-    deliveryAddress: json['deliveryAddress']?.toString(),
-    createdAt:
-        json['createdAt'] != null
-            ? DateTime.tryParse(json['createdAt'].toString())
-            : null,
-    deliveredAt:
-        json['deliveredAt'] != null
-            ? DateTime.tryParse(json['deliveredAt'].toString())
-            : null,
-  );
+  factory OrderModel.fromJson(Map<String, dynamic> json) {
+    final orderItemId = json['orderItemId']?.toString() ?? '';
+    if (orderItemId.isEmpty) {
+      throw Exception('orderItemId is required and cannot be null or empty');
+    }
+
+    return OrderModel(
+      orderId: (json['orderId'] ?? '').toString(),
+      orderItemId: orderItemId,
+      productId: (json['productId'] ?? '').toString(),
+      productName: (json['productName'] ?? 'Unknown Product').toString(),
+      productQuantity: (json['productQuantity'] ?? 0.0).toDouble(),
+      unit: (json['unit'] ?? 'kg').toString(),
+      totalPrice: (json['totalPrice'] ?? 0.0).toDouble(),
+      orderStatus: json['orderStatus']?.toString() ?? 'pending',
+      paymentStatus: json['paymentStatus']?.toString() ?? 'pending',
+      refundStatus: json['refundStatus']?.toString(),
+      buyerId: json['buyerId']?.toString(),
+      buyerName: json['buyerName']?.toString(),
+      buyerContact: json['buyerContact']?.toString(),
+      deliveryAddress: json['deliveryAddress']?.toString(),
+      latitude:
+          json['latitude'] != null
+              ? (json['latitude'] as num).toDouble()
+              : null,
+      longitude:
+          json['longitude'] != null
+              ? (json['longitude'] as num).toDouble()
+              : null,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString())
+              : null,
+      deliveredAt:
+          json['deliveredAt'] != null
+              ? DateTime.tryParse(json['deliveredAt'].toString())
+              : null,
+      deliveryConfirmedByBuyer:
+          (json['deliveryConfirmedByBuyer'] ?? false) == true,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'orderId': orderId,
+    'orderItemId': orderItemId,
     'productId': productId,
     'productName': productName,
     'productQuantity': productQuantity,
@@ -65,15 +95,20 @@ class OrderModel {
     'orderStatus': orderStatus,
     'paymentStatus': paymentStatus,
     'refundStatus': refundStatus,
+    'buyerId': buyerId,
     'buyerName': buyerName,
     'buyerContact': buyerContact,
     'deliveryAddress': deliveryAddress,
+    'latitude': latitude,
+    'longitude': longitude,
     'createdAt': createdAt?.toIso8601String(),
     'deliveredAt': deliveredAt?.toIso8601String(),
+    'deliveryConfirmedByBuyer': deliveryConfirmedByBuyer,
   };
 
   OrderModel copyWith({
     String? orderId,
+    String? orderItemId,
     String? productId,
     String? productName,
     double? productQuantity,
@@ -82,13 +117,18 @@ class OrderModel {
     String? orderStatus,
     String? paymentStatus,
     String? refundStatus,
+    String? buyerId,
     String? buyerName,
     String? buyerContact,
     String? deliveryAddress,
+    double? latitude,
+    double? longitude,
     DateTime? createdAt,
     DateTime? deliveredAt,
+    bool? deliveryConfirmedByBuyer,
   }) => OrderModel(
     orderId: orderId ?? this.orderId,
+    orderItemId: orderItemId ?? this.orderItemId,
     productId: productId ?? this.productId,
     productName: productName ?? this.productName,
     productQuantity: productQuantity ?? this.productQuantity,
@@ -97,10 +137,15 @@ class OrderModel {
     orderStatus: orderStatus ?? this.orderStatus,
     paymentStatus: paymentStatus ?? this.paymentStatus,
     refundStatus: refundStatus ?? this.refundStatus,
+    buyerId: buyerId ?? this.buyerId,
     buyerName: buyerName ?? this.buyerName,
     buyerContact: buyerContact ?? this.buyerContact,
     deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+    latitude: latitude ?? this.latitude,
+    longitude: longitude ?? this.longitude,
     createdAt: createdAt ?? this.createdAt,
     deliveredAt: deliveredAt ?? this.deliveredAt,
+    deliveryConfirmedByBuyer:
+        deliveryConfirmedByBuyer ?? this.deliveryConfirmedByBuyer,
   );
 }

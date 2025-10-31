@@ -1,20 +1,18 @@
 // lib/features/farmer/controller/farmer_controller.dart
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
-import 'package:krishi_link/features/notification/model/notification_model.dart';
-import 'package:krishi_link/src/features/order/model/order_model.dart';
-import 'package:krishi_link/src/features/product/data/models/product_model.dart';
-import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/features/farmer/data/farmer_api_service.dart';
+import 'package:krishi_link/src/features/order/data/order_service.dart';
+import 'package:krishi_link/src/features/order/model/order_model.dart';
+import 'package:krishi_link/src/features/product/data/models/product_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/tutorial_model.dart';
+
 import '../models/crop_model.dart';
-import 'package:krishi_link/src/core/components/product/product_form_data.dart';
+import '../models/tutorial_model.dart';
 
 class FarmerController extends GetxController {
   final FarmerApiService apiServices =
@@ -272,7 +270,113 @@ class FarmerController extends GetxController {
   Future<void> fetchOrders() async {
     try {
       await _updateLoading(true);
-      final fetchedOrders = await apiServices.fetchOrders();
+      final orderService =
+          Get.isRegistered<OrderService>()
+              ? Get.find<OrderService>()
+              : Get.put(OrderService());
+      final response = await orderService.getCustomerOrders();
+
+      // Parse the new API response structure
+      final data = response.data['data'] as List;
+      final fetchedOrders = <OrderModel>[];
+
+      // Convert each order with nested orderItems to flat OrderModel list
+      for (var orderData in data) {
+        final orderItems = orderData['orderItems'] as List? ?? [];
+        debugPrint(
+          '[FarmerController] Processing order: ${orderData['orderId']}',
+        );
+        debugPrint('[FarmerController] Order has ${orderItems.length} items');
+
+        // Create an OrderModel for each orderItem
+        for (var item in orderItems) {
+          debugPrint('[FarmerController] OrderItem ID: ${item['orderItemId']}');
+          // Map "Processing" status to "Pending" for UI compatibility
+          String itemStatus = item['itemStatus']?.toString() ?? 'pending';
+          if (itemStatus.toLowerCase() == 'processing') {
+            itemStatus = 'pending';
+          }
+
+          // If buyer has confirmed delivery, treat status as delivered for UI
+          final deliveryConfirmedByBuyer =
+              (item['deliveryConfirmedByBuyer'] ?? false) == true;
+          if (deliveryConfirmedByBuyer) {
+            itemStatus = 'delivered';
+          }
+
+          String paymentStatus = item['paymentStatus']?.toString() ?? 'pending';
+          if (paymentStatus.toLowerCase() == 'processing') {
+            paymentStatus = 'pending';
+          }
+
+          // Try to get product name from item, if not available fetch from order service
+          String productName = item['productName']?.toString() ?? '';
+          final productId = item['productId']?.toString() ?? '';
+
+          // If productName is empty and we have a productId, fetch the product name
+          if (productName.isEmpty && productId.isNotEmpty) {
+            try {
+              final productResponse = await orderService.getProductById(
+                productId,
+              );
+              if (productResponse.data != null &&
+                  productResponse.data['success'] == true) {
+                productName =
+                    productResponse.data['data']['productName']?.toString() ??
+                    'Unknown Product';
+              } else {
+                productName = 'Unknown Product';
+              }
+            } catch (e) {
+              debugPrint('Error fetching product name for $productId: $e');
+              productName = 'Unknown Product';
+            }
+          } else if (productName.isEmpty) {
+            productName = 'Unknown Product';
+          }
+
+          fetchedOrders.add(
+            OrderModel(
+              orderId: orderData['orderId']?.toString() ?? '',
+              orderItemId: item['orderItemId']?.toString()??'', // ✅ ADD THIS!
+              productId: productId,
+              productName: productName,
+              productQuantity: (item['quantity'] ?? 0).toDouble(),
+              unit: item['unit']?.toString() ?? 'kg',
+              totalPrice: (item['totalPrice'] ?? 0.0).toDouble(),
+              orderStatus: itemStatus.toLowerCase(),
+              paymentStatus: paymentStatus.toLowerCase(),
+              buyerId: orderData['buyerId']?.toString(),
+              buyerName: orderData['buyerName']?.toString(),
+              buyerContact: orderData['buyerContact']?.toString(),
+              deliveryAddress: orderData['deliveryAddress']?.toString(),
+              latitude:
+                  orderData['latitude'] != null
+                      ? (orderData['latitude'] as num).toDouble()
+                      : null,
+              longitude:
+                  orderData['longitude'] != null
+                      ? (orderData['longitude'] as num).toDouble()
+                      : null,
+              createdAt:
+                  orderData['orderDate'] != null
+                      ? DateTime.tryParse(orderData['orderDate'].toString())
+                      : null,
+            ),
+          );
+        }
+      }
+
+      // Sort by createdAt (orderDate) descending to show latest first
+      fetchedOrders.sort((a, b) {
+        final aDate = a.createdAt;
+        final bDate = b.createdAt;
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1; // nulls last
+        if (bDate == null) return -1;
+        return bDate.compareTo(aDate); // descending
+      });
+
       orders.assignAll(fetchedOrders);
       filteredOrders.assignAll(fetchedOrders);
       PopupService.success('orders_fetched'.tr);

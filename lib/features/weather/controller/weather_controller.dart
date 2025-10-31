@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:get/get.dart';
+
 import 'package:flutter/material.dart';
-import 'package:krishi_link/src/features/weather/data/weather_api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get/get.dart';
 import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/weather/weather_model.dart';
+import 'package:krishi_link/src/features/weather/data/weather_api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WeatherController extends GetxController {
   // Observable properties with better typing
