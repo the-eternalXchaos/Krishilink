@@ -118,7 +118,7 @@ class _BuyerMenuPageState extends State<BuyerMenuPage>
                   animationIndex: animationIndex++,
                   icon: Icons.shopping_bag,
                   label: 'my_orders'.tr,
-                  onTap: () => Get.toNamed('/my-orders'),
+                  onTap: () => Get.toNamed('/buyer/orders'),
                 ),
                 _buildMenuTile(
                   animationIndex: animationIndex++,
