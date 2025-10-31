@@ -8,7 +8,7 @@
 // import 'package:get/get.dart';
 // import 'package:http/http.dart' as http;
 //
-// import 'package:krishi_link/core/utils/api_constants.dart';
+// import 'package:krishi_link/src/core/constants/api_constants.dart';
 // import 'package:krishi_link/src/core/errors/app_exception.dart';
 // import 'package:krishi_link/features/admin/models/user_model.dart';
 // import 'package:krishi_link/services/api_service.dart';
