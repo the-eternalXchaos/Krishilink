@@ -1,21 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-
-import 'package:krishi_link/core/utils/api_constants.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/admin/models/user_model.dart';
+import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
-import 'package:krishi_link/src/features/device/data/device_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
+import 'package:krishi_link/src/features/device/data/device_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
 
 class AuthController extends GetxController {
   final ApiService _apiService;
