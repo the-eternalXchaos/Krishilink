@@ -5,6 +5,7 @@ import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/order/controllers/order_controller.dart';
 import 'package:krishi_link/src/features/order/data/order_service.dart';
 import 'package:krishi_link/src/features/order/model/order_model.dart';
+import 'package:krishi_link/widgets/safe_network_image.dart';
 
 class BuyerOrderDetailsScreen extends StatelessWidget {
   final OrderModel order;
@@ -14,50 +15,70 @@ class BuyerOrderDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    // Log the incoming order once per build
     debugPrint('[UI][BuyerOrderDetails] Showing order ${order.orderId}');
     debugPrint('[UI][BuyerOrderDetails] Payload: ${order.toString()}');
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
-      appBar: AppBar(
-        title: Text('Order Details'.tr),
-        elevation: 0,
-        backgroundColor: cs.primary,
-        foregroundColor: cs.onPrimary,
-      ),
       body: CustomScrollView(
         slivers: [
-          // Hero Header with gradient
-          SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [cs.primary, cs.primary.withValues(alpha: 0.85)],
+          // Enhanced App Bar with gradient
+          SliverAppBar(
+            expandedHeight: Get.height * 0.33,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: cs.primary,
+            foregroundColor: cs.onPrimary,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cs.primary,
+                      cs.primary.withValues(alpha: 0.8),
+                      cs.primaryContainer,
+                    ],
+                  ),
                 ),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.receipt_long, color: cs.onPrimary, size: 28),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: cs.onPrimary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.receipt_long_rounded,
+                            color: cs.onPrimary,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Order #${_shortId(order.orderId)}',
+                          style: tt.headlineSmall?.copyWith(
+                            color: cs.onPrimary,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
-                            Text(
-                              'Order #${_shortId(order.orderId)}',
-                              style: tt.titleLarge?.copyWith(
-                                color: cs.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 16,
+                              color: cs.onPrimary.withValues(alpha: 0.9),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(width: 6),
                             Text(
                               _formatDateTime(order.createdAt),
                               style: tt.bodyMedium?.copyWith(
@@ -66,100 +87,188 @@ class BuyerOrderDetailsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        _buildEnhancedStatusChip(order.orderStatus, cs),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _buildStatusChip(order.orderStatus, cs),
-                ],
+                ),
               ),
             ),
           ),
 
-          // Order Summary Card
+          // Order Progress Timeline (if applicable)
+          if (!_isTerminal(order.orderStatus))
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                child: _buildOrderTimeline(order.orderStatus, cs, tt),
+              ),
+            ),
+
+          // Order Summary Card with enhanced design
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: Card(
-                elevation: 2,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: cs.outlineVariant.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline, color: cs.primary, size: 22),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Order Summary'.tr,
-                            style: tt.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [cs.surface, cs.surfaceContainerLow],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: cs.primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.info_outline_rounded,
+                                color: cs.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Order Summary'.tr,
+                              style: tt.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildEnhancedInfoRow(
+                          Icons.calendar_today_rounded,
+                          'Ordered'.tr,
+                          _formatDateTime(order.createdAt),
+                          cs,
+                          tt,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildEnhancedInfoRow(
+                          Icons.update_rounded,
+                          'Last Updated'.tr,
+                          _formatDateTime(order.deliveredAt ?? order.createdAt),
+                          cs,
+                          tt,
+                        ),
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cs.primaryContainer.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: cs.primary.withValues(alpha: 0.2),
+                              width: 2,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow(
-                        Icons.calendar_today_outlined,
-                        'Ordered'.tr,
-                        _formatDateTime(order.createdAt),
-                        cs,
-                        tt,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        Icons.update_outlined,
-                        'Last Updated'.tr,
-                        _formatDateTime(order.deliveredAt ?? order.createdAt),
-                        cs,
-                        tt,
-                      ),
-                      const Divider(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Total Amount'.tr,
-                            style: tt.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Total Amount'.tr,
+                                    style: tt.bodyLarge?.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Rs ${order.totalPrice.toStringAsFixed(2)}',
+                                    style: tt.headlineMedium?.copyWith(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: cs.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.payments_rounded,
+                                  color: cs.onPrimary,
+                                  size: 28,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Rs ${order.totalPrice.toStringAsFixed(2)}',
-                            style: tt.titleLarge?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
 
-          // Item Section Header
+          // Item Section Header with enhanced styling
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    color: cs.primary,
-                    size: 20,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: cs.secondaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.shopping_bag_rounded,
+                      color: cs.onSecondaryContainer,
+                      size: 20,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Text(
-                    'Item'.tr,
-                    style: tt.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    'Order Item'.tr,
+                    style: tt.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '1 item',
+                      style: tt.labelMedium?.copyWith(
+                        color: cs.onTertiaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -167,33 +276,135 @@ class BuyerOrderDetailsScreen extends StatelessWidget {
             ),
           ),
 
-          // Single Item Tile (OrderModel represents one order item)
+          // Enhanced Item Tile
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _ItemTile(item: order, index: 1),
+                _EnhancedItemTile(item: order, index: 1),
               ]),
             ),
           ),
 
-          // Cancel Button
+          // Enhanced Cancel Button
           if (!_isTerminal(order.orderStatus))
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: _CancelOrderButton(orderId: order.orderId),
+                child: _EnhancedCancelOrderButton(orderId: order.orderId),
               ),
             ),
 
-          // Bottom spacing
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
   }
 
-  Widget _buildStatusChip(String status, ColorScheme cs) {
+  Widget _buildOrderTimeline(String status, ColorScheme cs, TextTheme tt) {
+    final steps = ['Processing', 'Shipped', 'Delivered'];
+    final currentIndex = steps.indexWhere(
+      (s) => s.toLowerCase() == status.toLowerCase(),
+    );
+    final activeIndex = currentIndex >= 0 ? currentIndex : 0;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: cs.outlineVariant.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Order Progress'.tr,
+              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: List.generate(
+                steps.length,
+                (index) => Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color:
+                                    index <= activeIndex
+                                        ? cs.primary
+                                        : cs.surfaceContainerHighest,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color:
+                                      index <= activeIndex
+                                          ? cs.primary
+                                          : cs.outline,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                index <= activeIndex
+                                    ? Icons.check_rounded
+                                    : Icons.circle,
+                                color:
+                                    index <= activeIndex
+                                        ? cs.onPrimary
+                                        : cs.onSurfaceVariant,
+                                size: index <= activeIndex ? 20 : 8,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              steps[index],
+                              style: tt.bodySmall?.copyWith(
+                                fontWeight:
+                                    index <= activeIndex
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                color:
+                                    index <= activeIndex
+                                        ? cs.primary
+                                        : cs.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (index < steps.length - 1)
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            margin: const EdgeInsets.only(bottom: 32),
+                            color:
+                                index < activeIndex
+                                    ? cs.primary
+                                    : cs.outlineVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedStatusChip(String status, ColorScheme cs) {
     final statusLower = status.toLowerCase();
     Color bgColor;
     Color textColor;
@@ -204,39 +415,46 @@ class BuyerOrderDetailsScreen extends StatelessWidget {
       case 'completed':
         bgColor = cs.tertiaryContainer;
         textColor = cs.onTertiaryContainer;
-        icon = Icons.check_circle;
+        icon = Icons.check_circle_rounded;
         break;
       case 'processing':
         bgColor = cs.primaryContainer;
         textColor = cs.onPrimaryContainer;
-        icon = Icons.autorenew;
+        icon = Icons.autorenew_rounded;
         break;
       case 'shipped':
         bgColor = cs.secondaryContainer;
         textColor = cs.onSecondaryContainer;
-        icon = Icons.local_shipping;
+        icon = Icons.local_shipping_rounded;
         break;
       case 'cancelled':
         bgColor = cs.errorContainer;
         textColor = cs.onErrorContainer;
-        icon = Icons.cancel;
+        icon = Icons.cancel_rounded;
         break;
       default:
         bgColor = cs.surfaceContainerHighest;
         textColor = cs.onSurface;
-        icon = Icons.info;
+        icon = Icons.info_rounded;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: bgColor.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: textColor),
+          Icon(icon, size: 20, color: textColor),
           const SizedBox(width: 8),
           Text(
             status.capitalizeFirst ?? status,
@@ -244,6 +462,7 @@ class BuyerOrderDetailsScreen extends StatelessWidget {
               color: textColor,
               fontWeight: FontWeight.bold,
               fontSize: 15,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -251,44 +470,51 @@ class BuyerOrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(
+  Widget _buildEnhancedInfoRow(
     IconData icon,
     String label,
     String value,
     ColorScheme cs,
     TextTheme tt,
   ) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: cs.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: cs.onPrimaryContainer),
           ),
-          child: Icon(icon, size: 18, color: cs.onPrimaryContainer),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: tt.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: tt.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: tt.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -311,60 +537,94 @@ bool _isTerminal(String status) {
       s == 'completed';
 }
 
-class _CancelOrderButton extends StatefulWidget {
+class _EnhancedCancelOrderButton extends StatefulWidget {
   final String orderId;
-  const _CancelOrderButton({required this.orderId});
+  const _EnhancedCancelOrderButton({required this.orderId});
 
   @override
-  State<_CancelOrderButton> createState() => _CancelOrderButtonState();
+  State<_EnhancedCancelOrderButton> createState() =>
+      _EnhancedCancelOrderButtonState();
 }
 
-class _CancelOrderButtonState extends State<_CancelOrderButton> {
+class _EnhancedCancelOrderButtonState
+    extends State<_EnhancedCancelOrderButton> {
   bool _loading = false;
   final _controller = Get.put(OrderController());
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _loading ? null : _confirmAndCancel,
-            icon:
-                _loading
-                    ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: cs.error,
-                      ),
-                    )
-                    : Icon(Icons.cancel, color: cs.error),
-            label: Text('Cancel order'.tr, style: TextStyle(color: cs.error)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: cs.error, width: 1.5),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.error.withValues(alpha: 0.3), width: 2),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _loading ? null : _confirmAndCancel,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_loading)
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: cs.error,
+                    ),
+                  )
+                else
+                  Icon(Icons.cancel_rounded, color: cs.error, size: 22),
+                const SizedBox(width: 12),
+                Text(
+                  'Cancel Order'.tr,
+                  style: TextStyle(
+                    color: cs.error,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
   Future<void> _confirmAndCancel() async {
     final ok = await Get.dialog<bool>(
       AlertDialog(
-        title: Text('Cancel order?'.tr),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Get.theme.colorScheme.error,
+            ),
+            const SizedBox(width: 12),
+            Text('Cancel Order?'.tr),
+          ],
+        ),
         content: Text('Do you really want to cancel this order?'.tr),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
             child: Text('No'.tr),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Get.back(result: true),
-            child: Text('Yes'.tr),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.error,
+              foregroundColor: Get.theme.colorScheme.onError,
+            ),
+            child: Text('Yes, Cancel'.tr),
           ),
         ],
       ),
@@ -384,20 +644,23 @@ class _CancelOrderButtonState extends State<_CancelOrderButton> {
   }
 }
 
-class _ItemTile extends StatefulWidget {
+class _EnhancedItemTile extends StatefulWidget {
   final OrderModel item;
   final int index;
-  const _ItemTile({required this.item, required this.index});
+  const _EnhancedItemTile({required this.item, required this.index});
 
   @override
-  State<_ItemTile> createState() => _ItemTileState();
+  State<_EnhancedItemTile> createState() => _EnhancedItemTileState();
 }
 
-class _ItemTileState extends State<_ItemTile> {
+class _EnhancedItemTileState extends State<_EnhancedItemTile>
+    with SingleTickerProviderStateMixin {
   final OrderService _orderService = OrderService();
   final OrderController _controller = Get.put(OrderController());
   Map<String, dynamic>? _productData;
   bool _isLoadingProduct = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   double _computeRate() {
     final qty = widget.item.productQuantity;
@@ -408,7 +671,22 @@ class _ItemTileState extends State<_ItemTile> {
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    _animationController.forward();
     _fetchProductDetails();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProductDetails() async {
@@ -421,7 +699,6 @@ class _ItemTileState extends State<_ItemTile> {
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
-        // Handle nested data structure
         if (data is Map<String, dynamic>) {
           setState(() {
             _productData = (data['data'] as Map<String, dynamic>?) ?? data;
@@ -442,15 +719,31 @@ class _ItemTileState extends State<_ItemTile> {
   }
 
   String? get _productImage {
-    final img = _productData?['image'];
-    if (img != null && img.toString().isNotEmpty) {
-      final imageCode = img.toString();
-      // If it's already a full URL, return it; otherwise construct the URL
-      if (imageCode.startsWith('http')) {
-        return imageCode;
-      }
-      return '${ApiConstants.getProductImageEndpoint}/$imageCode';
+    final data = _productData;
+    if (data == null) return null;
+
+    final imageUrl = data['imageUrl']?.toString();
+    final imagePath = data['imagePath']?.toString();
+    final imageCode = data['imageCode']?.toString();
+    final image = data['image']?.toString();
+
+    if (imageUrl != null && imageUrl.isNotEmpty) return imageUrl;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      if (imagePath.startsWith('http')) return imagePath;
+      return imagePath;
     }
+
+    final code =
+        (imageCode?.isNotEmpty == true)
+            ? imageCode!
+            : ((image != null && !image.startsWith('http')) ? image : '');
+    if (code.isNotEmpty) {
+      return '${ApiConstants.getProductImageEndpoint}/$code';
+    }
+
+    if (image != null && image.startsWith('http')) return image;
+
     return null;
   }
 
@@ -458,18 +751,29 @@ class _ItemTileState extends State<_ItemTile> {
     return _productData?['category'];
   }
 
-  Widget _buildNumberBadge(ColorScheme cs, TextTheme tt) {
+  Widget _buildEnhancedNumberBadge(ColorScheme cs, TextTheme tt) {
     return Container(
-      width: 56,
-      height: 56,
+      width: 72,
+      height: 72,
       decoration: BoxDecoration(
-        color: cs.primaryContainer,
-        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [cs.primaryContainer, cs.primary.withValues(alpha: 0.7)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Center(
         child: Text(
           '${widget.index}',
-          style: tt.titleLarge?.copyWith(
+          style: tt.headlineSmall?.copyWith(
             color: cs.onPrimaryContainer,
             fontWeight: FontWeight.bold,
           ),
@@ -483,163 +787,263 @@ class _ItemTileState extends State<_ItemTile> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {}, // Future: navigate to product details
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Item header with index and status
-              Row(
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Card(
+        elevation: 0,
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: cs.outlineVariant.withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [cs.surface, cs.surfaceContainerLow],
+            ),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product image or numbered badge
-                  if (_productImage != null && _productImage!.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        _productImage!,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildNumberBadge(cs, tt),
-                      ),
-                    )
-                  else
-                    _buildNumberBadge(cs, tt),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isLoadingProduct ? 'Loading...' : _productName,
-                          style: tt.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        if (_productCategory != null)
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.category_outlined,
-                                size: 14,
-                                color: cs.primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _productCategory!,
-                                style: tt.bodySmall?.copyWith(
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w500,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_productImage != null && _productImage!.isNotEmpty)
+                        Hero(
+                          tag: 'product-${widget.item.productId}',
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: cs.shadow.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: SizedBox(
+                                width: 72,
+                                height: 72,
+                                child: SafeNetworkImage(
+                                  imageUrl: _productImage!,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
+                        )
+                      else
+                        _buildEnhancedNumberBadge(cs, tt),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _isLoadingProduct ? 'Loading...' : _productName,
+                              style: tt.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            if (_productCategory != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: cs.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.category_rounded,
+                                      size: 14,
+                                      color: cs.onSecondaryContainer,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _productCategory!,
+                                      style: tt.bodySmall?.copyWith(
+                                        color: cs.onSecondaryContainer,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildEnhancedDetailColumn(
+                            Icons.inventory_2_rounded,
+                            'Quantity'.tr,
+                            '${widget.item.productQuantity % 1 == 0 ? widget.item.productQuantity.toInt() : widget.item.productQuantity}',
+                            cs,
+                            tt,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 50,
+                          color: cs.outlineVariant,
+                        ),
+                        Expanded(
+                          child: _buildEnhancedDetailColumn(
+                            Icons.attach_money_rounded,
+                            'Rate'.tr,
+                            'Rs ${(_computeRate()).toStringAsFixed(2)}',
+                            cs,
+                            tt,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 50,
+                          color: cs.outlineVariant,
+                        ),
+                        Expanded(
+                          child: _buildEnhancedDetailColumn(
+                            Icons.receipt_rounded,
+                            'Total'.tr,
+                            'Rs ${widget.item.totalPrice.toStringAsFixed(2)}',
+                            cs,
+                            tt,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  _buildStatusBadge(
-                    widget.item.orderStatus,
-                    cs,
-                    isItemStatus: true,
-                  ),
-                ],
-              ),
 
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // Item details grid
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDetailColumn(
-                      Icons.inventory_2_outlined,
-                      'Quantity'.tr,
-                      '${widget.item.productQuantity % 1 == 0 ? widget.item.productQuantity.toInt() : widget.item.productQuantity}',
-                      cs,
-                      tt,
-                    ),
+                  // Enhanced Status Badges
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _buildEnhancedStatusBadge(
+                        widget.item.orderStatus,
+                        cs,
+                        icon: Icons.info_rounded,
+                      ),
+                      _buildEnhancedStatusBadge(
+                        widget.item.paymentStatus,
+                        cs,
+                        isPayment: true,
+                        icon:
+                            widget.item.paymentStatus.toLowerCase() == 'paid'
+                                ? Icons.check_circle_rounded
+                                : Icons.pending_rounded,
+                      ),
+                      if (widget.item.refundStatus != null &&
+                          widget.item.refundStatus!.toLowerCase() != 'none')
+                        _buildEnhancedStatusBadge(
+                          widget.item.refundStatus!,
+                          cs,
+                          isRefund: true,
+                          icon: Icons.replay_rounded,
+                        ),
+                      if (widget.item.deliveryConfirmedByBuyer)
+                        _buildEnhancedStatusBadge(
+                          'Delivered',
+                          cs,
+                          isDelivered: true,
+                          icon: Icons.local_shipping_rounded,
+                        ),
+                    ],
                   ),
-                  Container(width: 1, height: 40, color: cs.outlineVariant),
-                  Expanded(
-                    child: _buildDetailColumn(
-                      Icons.attach_money_outlined,
-                      'Rate'.tr,
-                      'Rs ${(_computeRate()).toStringAsFixed(2)}',
-                      cs,
-                      tt,
-                    ),
-                  ),
-                  Container(width: 1, height: 40, color: cs.outlineVariant),
-                  Expanded(
-                    child: _buildDetailColumn(
-                      Icons.receipt_outlined,
-                      'Total'.tr,
-                      'Rs ${widget.item.totalPrice.toStringAsFixed(2)}',
-                      cs,
-                      tt,
-                    ),
-                  ),
-                ],
-              ),
 
-              const SizedBox(height: 16),
-
-              // Payment and refund status
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildStatusBadge(
-                    widget.item.paymentStatus,
-                    cs,
-                    isPayment: true,
-                  ),
-                  if (widget.item.refundStatus != null &&
-                      widget.item.refundStatus!.toLowerCase() != 'none')
-                    _buildStatusBadge(
-                      widget.item.refundStatus!,
-                      cs,
-                      isRefund: true,
-                    ),
-                  if (widget.item.deliveryConfirmedByBuyer)
-                    _buildStatusBadge('Delivered', cs, isDelivered: true),
-                ],
-              ),
-
-              // Mark as Delivered button (only show if shipped and not yet confirmed)
-              if (_shouldShowMarkAsDeliveredButton())
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoadingProduct ? null : _markAsDelivered,
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: Text('Mark as Delivered'.tr),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: cs.primaryContainer,
-                        foregroundColor: cs.onPrimaryContainer,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  // Enhanced Mark as Delivered Button
+                  if (_shouldShowMarkAsDeliveredButton())
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              cs.primary,
+                              cs.primary.withValues(alpha: 0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: cs.primary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isLoadingProduct ? null : _markAsDelivered,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 20,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    color: cs.onPrimary,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Mark as Delivered'.tr,
+                                    style: TextStyle(
+                                      color: cs.onPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -647,25 +1051,53 @@ class _ItemTileState extends State<_ItemTile> {
   }
 
   bool _shouldShowMarkAsDeliveredButton() {
-    // Use controller guard for consistency
     return _controller.canMarkAsDelivered(widget.item);
   }
 
   Future<void> _markAsDelivered() async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        title: Text('Confirm Delivery'.tr),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Get.theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.check_circle_outline_rounded,
+                color: Get.theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Confirm Delivery'.tr)),
+          ],
+        ),
         content: Text(
           'Have you received this item? Once confirmed, you acknowledge that the product has been delivered to you.'
               .tr,
+          style: TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
             child: Text('Cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.primary,
+              foregroundColor: Get.theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             child: Text('Confirm'.tr),
           ),
         ],
@@ -689,6 +1121,12 @@ class _ItemTileState extends State<_ItemTile> {
           backgroundColor: Get.theme.colorScheme.primaryContainer,
           colorText: Get.theme.colorScheme.onPrimaryContainer,
           duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+          icon: Icon(
+            Icons.check_circle_rounded,
+            color: Get.theme.colorScheme.primary,
+          ),
         );
         setState(() {});
       }
@@ -699,7 +1137,7 @@ class _ItemTileState extends State<_ItemTile> {
     }
   }
 
-  Widget _buildDetailColumn(
+  Widget _buildEnhancedDetailColumn(
     IconData icon,
     String label,
     String value,
@@ -708,75 +1146,88 @@ class _ItemTileState extends State<_ItemTile> {
   ) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: cs.primary),
-        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: cs.primaryContainer.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 20, color: cs.primary),
+        ),
+        const SizedBox(height: 8),
         Text(
           label,
           style: tt.bodySmall?.copyWith(
             color: cs.onSurfaceVariant,
             fontSize: 11,
+            fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: tt.bodyLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _buildStatusBadge(
+  Widget _buildEnhancedStatusBadge(
     String status,
     ColorScheme cs, {
-    bool isItemStatus = false,
     bool isPayment = false,
     bool isRefund = false,
     bool isDelivered = false,
+    IconData? icon,
   }) {
     Color bgColor;
     Color textColor;
-    IconData? icon;
+    IconData badgeIcon;
 
     if (isPayment) {
       final isPaid = status.toLowerCase() == 'paid';
       bgColor = isPaid ? cs.tertiaryContainer : cs.secondaryContainer;
       textColor = isPaid ? cs.onTertiaryContainer : cs.onSecondaryContainer;
-      icon = isPaid ? Icons.check_circle : Icons.pending;
+      badgeIcon =
+          icon ?? (isPaid ? Icons.check_circle_rounded : Icons.pending_rounded);
     } else if (isRefund) {
       bgColor = cs.errorContainer;
       textColor = cs.onErrorContainer;
-      icon = Icons.replay;
+      badgeIcon = icon ?? Icons.replay_rounded;
     } else if (isDelivered) {
       bgColor = cs.tertiaryContainer;
       textColor = cs.onTertiaryContainer;
-      icon = Icons.local_shipping_outlined;
+      badgeIcon = icon ?? Icons.local_shipping_rounded;
     } else {
-      // Item status
       bgColor = cs.primaryContainer;
       textColor = cs.onPrimaryContainer;
-      icon = Icons.circle;
+      badgeIcon = icon ?? Icons.circle;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 4),
+          Icon(badgeIcon, size: 16, color: textColor),
+          const SizedBox(width: 6),
           Text(
             status.capitalizeFirst ?? status,
             style: TextStyle(
               color: textColor,
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.3,
             ),
           ),
         ],

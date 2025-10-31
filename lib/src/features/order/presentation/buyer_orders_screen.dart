@@ -127,9 +127,13 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
         }
       }
 
-      // Reverse to show latest orders first
+      // Sort to show latest orders first (by createdAt, fallback to deliveredAt)
+      DateTime _key(OrderModel o) =>
+          o.createdAt ?? o.deliveredAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      orders.sort((a, b) => _key(b).compareTo(_key(a)));
+
       setState(() {
-        _orders = orders.reversed.toList();
+        _orders = orders;
         _loading = false;
       });
 

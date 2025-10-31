@@ -92,7 +92,7 @@ class OrderController extends GetxController {
     } catch (e) {
       errorMessage.value = 'Failed to fetch orders: ${e.toString()}';
       debugPrint('[OrderController] Error fetching orders: $e');
-      PopupService.error(errorMessage.value);
+      // Avoid intrusive popups on list pages; let UI render an inline error instead
     } finally {
       isLoading.value = false;
     }
