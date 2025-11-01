@@ -22,7 +22,8 @@ class ReviewModel {
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     return ReviewModel(
-      id: json['id']?.toString() ?? '',
+      // Some APIs return "reviewId" instead of "id"
+      id: (json['id'] ?? json['reviewId'])?.toString() ?? '',
       productId: json['productId']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',
       username: json['userName']?.toString() ?? 'Anonymous',

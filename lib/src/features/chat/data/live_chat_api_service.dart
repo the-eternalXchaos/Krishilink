@@ -2,6 +2,7 @@ import 'package:dio/dio.dart' show Options;
 import 'package:krishi_link/src/core/networking/base_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
+import 'package:krishi_link/src/features/chat/data/chat_cache_service.dart';
 
 class LiveChatApiService extends BaseService {
   Future<List<Map<String, dynamic>>> getMyCustomersForChat() async {
@@ -11,16 +12,33 @@ class LiveChatApiService extends BaseService {
       if (data is! Map<String, dynamic> || !data['success']) {
         throw Exception(data['message'] ?? 'Failed to fetch customers');
       }
-      final customers =
-          (data['data'] as List<dynamic>? ?? []).map((item) {
-            final map = item as Map<String, dynamic>;
-            return {
-              'id': map['id']?.toString() ?? '',
-              'name': map['displayName']?.toString() ?? 'Unknown',
-              'contact': map['contact']?.toString() ?? '',
-            };
-          }).toList();
-      return customers;
+      
+      // API currently returns an array of customer IDs (strings). If in the future it
+      // returns objects, we still handle that. Enrich with cached names for nicer UI.
+      final list = (data['data'] as List<dynamic>? ?? []);
+      final results = <Map<String, dynamic>>[];
+      for (final item in list) {
+        if (item is String) {
+          final id = item;
+          final cached = await ChatCacheService.I.getName(id);
+          final name = cached ?? ChatCacheService.I.prettyFallback(id, prefix: 'Buyer');
+          results.add({'id': id, 'name': name, 'contact': '', 'unread': 0});
+        } else if (item is Map<String, dynamic>) {
+          final id = item['id']?.toString() ?? '';
+          final name = item['displayName']?.toString() ?? '';
+          if (id.isNotEmpty && name.isNotEmpty) {
+            // Store fresh names for future sessions
+            await ChatCacheService.I.upsertName(id, name);
+          }
+          results.add({
+            'id': id,
+            'name': name.isNotEmpty ? name : (id.isNotEmpty ? ChatCacheService.I.prettyFallback(id, prefix: 'Buyer') : 'Unknown'),
+            'contact': item['contact']?.toString() ?? '',
+            'unread': 0,
+          });
+        }
+      }
+      return results;
     });
   }
 
@@ -102,7 +120,6 @@ class LiveChatApiService extends BaseService {
       if (!hasAuth) return <LiveChatMessage>[];
       final response = await apiClient.get('/api/Chat/getChatHistory/$userId');
 
-      // Some backends return { success, data: [] }, others return [] directly
       final raw = response.data;
       final List<dynamic> list =
           raw is List

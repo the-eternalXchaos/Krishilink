@@ -31,7 +31,7 @@ class FarmerMenu extends StatelessWidget {
               const Divider(),
               _buildMenuItem(
                 Icons.shopping_basket,
-                'customer_orders'.tr,
+                'Customer Orders'.tr,
                 // () => Get.toNamed('/customer/orders'),
                 () => Get.toNamed('/farmer/orders'),
               ),

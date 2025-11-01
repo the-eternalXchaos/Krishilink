@@ -1216,6 +1216,7 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                               ),
                             ),
                             const SizedBox(width: 12),
+                            // TODO remove it later  buy now
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: _buyNow,

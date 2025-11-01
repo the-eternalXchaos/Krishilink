@@ -22,7 +22,6 @@ class ChatRealtimeService {
   // Legacy no-op wrappers (methods removed/renamed in new service)
   Future<void> disconnect() async {}
 
-  // Backward compatibility: older code expects explicit join/leave.
   Future<void> joinRoom(String roomId) async {
     // If ChatService implicitly joins on send/receive, we no-op here.
     // Hook for future explicit join implementation.

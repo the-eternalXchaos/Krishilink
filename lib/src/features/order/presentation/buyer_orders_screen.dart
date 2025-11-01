@@ -128,9 +128,11 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
       }
 
       // Sort to show latest orders first (by createdAt, fallback to deliveredAt)
-      DateTime _key(OrderModel o) =>
-          o.createdAt ?? o.deliveredAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      orders.sort((a, b) => _key(b).compareTo(_key(a)));
+      DateTime key(OrderModel o) =>
+          o.createdAt ??
+          o.deliveredAt ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+      orders.sort((a, b) => key(b).compareTo(key(a)));
 
       setState(() {
         _orders = orders;

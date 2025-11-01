@@ -1,6 +1,4 @@
 // lib/features/chat/live_chat/live_chat_model.dart
-/// Primary model used by the new live chat flow (UI & controller).
-/// The UI expects a `body` property (NOT `text`).
 class LiveChatMessage {
   final String id;
   final String senderId;

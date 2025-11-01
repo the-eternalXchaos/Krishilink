@@ -5,9 +5,11 @@ import 'package:get/get.dart';
 import 'package:krishi_link/features/auth/controller/auth_controller.dart';
 import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
+import 'package:krishi_link/src/features/chat/data/chat_cache_service.dart';
 import 'package:krishi_link/src/features/chat/data/chat_services.dart';
 import 'package:krishi_link/src/features/chat/data/live_chat_api_service.dart';
 import 'package:krishi_link/src/features/chat/presentation/screens/live_chat_screen.dart';
+import 'package:signalr_netcore/signalr_client.dart';
 
 class FarmerChatScreen extends StatefulWidget {
   final String productId;
@@ -22,9 +24,12 @@ class FarmerChatScreen extends StatefulWidget {
   State<FarmerChatScreen> createState() => _FarmerChatScreenState();
 }
 
-class _FarmerChatScreenState extends State<FarmerChatScreen> {
+class _FarmerChatScreenState extends State<FarmerChatScreen>
+    with SingleTickerProviderStateMixin {
   late final LiveChatApiService _api;
   late final AuthController _auth;
+  late AnimationController _glowController;
+  late Animation<double> _glowAnimation;
   bool isLive = false;
   bool isConnecting = false;
   List<Map<String, dynamic>> customers = [];
@@ -33,6 +38,8 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   Timer? _pollTimer;
   bool _isChatOpen = false;
   bool _isRefreshing = false;
+  StreamSubscription<HubConnectionState>? _stateSub;
+  String? _activeChatUserId;
 
   @override
   void initState() {
@@ -42,7 +49,46 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         Get.isRegistered<AuthController>()
             ? Get.find<AuthController>()
             : Get.put(AuthController());
+
+    // Initialize glow animation
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _glowAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
     _load();
+
+    // Keep UI in sync with actual hub connection state
+    _stateSub = ChatService.I.connectionState.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        switch (state) {
+          case HubConnectionState.Connected:
+            isLive = true;
+            isConnecting = false;
+            statusMessage = 'connected_to_hub'.tr;
+            break;
+          case HubConnectionState.Connecting:
+          case HubConnectionState.Reconnecting:
+            isConnecting = true;
+            statusMessage = 'connecting_to_hub'.tr;
+            break;
+          case HubConnectionState.Disconnecting:
+            isConnecting = true;
+            statusMessage = 'disconnecting_from_hub'.tr;
+            break;
+          case HubConnectionState.Disconnected:
+            isLive = false;
+            isConnecting = false;
+            statusMessage = 'offline'.tr;
+            break;
+        }
+      });
+    });
   }
 
   Future<void> _refresh() async {
@@ -79,6 +125,15 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         isLive = false;
       }
 
+      // Try showing cached customers immediately for better UX
+      final cachedCustomers = await ChatCacheService.I.loadCustomerList();
+      if (cachedCustomers.isNotEmpty && mounted) {
+        setState(() {
+          customers = List<Map<String, dynamic>>.from(cachedCustomers);
+        });
+        debugPrint('📦 Loaded ${customers.length} customers from cache');
+      }
+
       // Load customers with retry mechanism
       debugPrint('📋 Loading customers...');
       for (int attempt = 1; attempt <= 3; attempt++) {
@@ -95,6 +150,16 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
                   )
                   .toList();
           debugPrint('📋 Loaded ${customers.length} customers successfully');
+          // Persist list and names for future sessions
+          unawaited(ChatCacheService.I.saveCustomerList(customers));
+          unawaited(
+            ChatCacheService.I.upsertMany({
+              for (final c in customers)
+                if ((c['id'] ?? '').toString().isNotEmpty &&
+                    (c['name'] ?? '').toString().isNotEmpty)
+                  (c['id'] as String): (c['name'] as String),
+            }),
+          );
           break;
         } catch (e) {
           debugPrint('❌ Customer load attempt $attempt/3 failed: $e');
@@ -168,24 +233,58 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         }
 
         final keyId = effectiveId ?? 'unknown_${senderName.hashCode}';
+        // Persist any known mapping to cache for nicer future display
+        if ((effectiveId ?? '').isNotEmpty &&
+            senderName.isNotEmpty &&
+            senderName != 'Unknown') {
+          await ChatCacheService.I.upsertName(keyId, senderName);
+        }
         if (!mounted) return;
 
+        // Compute updates outside setState when awaiting is needed
+        final idx = customers.indexWhere((c) => c['id'] == keyId);
+        String? cachedName;
+        if (idx == -1) {
+          cachedName = await ChatCacheService.I.getName(keyId);
+        }
+
         setState(() {
-          final idx = customers.indexWhere((c) => c['id'] == keyId);
           if (idx == -1) {
             customers.insert(0, {
               'id': keyId,
-              'name': senderName.isNotEmpty ? senderName : 'Unknown Buyer',
+              'name':
+                  (cachedName?.isNotEmpty == true)
+                      ? cachedName
+                      : (senderName.isNotEmpty
+                          ? senderName
+                          : ChatCacheService.I.prettyFallback(
+                            keyId,
+                            prefix: 'Buyer',
+                          )),
               'contact': '',
+              'unread': (!_isChatOpen || _activeChatUserId != keyId) ? 1 : 0,
             });
             debugPrint('➕ Added new customer: $keyId - $senderName');
           } else {
             final entry = customers.removeAt(idx);
+            // If we learned a better name, update it
+            if (senderName.isNotEmpty && senderName != 'Unknown') {
+              entry['name'] = senderName;
+            }
+            // Increment unread if this isn\'t the active chat
+            if (!_isChatOpen || _activeChatUserId != keyId) {
+              final current =
+                  int.tryParse((entry['unread'] ?? 0).toString()) ?? 0;
+              entry['unread'] = current + 1;
+            }
             customers.insert(0, entry);
             debugPrint('🔼 Moved $keyId to top');
           }
           debugPrint('📋 List updated: ${customers.length} customers');
         });
+
+        // Persist updated list asynchronously
+        unawaited(ChatCacheService.I.saveCustomerList(customers));
 
         // Notify farmer if chat view isn't open
         if (!_isChatOpen && mounted) {
@@ -209,13 +308,18 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   }
 
   Future<void> _goOffline() async {
+    debugPrint(
+      '🔴 [_goOffline] invoked. Env(before): ${ChatService.I.envSummary()}',
+    );
     if (!isLive && !isConnecting) return;
     setState(() {
       statusMessage = 'disconnecting_from_hub'.tr;
       isConnecting = true;
     });
     try {
+      debugPrint('🔴 [_goOffline] calling ChatService.disconnect()');
       await ChatService.I.disconnect();
+      debugPrint('🔴 [_goOffline] ChatService.disconnect() returned');
       _msgSub?.cancel();
       _msgSub = null;
       _pollTimer?.cancel();
@@ -232,6 +336,9 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         backgroundColor: Colors.orange.withValues(alpha: 0.1),
         colorText: Colors.orange[700],
       );
+      debugPrint(
+        '🔴 [_goOffline] completed. Env(after): ${ChatService.I.envSummary()}',
+      );
     } catch (e) {
       debugPrint('❌ Error disconnecting: $e');
       if (!mounted) return;
@@ -240,6 +347,24 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
         statusMessage = 'Failed to disconnect';
       });
     }
+  }
+
+  Future<void> _onPowerPressed() async {
+    // Extra debug and user feedback when pressing the power button
+    debugPrint(
+      '🛑 [PowerButton] pressed. Env(before): ${ChatService.I.envSummary()}',
+    );
+    Get.snackbar(
+      'Disconnecting',
+      'Closing live connection to the hub…',
+      backgroundColor: Colors.orange.withValues(alpha: 0.08),
+      colorText: Colors.orange[700],
+      duration: const Duration(seconds: 2),
+    );
+    await _goOffline();
+    debugPrint(
+      '🛑 [PowerButton] completed. Env(after): ${ChatService.I.envSummary()}',
+    );
   }
 
   Future<void> _connectLive() async {
@@ -386,6 +511,10 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
       ),
     )?.then((_) {
       _isChatOpen = false;
+      if (mounted) {
+        // Force immediate UI refresh so AppBar actions redraw with latest state
+        setState(() {});
+      }
       _load();
     });
   }
@@ -393,6 +522,15 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   void _openCustomerChat(Map<String, dynamic> customer) {
     debugPrint('💬 Opening chat with customer: ${customer['name']}');
     _isChatOpen = true;
+    _activeChatUserId = (customer['id'] ?? '').toString();
+    // Clear unread immediately on open
+    final idx = customers.indexWhere((c) => c['id'] == _activeChatUserId);
+    if (idx != -1) {
+      setState(() {
+        customers[idx]['unread'] = 0;
+      });
+      unawaited(ChatCacheService.I.saveCustomerList(customers));
+    }
     Get.to(
       () => LiveChatScreen(
         productId: widget.productId,
@@ -403,12 +541,29 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
       ),
     )?.then((_) {
       _isChatOpen = false;
+      // Ensure unread cleared when returning
+      if (_activeChatUserId != null) {
+        final idx = customers.indexWhere((c) => c['id'] == _activeChatUserId);
+        if (idx != -1) {
+          setState(() {
+            customers[idx]['unread'] = 0;
+          });
+          unawaited(ChatCacheService.I.saveCustomerList(customers));
+        }
+      }
+      _activeChatUserId = null;
+      if (mounted) {
+        // Force immediate UI refresh so AppBar actions redraw with latest state
+        setState(() {});
+      }
       _load();
     });
   }
 
   @override
   void dispose() {
+    _stateSub?.cancel();
+    _glowController.dispose();
     _msgSub?.cancel();
     _pollTimer?.cancel();
     super.dispose();
@@ -424,32 +579,50 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          // Manual refresh button to reload chat list
-          IconButton(
-            tooltip: 'Refresh list',
-            onPressed: _isRefreshing ? null : _refresh,
-            icon:
-                _isRefreshing
-                    ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : const Icon(Icons.refresh),
+          AnimatedBuilder(
+            animation: _glowAnimation,
+            builder: (context, _) {
+              return Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow:
+                      isLive
+                          ? [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(
+                                0.5 * _glowAnimation.value,
+                              ),
+                              blurRadius: 12 * _glowAnimation.value,
+                              spreadRadius: 2 * _glowAnimation.value,
+                            ),
+                            BoxShadow(
+                              color: Colors.red.withOpacity(
+                                0.2 * _glowAnimation.value,
+                              ),
+                              blurRadius: 18 * _glowAnimation.value,
+                              spreadRadius: 3 * _glowAnimation.value,
+                            ),
+                          ]
+                          : [],
+                ),
+                child: IconButton(
+                  tooltip:
+                      isLive
+                          ? 'Disconnect from Hub'
+                          : (isConnecting
+                              ? 'Connecting...'
+                              : 'Offline (Use Go Live to connect)'),
+                  onPressed: (isConnecting || !isLive) ? null : _onPowerPressed,
+                  icon: Icon(
+                    Icons.power_settings_new,
+                    color: isLive ? Colors.red : Colors.red.withOpacity(0.4),
+                    size: 28,
+                  ),
+                ),
+              );
+            },
           ),
-          // Power button to disconnect from hub (shown always; disabled if not live)
-          IconButton(
-            tooltip:
-                isLive
-                    ? 'Go Offline'
-                    : (isConnecting ? 'Connecting...' : 'Not live'),
-            onPressed: (isLive && !isConnecting) ? _goOffline : null,
-            icon: Icon(
-              Icons.power_settings_new,
-              color:
-                  isLive ? Colors.redAccent : Theme.of(context).disabledColor,
-            ),
-          ),
+          const SizedBox(width: 12),
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: ElevatedButton.icon(
@@ -619,9 +792,35 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
                               ),
                             ),
                             subtitle: Text(customer['contact']),
-                            trailing: const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if ((int.tryParse(
+                                          (customer['unread'] ?? 0).toString(),
+                                        ) ??
+                                        0) >
+                                    0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    margin: const EdgeInsets.only(right: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      (customer['unread'] ?? 0).toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                const Icon(Icons.arrow_forward_ios, size: 16),
+                              ],
                             ),
                             onTap: () => _openCustomerChat(customer),
                           );
