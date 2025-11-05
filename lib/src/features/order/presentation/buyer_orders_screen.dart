@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:krishi_link/src/features/order/data/order_service.dart';
 import 'package:krishi_link/src/features/order/model/order_model.dart';
 import 'package:krishi_link/src/features/product/data/models/product_model.dart';
@@ -146,8 +148,65 @@ class _BuyerOrdersScreenState extends State<BuyerOrdersScreen> {
         _ensureProductImage(pid);
       }
     } catch (e) {
+      
+      if (e is DioException) {
+        final res = e.response;
+        final status = res?.statusCode;
+        if (status == 404) {
+          setState(() {
+            _orders = const [];
+            _error = null; // triggers empty view instead of error view
+            _loading = false;
+          });
+          return;
+        }
+        String message = 'Failed to load orders. Please try again.';
+        if (res == null) {
+          if (e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.unknown) {
+            message =
+                'No internet connection. Pull to refresh when back online.';
+          }
+        } else {
+          // Prefer a short server message if present
+          final body = res.data;
+          if (body is Map) {
+            final m = body.cast<Object?, Object?>();
+            final serverMsg = (m['message'] ?? m['title'])?.toString();
+            if (serverMsg != null && serverMsg.trim().isNotEmpty) {
+              message = serverMsg.trim();
+            } else {
+              message = 'Server error ($status). Please try again.';
+            }
+          } else if (body is String && body.trim().isNotEmpty) {
+            final trimmed = body.trim();
+            message =
+                trimmed.length <= 160
+                    ? trimmed
+                    : '${trimmed.substring(0, 160)}…';
+          } else if (status != null) {
+            message = 'Server error ($status). Please try again.';
+          }
+        }
+        setState(() {
+          _error = message;
+          _loading = false;
+        });
+        return;
+      }
+      if (e is AppException) {
+        setState(() {
+          _error =
+              e.message.isNotEmpty
+                  ? e.message
+                  : 'Couldn\'t load your orders. Please try again.';
+          _loading = false;
+        });
+        return;
+      }
       setState(() {
-        _error = e.toString();
+        _error =
+            'Something went wrong while loading your orders. Please try again.';
         _loading = false;
       });
     }

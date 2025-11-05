@@ -1,9 +1,11 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
-import 'package:krishi_link/core/theme/app_theme.dart';
 import 'package:krishi_link/features/farmer/models/tutorial_model.dart';
+import 'package:krishi_link/src/core/constants/constants.dart';
+import 'package:krishi_link/widgets/safe_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TutorialDetailsScreen extends StatelessWidget {
   final TutorialModel tutorial;
@@ -49,24 +51,34 @@ class TutorialDetailsScreen extends StatelessWidget {
             FadeInDown(
               delay: const Duration(milliseconds: 200),
               child: Text(
-                'published'.trArgs([DateFormat('MMM dd, yyyy').format(createdAt)]),
+                'published'.trArgs([
+                  DateFormat('MMM dd, yyyy').format(createdAt),
+                ]),
                 style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
               ),
             ),
             const SizedBox(height: 16),
-            if (tutorial.imageUrl != null)
+            if ((tutorial.imageUrl ?? '').trim().isNotEmpty)
               FadeInUp(
-                child: Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey.shade200,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    height: 200,
+                    width: double.infinity,
+                    child:
+                        (tutorial.imageUrl!.startsWith('http'))
+                            ? SafeNetworkImage(
+                              imageUrl: tutorial.imageUrl!,
+                              fit: BoxFit.cover,
+                            )
+                            : Image.asset(
+                              tutorial.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (context, error, stackTrace) =>
+                                      Image.asset(AssetPaths.plantPlaceholder),
+                            ),
                   ),
-                  child: Center(
-                    child: Text('image_placeholder'.trArgs([tutorial.imageUrl ?? ''])),
-                  ),
-                  // TODO: Use Image.network(tutorial.imageUrl) with error handling
                 ),
               ),
             const SizedBox(height: 16),
@@ -117,21 +129,46 @@ class TutorialDetailsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            if (tutorial.videoUrl != null) ...[
+            if ((tutorial.videoUrl ?? '').trim().isNotEmpty) ...[
               const SizedBox(height: 16),
               FadeInUp(
                 delay: const Duration(milliseconds: 300),
-                child: Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
+                child: Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey.shade200,
                   ),
-                  child: Center(
-                    child: Text('video_placeholder'.trArgs([tutorial.videoUrl ?? ''])),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.ondemand_video, size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'भिडियो हेर्नुहोस्'.tr,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.open_in_new),
+                          label: Text('Open'.tr),
+                          onPressed: () async {
+                            final raw = tutorial.videoUrl!.trim();
+                            final uri = Uri.tryParse(raw);
+                            if (uri == null) return;
+                            final ok = await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                            if (!ok) {
+                              Get.snackbar('भिडियो', 'लिङ्क खोल्न सकेन।');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  // TODO: Integrate video player (e.g., video_player package)
                 ),
               ),
             ],

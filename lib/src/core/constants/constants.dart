@@ -26,7 +26,14 @@ class AssetPaths {
   static const String plantPlaceholder = '$_imagePath/placeholder_plant.png';
   static const String defaultImage = '$_imagePath/default_image.png';
   static const String loginBackground = '$_imagePath/login_background.jpg';
+  // krishilink tutorials images
+
   static const String earlyBlight = '$_imagePath/tomato_early_blight.png';
+  static const String paddyIrrigation = '$_imagePath/paddy_irrigation.jpg';
+  static const String soilPreparation = '$_imagePath/soil_preparation.jpg';
+  static const String pestScouting = '$_imagePath/pest_scouting.jpg';
+  static const String postHarvest = '$_imagePath/post_harvest.jpg';
+  static const String organicFertilizer = '$_imagePath/organic_fertilizer.jpg';
 
   // Lottie Animations
   static const String farmerIllustration = '$_lottiePath/farmer.json';

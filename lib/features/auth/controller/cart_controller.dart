@@ -57,7 +57,7 @@ class CartController extends GetxController {
       _handleDioError(e, 'fetch cart');
     } catch (e) {
       debugPrint('🛒 [CartController] ❌ Error: $e');
-      PopupService.ShowSnackBar('Failed to load cart', title: 'Error');
+      PopupService.showSnackbar (message:'Failed to load cart', title: 'Error');
     } finally {
       isLoading.value = false;
     }
