@@ -30,7 +30,7 @@ These demo snapshots live under `lib/src/core/assets/demo_images/` and are safe 
 </p>
 <p align="center">
 	<img src="lib/src/core/assets/demo_images/farmer_dashboard.png" alt="Home /Buyer Dashboard" height="320" />
-	<img src="lib/src/core/assets/demo_images/disease_Detection.png" alt="Home /Disease Detection" height="320" />
+	<img src="lib/src/core/assets/demo_images/disease_detection.png" alt="Home /Disease Detection" height="320" />
 	<img src="lib/src/core/assets/demo_images/product_management.png" alt="Home /Product Management" height="320" />
 	<img src="lib/src/core/assets/demo_images/order.png" alt="Orders" height="320" />
 </p>
