@@ -7,7 +7,7 @@ A modern marketplace connecting farmers and buyers in Nepal — with secure paym
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-3.x-0175C2.svg?logo=dart)
 ![GetX](https://img.shields.io/badge/State%20Mgmt-GetX-success)
-![License](https://img.shields.io/badge/License-MIT-informational)
+![License](https://img.shields.io/badge/License-Proprietary-red)
 
 ## ✨ Features
 
@@ -93,5 +93,7 @@ PRs and issues are welcome. Please follow existing patterns (GetX, Dio) and keep
 
 ## 📜 License
 
-MIT — see `LICENSE` (or add one if not present).
+Proprietary — All rights reserved. See `LICENSE` for details.
+
+
 
