@@ -152,6 +152,7 @@ flutter:
     - lib/src/core/assets/lottie/
     - lib/src/core/assets/images/krishilink.png
     - lib/src/core/components/lottie/
+    - lib/src/core/assets/tutorials_images/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

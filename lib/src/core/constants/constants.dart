@@ -14,6 +14,7 @@ TextTheme getTextTheme(BuildContext context) {
 /// 📌 Asset Paths
 /// =====================
 const String _imagePath = 'lib/src/core/assets/images';
+const String _tutorialsImagePath = 'lib/src/core/assets/tutorials_images';
 const String _lottiePath = 'lib/src/core/components/lottie';
 
 class AssetPaths {
@@ -28,12 +29,12 @@ class AssetPaths {
   static const String loginBackground = '$_imagePath/login_background.jpg';
   // krishilink tutorials images
 
-  static const String earlyBlight = '$_imagePath/tomato_early_blight.png';
-  static const String paddyIrrigation = '$_imagePath/paddy_irrigation.jpg';
-  static const String soilPreparation = '$_imagePath/soil_preparation.jpg';
-  static const String pestScouting = '$_imagePath/pest_scouting.jpg';
-  static const String postHarvest = '$_imagePath/post_harvest.jpg';
-  static const String organicFertilizer = '$_imagePath/organic_fertilizer.jpg';
+  static const String earlyBlight = '$_tutorialsImagePath/tomato_early_blight.jpg';
+  static const String paddyIrrigation = '$_tutorialsImagePath/paddy_watering.jpg';
+  static const String soilPreparation = '$_tutorialsImagePath/soil_preparation.jpg';
+  static const String pestScouting = '$_tutorialsImagePath/insects_scouting.jpg';
+  static const String postHarvest = '$_tutorialsImagePath/post_harvest.jpg';
+  static const String organicFertilizer = '$_tutorialsImagePath/organic_fertilizer.jpg';
 
   // Lottie Animations
   static const String farmerIllustration = '$_lottiePath/farmer.json';
