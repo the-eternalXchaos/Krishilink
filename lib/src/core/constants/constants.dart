@@ -29,12 +29,17 @@ class AssetPaths {
   static const String loginBackground = '$_imagePath/login_background.jpg';
   // krishilink tutorials images
 
-  static const String earlyBlight = '$_tutorialsImagePath/tomato_early_blight.jpg';
-  static const String paddyIrrigation = '$_tutorialsImagePath/paddy_watering.jpg';
-  static const String soilPreparation = '$_tutorialsImagePath/soil_preparation.jpg';
-  static const String pestScouting = '$_tutorialsImagePath/insects_scouting.jpg';
+  static const String earlyBlight =
+      '$_tutorialsImagePath/tomato_early_blight.jpg';
+  static const String paddyIrrigation =
+      '$_tutorialsImagePath/paddy_watering.jpg';
+  static const String soilPreparation =
+      '$_tutorialsImagePath/soil_preparation.jpg';
+  static const String pestScouting =
+      '$_tutorialsImagePath/insects_scouting.jpg';
   static const String postHarvest = '$_tutorialsImagePath/post_harvest.jpg';
-  static const String organicFertilizer = '$_tutorialsImagePath/organic_fertilizer.jpg';
+  static const String organicFertilizer =
+      '$_tutorialsImagePath/organic_fertilizer.jpg';
 
   // Lottie Animations
   static const String farmerIllustration = '$_lottiePath/farmer.json';

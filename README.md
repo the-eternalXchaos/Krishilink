@@ -1,21 +1,13 @@
-<div align="center">
+![KrishiLink Logo](lib/src/core/assets/images/krishilink.png)
 
-	<img src="lib/src/core/assets/images/krishilink.png" alt="KrishiLink Logo" height="88" />
+# KrishiLink
 
-	<h1>KrishiLink</h1>
+A modern marketplace connecting farmers and buyers in Nepal — with secure payments (eSewa & Khalti), chat, maps, and AI-powered disease detection.
 
-	<p>
-		A modern marketplace connecting farmers and buyers in Nepal — with secure payments (eSewa & Khalti), chat, maps, and AI-powered disease detection.
-	</p>
-
-	<p>
-		<img src="https://img.shields.io/badge/Flutter-3.x-blue.svg?logo=flutter" alt="Flutter" />
-		<img src="https://img.shields.io/badge/Dart-3.x-0175C2.svg?logo=dart" alt="Dart" />
-		<img src="https://img.shields.io/badge/State%20Mgmt-GetX-success" alt="GetX" />
-		<img src="https://img.shields.io/badge/License-MIT-informational" alt="License" />
-	</p>
-
-</div>
+![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.x-0175C2.svg?logo=dart)
+![GetX](https://img.shields.io/badge/State%20Mgmt-GetX-success)
+![License](https://img.shields.io/badge/License-MIT-informational)
 
 ## ✨ Features
 
@@ -23,32 +15,38 @@
 - Product catalog, search, and reviews
 - Order management (buyer & farmer) with status tracking
 - Secure payments via backend-integrated eSewa and Khalti (WebView)
-- Live chat between buyer and farmer, with cached names and history
+- Live chat between buyer and farmer and chat bot helper
 - Maps and delivery location picker
-- Push notifications (Firebase Messaging) and local notifications
 - AI-powered plant disease detection
 
 ## 🖼️ Screenshots
 
+These demo snapshots live under `lib/src/core/assets/demo_images/` and are safe to update/replace.
+
 <p align="center">
-	<img src="flutter_01.png" alt="Flutter Showcase" height="320" />
-	<img src="lib/src/core/assets/images/login_background.jpg" alt="Login" height="320" />
-	<img src="lib/src/core/assets/images/tomato_early_blight.jpg" alt="Disease Detection Example" height="320" />
+	<img src="lib/src/core/assets/demo_images/buyer_dashboard.png" alt="Buyer Flow" height="320" />
+	<img src="lib/src/core/assets/demo_images/product_details.png" alt="Product Details" height="320" />
+	<img src="lib/src/core/assets/demo_images/check_out.png" alt="Checkout" height="320" />
+</p>
+<p align="center">
+	<img src="lib/src/core/assets/demo_images/farmer_dashboard.png" alt="Home /Buyer Dashboard" height="320" />
+	<img src="lib/src/core/assets/demo_images/disease_Detection.png" alt="Home /Disease Detection" height="320" />
+	<img src="lib/src/core/assets/demo_images/product_management.png" alt="Home /Product Management" height="320" />
+	<img src="lib/src/core/assets/demo_images/order.png" alt="Orders" height="320" />
 </p>
 
-> Note: Images above are representative assets/screens. Replace or add more snapshots as needed.
+> Tip: Add more images to `lib/src/core/assets/demo_images/` and reference them here to expand the gallery.
 
 ## 🧩 Tech Stack
 
 - Flutter, Dart
-- GetX (state, DI, routes)
+- GetX (state , routes)
 - Dio (networking), WebView
-- Firebase (Core, Auth, Messaging), Local Notifications
 - Google Maps & Places
 
 ## 🔐 Payments (Backend-driven)
 
-This app integrates payments via your backend endpoints, not the SDK directly:
+This app integrates payments via yourour backend endpoints, not the SDK directly:
 
 - eSewa: `POST /api/Payment/initiatePaymentForEsewa` → auto-submitted form in WebView → backend success/failure callbacks
 - Khalti: `POST /api/Payment/initiatePaymentForKhalti` → open returned paymentUrl in WebView → backend `khaltiResponse` callback
@@ -82,9 +80,6 @@ flutter run \
 ## 📁 Project Docs
 
 - Architecture: `ARCHITECTURE.md`
-- Migration notes: `MIGRATION_README.md`, `MIGRATION_STRATEGY.md`, `MIGRATION_CHECKLIST.md`
-- Full file inventory: `FILE_INVENTORY.md`
-- Payment notes: `KHALTI_DIRECT_PAYMENT_GUIDE.md`
 
 ## 🧭 Folder Highlights
 
