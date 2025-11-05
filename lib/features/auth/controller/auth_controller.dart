@@ -333,7 +333,7 @@ class AuthController extends GetxController {
         _handleErrorResponse(response);
       }
     } on AppException catch (e) {
-      _showError(e.message);
+      _showAppError(e);
     } catch (e) {
       debugPrint('$e');
       _showError('Login failed: $e');
@@ -342,29 +342,157 @@ class AuthController extends GetxController {
     }
   }
 
-  /// ✅ Helper to extract error messages cleanly
+  /// ✅ Helper to extract error messages cleanly (tolerant and case-insensitive)
   void _handleErrorResponse(http.Response response) {
-    debugPrint("❌ Error response: ${response.body}");
-    try {
-      final error = jsonDecode(response.body);
-      String errorMessage = 'Login failed';
+    final raw = response.body;
+    debugPrint("❌ Error response: $raw");
 
-      if (error['errors'] != null && error['errors'] is Map) {
-        final errors = error['errors'] as Map;
-        if (errors['MyError'] != null && errors['MyError'] is List) {
-          final myErrors = errors['MyError'] as List;
-          if (myErrors.isNotEmpty) {
-            errorMessage = myErrors.first.toString();
-          }
-        }
-      } else if (error['message'] != null) {
-        errorMessage = error['message'];
+    // Local helper: find a string value by key (case-insensitive)
+    String? findStringIgnoreCase(Map data, String key) {
+      try {
+        final entry = data.entries.firstWhere(
+          (kv) => kv.key.toString().toLowerCase() == key.toLowerCase(),
+          orElse: () => const MapEntry('', null),
+        );
+        final val = entry.value;
+        return val?.toString();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    try {
+      // Strip possible BOM and whitespace, then try JSON decode
+      final cleaned = raw.replaceAll('\ufeff', '').trim();
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(cleaned);
+      } catch (_) {
+        decoded = null;
       }
 
-      throw AppException(errorMessage);
-    } catch (_) {
-      throw AppException('Unexpected server error');
+      String message = 'Login failed';
+      String? title;
+
+      if (decoded is Map) {
+        // Extract title/message in a case-insensitive way
+        title = findStringIgnoreCase(decoded, 'title');
+        final msgField = findStringIgnoreCase(decoded, 'message');
+
+        // errors field could be Map or List. Prefer MyError if present.
+        dynamic errorsVal =
+            decoded.entries
+                .firstWhere(
+                  (kv) => kv.key.toString().toLowerCase() == 'errors',
+                  orElse: () => const MapEntry('', null),
+                )
+                .value;
+
+        String? firstErrorMsg;
+        if (errorsVal is Map && errorsVal.isNotEmpty) {
+          // Prefer 'MyError' specifically when available
+          final myErrorEntry = errorsVal.entries.firstWhere(
+            (e) => e.key.toString().toLowerCase() == 'myerror',
+            orElse: () => const MapEntry('', null),
+          );
+          final chosen =
+              (myErrorEntry.value != null)
+                  ? myErrorEntry.value
+                  : errorsVal.values.first;
+          if (chosen is List && chosen.isNotEmpty) {
+            firstErrorMsg = chosen.first.toString();
+          } else {
+            firstErrorMsg = chosen?.toString();
+          }
+        } else if (errorsVal is List && errorsVal.isNotEmpty) {
+          firstErrorMsg = errorsVal.first.toString();
+        }
+
+        // Pick the most informative message available
+        message =
+            firstErrorMsg ??
+            msgField ??
+            title ??
+            'Server error: ${response.statusCode}';
+      } else if (cleaned.isNotEmpty) {
+        // Non-JSON string: try to extract via regex to avoid dumping raw JSON
+        try {
+          final titleMatch = RegExp(
+            r'"title"\s*:\s*"([^"]+)"',
+            caseSensitive: false,
+          ).firstMatch(cleaned);
+          if (titleMatch != null) title = titleMatch.group(1);
+
+          final myErrorMatch = RegExp(
+            r'"MyError"\s*:\s*\[\s*"([^"]+)"',
+            caseSensitive: false,
+          ).firstMatch(cleaned);
+          if (myErrorMatch != null) {
+            message = myErrorMatch.group(1)!;
+          } else {
+            final msgMatch = RegExp(
+              r'"message"\s*:\s*"([^"]+)"',
+              caseSensitive: false,
+            ).firstMatch(cleaned);
+            message =
+                msgMatch?.group(1) ??
+                title ??
+                'Server error: ${response.statusCode}';
+          }
+        } catch (_) {
+          message = 'Server error: ${response.statusCode}';
+        }
+      } else {
+        message = 'Server error: ${response.statusCode}';
+      }
+
+      throw AppException(
+        message,
+        statusCode: response.statusCode,
+        title: title,
+      );
+    } catch (err) {
+      // Parsing failed; last-attempt regex extraction from raw string
+      try {
+        final cleaned = raw.replaceAll('\ufeff', '').trim();
+        final titleMatch = RegExp(
+          r'"title"\s*:\s*"([^"]+)"',
+          caseSensitive: false,
+        ).firstMatch(cleaned);
+        final myErrorMatch = RegExp(
+          r'"MyError"\s*:\s*\[\s*"([^"]+)"',
+          caseSensitive: false,
+        ).firstMatch(cleaned);
+        final fallbackMsg =
+            myErrorMatch?.group(1) ??
+            titleMatch?.group(1) ??
+            'Server error: ${response.statusCode}';
+        final fallbackTitle = titleMatch?.group(1) ?? 'Authentication Failed';
+        throw AppException(
+          fallbackMsg,
+          statusCode: response.statusCode,
+          title: fallbackTitle,
+        );
+      } catch (_) {
+        throw AppException(
+          'Server error: ${response.statusCode}',
+          statusCode: response.statusCode,
+          title: 'Authentication Failed',
+        );
+      }
     }
+  }
+
+  /// Show API error with server-provided title/message when available
+  void _showAppError(AppException e) {
+    // If the server provided a meaningful title (e.g., "Authentication Failed"), show it
+    final title = e.title ?? 'login_failed'.tr;
+    // Prefer the parsed message; fallback to generic mapping only if needed
+    final msg = (e.message.isNotEmpty) ? e.message : 'something_went_wrong'.tr;
+
+    errorMessage.value = msg;
+    debugPrint('Login Error: $msg');
+    PopupService.error(msg, title: title);
   }
 
   Future<void> loginWithGoogle() async {
@@ -407,7 +535,7 @@ class AuthController extends GetxController {
       await saveAuthData(user.toJson() as UserModel);
       navigateBasedOnRole();
     } on AppException catch (e) {
-      _showError(e.message);
+      _showAppError(e);
     } catch (e) {
       _showError('Facebook login failed: $e');
     } finally {
@@ -431,7 +559,7 @@ class AuthController extends GetxController {
       await saveAuthData(user.toJson() as UserModel);
       navigateBasedOnRole();
     } on AppException catch (e) {
-      _showError(e.message);
+      _showAppError(e);
     } catch (e) {
       _showError('Apple login failed: $e');
     } finally {

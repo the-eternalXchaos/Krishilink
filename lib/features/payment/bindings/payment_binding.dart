@@ -5,7 +5,6 @@ import 'package:krishi_link/src/features/payment/presentation/controllers/direct
 class PaymentBinding extends Bindings {
   @override
   void dependencies() {
-    // Payment-specific controllers with fenix for recreation
     Get.lazyPut(() => DirectPaymentController(), fenix: true);
   }
 }

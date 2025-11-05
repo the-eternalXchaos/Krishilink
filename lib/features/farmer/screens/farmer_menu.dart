@@ -31,7 +31,7 @@ class FarmerMenu extends StatelessWidget {
               const Divider(),
               _buildMenuItem(
                 Icons.shopping_basket,
-                'Customer Orders'.tr,
+                'customer_orders'.tr,
                 // () => Get.toNamed('/customer/orders'),
                 () => Get.toNamed('/farmer/orders'),
               ),
@@ -59,10 +59,10 @@ class FarmerMenu extends StatelessWidget {
                   context: context,
                   builder: (BuildContext context) {
                     return CustomConfirmDialog(
-                      title: 'Logout',
-                      content: 'Are you sure you want to logout?',
-                      confirmText: 'Yes',
-                      cancelText: 'No',
+                      title: 'logout'.tr,
+                      content: 'are_you_sure_logout'.tr,
+                      confirmText: 'yes'.tr,
+                      cancelText: 'no'.tr,
                       onConfirm: () {
                         authController.logout();
                         Get.offAllNamed('/login');

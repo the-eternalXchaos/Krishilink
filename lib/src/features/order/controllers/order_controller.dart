@@ -10,6 +10,7 @@ import 'package:krishi_link/src/features/order/model/order_model.dart';
 class OrderController extends GetxController {
   final OrderService _orderService;
   final AuthController _authController;
+  final Map<String, String> _productNameCache = {};
 
   OrderController({OrderService? orderService, AuthController? authController})
     : _orderService =
@@ -85,6 +86,12 @@ class OrderController extends GetxController {
 
       orders.assignAll(fetchedOrders);
       filteredOrders.assignAll(fetchedOrders);
+
+      // Enrich any missing/placeholder product names in the background
+      // so UI can update when real names arrive.
+      // Don't await here to keep UI responsive.
+      // ignore: discarded_futures
+      _enrichMissingProductNames();
 
       debugPrint(
         '[OrderController] Fetched ${fetchedOrders.length} orders for $userRole',
@@ -379,6 +386,96 @@ class OrderController extends GetxController {
   }
 
   // ==================== HELPERS ====================
+
+  bool _isPlaceholderName(String name) {
+    final n = name.trim().toLowerCase();
+    return n.isEmpty ||
+        n == 'product' ||
+        n == 'unknown product' ||
+        n.startsWith('product #');
+  }
+
+  Future<void> _enrichMissingProductNames() async {
+    try {
+      // Collect unique productIds with placeholder names
+      final ids =
+          orders
+              .where(
+                (o) =>
+                    _isPlaceholderName(o.productName) && o.productId.isNotEmpty,
+              )
+              .map((o) => o.productId)
+              .toSet()
+              .toList();
+      if (ids.isEmpty) return;
+
+      for (final pid in ids) {
+        // Use cache if available
+        if (_productNameCache.containsKey(pid)) {
+          _applyProductName(pid, _productNameCache[pid]!);
+          continue;
+        }
+
+        try {
+          final res = await _orderService.getProductById(pid);
+          String? name;
+          final body = res.data;
+          if (body is Map) {
+            final inner = body['data'];
+            if (inner is Map) {
+              name = (inner['productName'] ?? inner['name'])?.toString();
+            } else if (inner is List && inner.isNotEmpty) {
+              final first = inner.first;
+              if (first is Map) {
+                name = (first['productName'] ?? first['name'])?.toString();
+              }
+            }
+          }
+
+          // Fallback to short id if still missing
+          name ??=
+              'Product #${pid.substring(0, pid.length >= 8 ? 8 : pid.length)}';
+
+          _productNameCache[pid] = name;
+          _applyProductName(pid, name);
+        } catch (e) {
+          // Ignore fetch errors; keep placeholder
+          debugPrint(
+            '[OrderController] Failed to fetch product name for $pid: $e',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[OrderController] _enrichMissingProductNames error: $e');
+    }
+  }
+
+  void _applyProductName(String productId, String name) {
+    bool mutated = false;
+    for (var i = 0; i < orders.length; i++) {
+      final o = orders[i];
+      if (o.productId == productId && _isPlaceholderName(o.productName)) {
+        orders[i] = o.copyWith(productName: name);
+        mutated = true;
+      }
+    }
+    if (mutated) {
+      orders.refresh();
+    }
+
+    // Update filtered list as well
+    mutated = false;
+    for (var i = 0; i < filteredOrders.length; i++) {
+      final o = filteredOrders[i];
+      if (o.productId == productId && _isPlaceholderName(o.productName)) {
+        filteredOrders[i] = o.copyWith(productName: name);
+        mutated = true;
+      }
+    }
+    if (mutated) {
+      filteredOrders.refresh();
+    }
+  }
 
   void _refreshFilteredOrders() {
     // Maintain current filter

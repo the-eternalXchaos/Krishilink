@@ -1,14 +1,14 @@
 ﻿import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:krishi_link/core/lottie/pop_up.dart';
+import 'package:krishi_link/core/lottie/popup_service.dart';
 import 'package:krishi_link/features/disease_detection/controller/disease_controller.dart';
 import 'package:krishi_link/src/core/components/material_ui/pop_up.dart';
 import 'package:krishi_link/src/core/constants/constants.dart';
 import 'package:lottie/lottie.dart';
-import 'package:krishi_link/core/lottie/popup_service.dart';
 
 class DiseaseDetectionScreen extends StatefulWidget {
   const DiseaseDetectionScreen({super.key});
@@ -97,6 +97,20 @@ class DiseaseDetectionScreenState extends State<DiseaseDetectionScreen>
     final themeColor = theme.colorScheme;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Disease Detection',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: themeColor.primary,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.2),
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

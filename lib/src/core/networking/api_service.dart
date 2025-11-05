@@ -118,10 +118,14 @@ class ApiService {
 
             debugPrint('[Interceptor] Unauthorized: showing login prompt');
             if (Get.currentRoute != '/login') {
-              PopupService.error(
-                'Please login to continue',
-                title: 'Session Expired',
-              );
+              // Parse server-provided title/message if available
+              final ex = _parseDioError(error);
+              final popupTitle = ex.title ?? 'Authentication Failed';
+              final popupMessage =
+                  ex.message.isNotEmpty
+                      ? ex.message
+                      : 'Please login to continue';
+              PopupService.error(popupMessage, title: popupTitle);
               Get.offAllNamed('/login');
             }
             return handler.next(error);
@@ -588,34 +592,102 @@ class ApiService {
   // --- ERROR HANDLING ---
   AppException _parseDioError(DioException e) {
     String message = 'An error occurred';
+    String? title;
+    int? statusCode = e.response?.statusCode;
+
+    String? findStringIgnoreCase(Map data, String key) {
+      try {
+        final entry = data.entries.firstWhere(
+          (kv) => kv.key.toString().toLowerCase() == key.toLowerCase(),
+          orElse: () => const MapEntry('', null),
+        );
+        final val = entry.value;
+        return val?.toString();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    // Small helper to extract meaningful message/title from a Map payload
+    void extractFromMap(Map responseMap) {
+      // Normalize possible keys: Title/Errors/Message (case-insensitive)
+      title = findStringIgnoreCase(responseMap, 'title');
+      final msgField = findStringIgnoreCase(responseMap, 'message');
+
+      // Extract first error from Errors/errors if present; prefer MyError
+      String? firstErrorMsg;
+      dynamic errorsVal =
+          responseMap.entries
+              .firstWhere(
+                (kv) => kv.key.toString().toLowerCase() == 'errors',
+                orElse: () => const MapEntry('', null),
+              )
+              .value;
+
+      if (errorsVal is Map && errorsVal.isNotEmpty) {
+        final myErrorEntry = errorsVal.entries.firstWhere(
+          (e) => e.key.toString().toLowerCase() == 'myerror',
+          orElse: () => const MapEntry('', null),
+        );
+        final chosen =
+            (myErrorEntry.value != null)
+                ? myErrorEntry.value
+                : errorsVal.values.first;
+        if (chosen is List && chosen.isNotEmpty) {
+          firstErrorMsg = chosen.first.toString();
+        } else {
+          firstErrorMsg = chosen?.toString();
+        }
+      } else if (errorsVal is List && errorsVal.isNotEmpty) {
+        firstErrorMsg = errorsVal.first.toString();
+      }
+
+      message =
+          firstErrorMsg ?? msgField ?? title ?? 'Server error: $statusCode';
+    }
 
     if (e.response != null && e.response!.data != null) {
       final responseData = e.response!.data;
       debugPrint('🔍 [Error Parser] Response data: $responseData');
 
       if (responseData is String) {
-        message = responseData;
-      } else if (responseData is Map<String, dynamic>) {
-        // Try to get the most specific error message
-        if (responseData['errors'] != null) {
-          final errors = responseData['errors'];
-          if (errors is Map && errors.isNotEmpty) {
-            final firstError = errors.values.first;
-            if (firstError is List && firstError.isNotEmpty) {
-              message = firstError.first.toString();
+        final raw = responseData.trim();
+        // Try to decode JSON-like string to extract proper error fields
+        if (raw.startsWith('{') && raw.endsWith('}')) {
+          try {
+            final decoded = jsonDecode(raw);
+            if (decoded is Map) {
+              extractFromMap(decoded);
             } else {
-              message = firstError.toString();
+              message = responseData; // fallback to raw string
             }
-          } else if (errors is List && errors.isNotEmpty) {
-            message = errors.first.toString();
+          } catch (_) {
+            // As a guard, try regex to grab title/MyError to avoid showing full JSON raw
+            try {
+              final titleMatch = RegExp(
+                r'"title"\s*:\s*"([^"]+)"',
+                caseSensitive: false,
+              ).firstMatch(raw);
+              if (titleMatch != null) title = titleMatch.group(1);
+              final myErrorMatch = RegExp(
+                r'"MyError"\s*:\s*\[\s*"([^"]+)"',
+                caseSensitive: false,
+              ).firstMatch(raw);
+              if (myErrorMatch != null) {
+                message = myErrorMatch.group(1)!;
+              } else {
+                message = title ?? 'Server error: $statusCode';
+              }
+            } catch (_) {
+              message = 'Server error: $statusCode';
+            }
           }
-        } else if (responseData['message'] != null) {
-          message = responseData['message'];
-        } else if (responseData['title'] != null) {
-          message = responseData['title'];
         } else {
-          message = 'Server error: ${e.response?.statusCode}';
+          // Plain string message from server; use as-is
+          message = responseData;
         }
+      } else if (responseData is Map) {
+        extractFromMap(responseData);
       }
     } else {
       // Handle network-level errors
@@ -630,8 +702,9 @@ class ApiService {
       }
     }
 
+    debugPrint('🔍 [Error Parser] Final error title: ${title ?? '-'}');
     debugPrint('🔍 [Error Parser] Final error message: $message');
-    return AppException(message);
+    return AppException(message, statusCode: statusCode, title: title);
   }
 
   // Method to dispose of resources

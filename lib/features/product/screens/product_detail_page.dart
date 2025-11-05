@@ -1217,24 +1217,24 @@ class _ProductDetailPageState extends State<ProductDetailPage>
                             ),
                             const SizedBox(width: 12),
                             // TODO remove it later  buy now
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: _buyNow,
-                                icon: const Icon(Icons.shopping_bag_outlined),
-                                label: Text('buy_now'.tr),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                  foregroundColor: colorScheme.onPrimary,
-                                  elevation: 2,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // Expanded(
+                            //   child: ElevatedButton.icon(
+                            //     onPressed: _buyNow,
+                            //     icon: const Icon(Icons.shopping_bag_outlined),
+                            //     label: Text('buy_now'.tr),
+                            //     style: ElevatedButton.styleFrom(
+                            //       backgroundColor: colorScheme.primary,
+                            //       foregroundColor: colorScheme.onPrimary,
+                            //       elevation: 2,
+                            //       padding: const EdgeInsets.symmetric(
+                            //         vertical: 16,
+                            //       ),
+                            //       shape: RoundedRectangleBorder(
+                            //         borderRadius: BorderRadius.circular(16),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 24),

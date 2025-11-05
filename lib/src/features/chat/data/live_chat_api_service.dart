@@ -1,18 +1,18 @@
 import 'package:dio/dio.dart' show Options;
 import 'package:krishi_link/src/core/networking/base_service.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
-import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
 import 'package:krishi_link/src/features/chat/data/chat_cache_service.dart';
+import 'package:krishi_link/src/features/chat/models/live_chat_model.dart';
 
 class LiveChatApiService extends BaseService {
   Future<List<Map<String, dynamic>>> getMyCustomersForChat() async {
     return executeApiCall(() async {
-      final response = await apiClient.get('/api/Chat/getMyCustomersForChat' );
+      final response = await apiClient.get('/api/Chat/getMyCustomersForChat');
       final data = response.data;
       if (data is! Map<String, dynamic> || !data['success']) {
         throw Exception(data['message'] ?? 'Failed to fetch customers');
       }
-      
+
       // API currently returns an array of customer IDs (strings). If in the future it
       // returns objects, we still handle that. Enrich with cached names for nicer UI.
       final list = (data['data'] as List<dynamic>? ?? []);
@@ -21,7 +21,8 @@ class LiveChatApiService extends BaseService {
         if (item is String) {
           final id = item;
           final cached = await ChatCacheService.I.getName(id);
-          final name = cached ?? ChatCacheService.I.prettyFallback(id, prefix: 'Buyer');
+          final name =
+              cached ?? ChatCacheService.I.prettyFallback(id, prefix: 'Buyer');
           results.add({'id': id, 'name': name, 'contact': '', 'unread': 0});
         } else if (item is Map<String, dynamic>) {
           final id = item['id']?.toString() ?? '';
@@ -32,7 +33,12 @@ class LiveChatApiService extends BaseService {
           }
           results.add({
             'id': id,
-            'name': name.isNotEmpty ? name : (id.isNotEmpty ? ChatCacheService.I.prettyFallback(id, prefix: 'Buyer') : 'Unknown'),
+            'name':
+                name.isNotEmpty
+                    ? name
+                    : (id.isNotEmpty
+                        ? ChatCacheService.I.prettyFallback(id, prefix: 'Buyer')
+                        : 'Unknown'),
             'contact': item['contact']?.toString() ?? '',
             'unread': 0,
           });

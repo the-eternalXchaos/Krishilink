@@ -98,7 +98,6 @@ class KhaltiDirectPaymentService {
             .toList(),
       };
 
-      debugPrint('[Khalti] Payment request: ${jsonEncode(paymentRequest)}');
 
       // Save context for history enrichment
       _pendingContext = {
@@ -113,7 +112,6 @@ class KhaltiDirectPaymentService {
         'purchaseOrderId': purchaseOrderId,
       };
 
-      // Call Khalti API directly
       final response = await _dioClient.post(
         'https://dev.khalti.com/api/v2/epayment/initiate/',
         data: paymentRequest,

@@ -43,6 +43,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   // Track last URL to aid debugging and potential conditional flows
   String _lastUrl = '';
   bool _handledResult = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -76,6 +77,29 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
                     const Duration(milliseconds: 300),
                     _handleFailure,
                   );
+                }
+              },
+              onWebResourceError: (error) {
+                if (kDebugMode) {
+                  debugPrint(
+                    '[WebView][ERROR] ${error.errorCode} ${error.description}',
+                  );
+                }
+                if (!_handledResult) {
+                  setState(() {
+                    _isLoading = false;
+                    _errorMessage = error.description;
+                  });
+
+                  if (error.errorType ==
+                      WebResourceErrorType.failedSslHandshake) {
+                    PopupService.error(
+                      'Secure connection to the payment gateway failed. Please verify the SSL certificate or try again later.',
+                    );
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      if (mounted) Navigator.of(context).maybePop();
+                    });
+                  }
                 }
               },
               onNavigationRequest: (req) {
@@ -122,6 +146,38 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
         children: [
           WebViewWidget(controller: _controller),
           if (_isLoading) const Center(child: CircularProgressIndicator()),
+          if (_errorMessage != null)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white),
+                    const SizedBox(height: 12),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           if (kDebugMode)
             Positioned(
               left: 8,

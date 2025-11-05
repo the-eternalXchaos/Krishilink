@@ -9,7 +9,6 @@ class PaymentKeys {
     defaultValue: 'test_secret_key_f59e8b7629b4431db8264e09fc830d76',
   );
 
-  /// Returns true if non-test keys were provided at build time.
   static bool get isConfigured =>
       !khaltiPublicKey.startsWith('test_') &&
       !khaltiSecretKey.startsWith('test_');

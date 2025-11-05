@@ -114,9 +114,9 @@ dependencies:
   internet_connection_checker: ^3.0.1
 
 
-  # workmanager: ^0.5.2  # Temporarily disabled due to platform compatibility issues
+  # workmanager: ^0.5.2  
   # Payment Dependencies
-  # khalti_flutter: ^1.0.0-dev.5  # Temporarily disabled due to intl version conflict
+  # khalti_flutter: ^1.0.0-dev.5  
 
 dev_dependencies:
   flutter_test:

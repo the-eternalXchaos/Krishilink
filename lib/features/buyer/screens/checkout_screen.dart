@@ -9,12 +9,10 @@ import 'package:krishi_link/features/auth/controller/cart_controller.dart';
 import 'package:krishi_link/src/core/components/app_text_input_field.dart';
 import 'package:krishi_link/src/core/components/product/location_picker.dart';
 import 'package:krishi_link/src/core/constants/api_constants.dart';
+import 'package:krishi_link/src/core/errors/app_exception.dart';
 import 'package:krishi_link/src/features/auth/data/token_service.dart';
 import 'package:krishi_link/src/features/cart/models/cart_item.dart';
 import 'package:krishi_link/src/features/payment/data/backend_payment_service.dart';
-import 'package:krishi_link/src/features/payment/data/khalti_direct_payment_service.dart';
-import 'package:krishi_link/src/features/payment/data/payment_keys.dart';
-import 'package:krishi_link/src/features/payment/data/payment_service.dart';
 import 'package:krishi_link/src/features/payment/presentation/screens/payment_webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,17 +41,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       Get.isRegistered<CartController>()
           ? Get.find<CartController>()
           : Get.put(CartController());
-  final PaymentService paymentService = Get.put(PaymentService());
   final BackendPaymentService backendPaymentService = Get.put(
     BackendPaymentService(),
-  );
-  final KhaltiDirectPaymentService khaltiDirectPaymentService = Get.put(
-    PaymentKeys.isConfigured
-        ? KhaltiDirectPaymentService(
-          khaltiPublicKey: PaymentKeys.publicKey,
-          khaltiSecretKey: PaymentKeys.secretKey,
-        )
-        : KhaltiDirectPaymentService(),
   );
 
   String selectedPaymentMethod = 'cash_on_delivery';
@@ -314,43 +303,219 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _processKhaltiPayment() async {
     try {
-      await khaltiDirectPaymentService.initiateDirectPayment(
-        items: checkoutItems,
-        amount: finalTotal,
-        customerName:
-            authController.currentUser.value != null
-                ? authController.currentUser.value!.fullName
-                : '',
-        customerPhone: _phoneController.text.trim(),
-        customerEmail:
-            authController.currentUser.value != null
-                ? authController.currentUser.value!.email
-                : '',
-        deliveryAddress: _addressController.text.trim(),
-        latitude: selectedLatitude,
-        longitude: selectedLongitude,
-        onSuccess: (txId) async {
-          PopupService.success(
-            'khalti_payment_success'.tr,
-            title: 'success'.tr,
-          );
-          await _savePaymentHistory(
-            status: 'success',
-            transactionId: txId,
-            pidx: 'khalti',
-          );
-          Get.toNamed('payment-history');
-        },
-        onFailure:
-            (error) => PopupService.error(
-              'khalti_payment_failed'.tr,
-              title: 'error'.tr,
-            ),
-        onCancel: () => PopupService.warning('Payment cancelled'),
+      debugPrint('[Checkout][Khalti] Starting payment flow');
+
+      if (cartController.currentCartId.value.isEmpty) {
+        debugPrint('[Checkout][Khalti] cartId missing; fetching cart...');
+        await cartController.fetchCartItems();
+      }
+
+      final cartId = cartController.currentCartId.value;
+      debugPrint('[Checkout][Khalti] Using cartId: $cartId');
+      debugPrint(
+        '[Checkout][Khalti] totalPayableAmount: ${finalTotal.toStringAsFixed(2)}',
       );
+
+      if (cartId.isEmpty) {
+        throw Exception('Missing cart id');
+      }
+
+      final response = await backendPaymentService.initiateKhalti(
+        cartId: cartId,
+        totalPayableAmount: finalTotal,
+      );
+
+      debugPrint('[Checkout][Khalti] Initiate status: ${response.statusCode}');
+      debugPrint('[Checkout][Khalti] Initiate body: ${response.data}');
+
+      if (response.statusCode != 200) {
+        final message =
+            _extractMessage(response.data) ??
+            'Failed to initiate Khalti payment';
+        throw AppException(message);
+      }
+
+      final parsed = _parseKhaltiPaymentResponse(response.data);
+      final paymentUrl = parsed['url'];
+      final pidx = parsed['pidx'];
+
+      debugPrint('[Checkout][Khalti] paymentUrl: $paymentUrl');
+      debugPrint('[Checkout][Khalti] pidx: $pidx');
+
+      if (paymentUrl == null || paymentUrl.isEmpty) {
+        throw AppException('Missing payment URL');
+      }
+
+      await Get.to(
+        () => PaymentWebViewScreen(
+          url: paymentUrl,
+          successUrls: const [
+            ApiConstants.khaltiResponseEndpoint,
+            ApiConstants.paymentSuccessEndpoint,
+          ],
+          failureUrls: const [ApiConstants.paymentFailureEndpoint],
+          clearCartOnSuccess: true,
+        ),
+        arguments: {'pidx': pidx, 'source': 'khalti'},
+      );
+    } on AppException catch (e) {
+      debugPrint('[Checkout][Khalti][APP-ERROR] ${e.message}');
+      PopupService.error(e.message, title: 'khalti'.tr);
     } catch (e) {
+      debugPrint('[Checkout][Khalti][ERROR] $e');
       PopupService.error('khalti_payment_failed'.tr, title: 'error'.tr);
     }
+  }
+
+  Map<String, String?> _parseKhaltiPaymentResponse(dynamic body) {
+    Map<String, dynamic>? rootMap;
+    String? paymentUrl;
+    String? pidx;
+
+    if (body is Map) {
+      rootMap = Map<String, dynamic>.from(body);
+    } else if (body is String) {
+      final trimmed = body.trim();
+      if (trimmed.isEmpty) {
+        throw AppException('Empty response from payment service');
+      }
+      if (trimmed.startsWith('{')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is Map) {
+            rootMap = Map<String, dynamic>.from(decoded);
+          }
+        } catch (_) {}
+      }
+      if (rootMap == null) {
+        final normalized = _normalizeUrl(trimmed);
+        if (normalized == null) {
+          throw AppException('Unexpected response from payment service');
+        }
+        paymentUrl = normalized;
+        pidx = Uri.tryParse(normalized)?.queryParameters['pidx'];
+        return {'url': paymentUrl, 'pidx': pidx};
+      }
+    } else {
+      throw AppException('Unexpected response format from payment service');
+    }
+
+    final Map<String, dynamic> map = rootMap;
+    final successField = map['success'];
+    final hasExplicitSuccess = successField != null;
+    final isSuccess =
+        successField is bool
+            ? successField
+            : successField?.toString().toLowerCase().trim() == 'true';
+
+    if (hasExplicitSuccess && !isSuccess) {
+      final serverMessage = map['message']?.toString();
+      throw AppException(
+        serverMessage?.isNotEmpty == true
+            ? serverMessage!
+            : 'Khalti payment initiation failed',
+      );
+    }
+
+    dynamic payload = map['data'];
+    if (payload is Map) {
+      payload = Map<String, dynamic>.from(payload);
+    } else if (payload is String) {
+      final trimmed = payload.trim();
+      if (trimmed.startsWith('{')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is Map) {
+            payload = Map<String, dynamic>.from(decoded);
+          }
+        } catch (_) {}
+      }
+      if (payload is! Map) {
+        final normalized = _normalizeUrl(trimmed);
+        if (normalized != null) {
+          paymentUrl = normalized;
+          pidx = Uri.tryParse(normalized)?.queryParameters['pidx'];
+          return {'url': paymentUrl, 'pidx': pidx};
+        }
+      }
+    }
+
+    final effective = payload is Map ? payload : map;
+
+    paymentUrl = _extractUrlFromMap(Map<String, dynamic>.from(effective));
+    pidx = (effective['pidx'] ?? effective['pIdx'] ?? map['pidx'])?.toString();
+
+    if (paymentUrl == null || paymentUrl.isEmpty) {
+      final message = map['message']?.toString() ?? 'Missing payment URL';
+      throw AppException(message);
+    }
+
+    pidx ??= Uri.tryParse(paymentUrl)?.queryParameters['pidx'];
+
+    return {'url': paymentUrl, 'pidx': pidx};
+  }
+
+  String? _normalizeUrl(String? raw) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.scheme.isEmpty) return null;
+    return trimmed;
+  }
+
+  String? _extractUrlFromMap(Map<String, dynamic> source) {
+    final candidates = [
+      source['paymentUrl'],
+      source['payment_url'],
+      source['url'],
+    ];
+    for (final candidate in candidates) {
+      final normalized = candidate is String ? _normalizeUrl(candidate) : null;
+      if (normalized != null) return normalized;
+    }
+
+    for (final entry in source.entries) {
+      final value = entry.value;
+      if (value is String) {
+        final normalized = _normalizeUrl(value);
+        if (normalized != null) return normalized;
+      } else if (value is Map) {
+        final nested = _extractUrlFromMap(Map<String, dynamic>.from(value));
+        if (nested != null) return nested;
+      }
+    }
+    return null;
+  }
+
+  String? _extractMessage(dynamic body) {
+    if (body == null) return null;
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      final message = map['message'] ?? map['error'] ?? map['detail'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+      if (map['data'] != null && map['data'] is String) {
+        final nestedMessage = _extractMessage(map['data']);
+        if (nestedMessage != null) return nestedMessage;
+      }
+      return null;
+    }
+    if (body is String) {
+      final trimmed = body.trim();
+      if (trimmed.isEmpty) return null;
+      if (trimmed.startsWith('{')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is Map) {
+            return _extractMessage(decoded);
+          }
+        } catch (_) {}
+      }
+      return trimmed;
+    }
+    return null;
   }
 
   String _buildEsewaAutoSubmitHtml(Map<String, dynamic> fields) {

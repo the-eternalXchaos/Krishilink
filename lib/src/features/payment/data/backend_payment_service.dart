@@ -4,16 +4,7 @@ import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:krishi_link/src/core/constants/api_constants.dart';
 import 'package:krishi_link/src/core/networking/api_service.dart';
 
-/// Backend-integrated payment service for eSewa, Khalti, and COD via your API.
-///
-/// This does NOT change any gateway contracts; it simply calls your backend
-/// endpoints exactly as documented:
-/// - POST /api/Payment/initiatePaymentForEsewa (multipart: cartId, totalPayableAmount)
-/// - GET  /api/Payment/esewaSuccess?data=...
-/// - GET  /api/Payment/failure?data=...
-/// - POST /api/Payment/initiatePaymentForKhalti (multipart: cartId, totalPayableAmount)
-/// - GET  /api/Payment/khaltiResponse?... (pidx, status, ...)
-/// - POST /api/Payment/cashOnDelivery (multipart: cartId, totalPayableAmount)
+
 class BackendPaymentService {
   late final ApiService _api;
   BackendPaymentService({ApiService? api}) {

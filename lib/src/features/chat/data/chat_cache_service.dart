@@ -124,12 +124,14 @@ class ChatCacheService {
             .whereType<Map>()
             .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
             .cast<Map<String, dynamic>>()
-            .map((e) => {
-                  'id': (e['id'] ?? '').toString(),
-                  'name': (e['name'] ?? '').toString(),
-                  'contact': (e['contact'] ?? '').toString(),
-                  'unread': int.tryParse((e['unread'] ?? 0).toString()) ?? 0,
-                })
+            .map(
+              (e) => {
+                'id': (e['id'] ?? '').toString(),
+                'name': (e['name'] ?? '').toString(),
+                'contact': (e['contact'] ?? '').toString(),
+                'unread': int.tryParse((e['unread'] ?? 0).toString()) ?? 0,
+              },
+            )
             .toList(growable: false);
       }
       return <Map<String, dynamic>>[];
